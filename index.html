@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CRM 排期管理工作台</title>
+  <title>达播专场四步流程交互图</title>
   <style>
     :root {
       --bg: #f3f6fb;
@@ -46,8 +46,8 @@
       z-index: 20;
     }
 
-    .brand { display: flex; align-items: center; gap: 8px; min-width: 120px; font-size: 23px; font-weight: 900; color: #050505; line-height: 1; }
-    .brand-mark { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: white; background: #ff7800; font-size: 16px; font-weight: 900; }
+    .brand { display: flex; align-items: center; gap: 8px; min-width: 98px; font-size: 24px; font-weight: 900; color: #050505; line-height: 1; }
+    .brand-mark { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: white; background: #ff7800; font-size: 22px; font-weight: 900; }
     .workbench { font-size: 18px; font-weight: 800; color: #0b1424; white-space: nowrap; }
     .nav {
       height: 60px;
@@ -82,12 +82,13 @@
       background: var(--orange);
       position: absolute;
       left: 50%;
+      top: auto;
       bottom: 0;
       transform: translateX(-50%);
     }
     .top-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; color: #00152e; font-size: 16px; white-space: nowrap; }
     .link-btn { color: #00152e; background: transparent; font-size: 16px; }
-    .admin-badge { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #9b7df5; font-size: 12px; font-weight: 900; }
+    .admin-badge { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #9b7df5; font-size: 13px; font-weight: 900; }
     .user { display: none; align-items: center; gap: 8px; font-size: 15px; font-weight: 750; white-space: nowrap; }
     .avatar {
       width: 34px;
@@ -106,7 +107,6 @@
     main { width: auto; max-width: none; margin: 0; padding: 30px 26px 48px; min-height: calc(100vh - 60px); }
     .head { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 24px; }
     .head h1 { font-size: 26px; font-weight: 500; line-height: 1.35; margin: 0; color: #00152e; }
-    .head small { display: block; margin-top: 6px; color: var(--muted); font-size: 14px; }
     .actions { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
     .btn {
       min-height: 40px;
@@ -125,8 +125,6 @@
     .btn.primary { color: white; background: var(--orange); box-shadow: none; }
     .btn.ghost { background: #fff; border: 1px solid #d9e1eb; }
     .btn.green { color: white; background: var(--green); }
-    .btn.red { color: white; background: var(--red); }
-    .btn:active { transform: translateY(1px); }
 
     .process {
       display: grid;
@@ -164,13 +162,14 @@
       align-items: flex-start;
       gap: 14px;
     }
+    .stat-icon { display: none; }
     .stat strong { display: block; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; color: #00152e; }
     .stat span { color: var(--muted); font-size: 14px; }
+    .list-stats .stat { min-height: 112px; padding: 22px 28px; align-items: flex-start; }
     .stat.stat-orange strong { color: var(--orange); }
     .stat.stat-green strong { color: var(--green); }
     .stat.stat-blue strong { color: var(--blue); }
     .stat.stat-red strong { color: var(--red); }
-    .stat.stat-purple strong { color: var(--purple); }
     .stat.is-clickable {
       color: inherit;
       text-align: left;
@@ -186,7 +185,6 @@
       box-shadow: var(--shadow);
       overflow: hidden;
     }
-    .panel + .panel { margin-top: 18px; }
     .panel-head {
       min-height: 56px;
       padding: 16px 20px;
@@ -197,9 +195,8 @@
       gap: 12px;
     }
     .panel-title { margin: 0; font-size: 18px; font-weight: 500; line-height: 1.35; color: #00152e; }
-    .panel-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
     .panel-body { padding: 18px 20px; }
-    .panel-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .panel-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
 
     .grid-2 { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 18px; align-items: start; }
     .grid-main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
@@ -208,6 +205,7 @@
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .stack { display: grid; gap: 12px; }
 
+    .list-panel { overflow: visible; }
     .list-toolbar {
       display: flex;
       align-items: center;
@@ -215,84 +213,105 @@
       gap: 14px;
       margin-bottom: 18px;
     }
-    .seg-group {
-      display: inline-flex;
-      align-items: center;
+    .list-toolbar .seg-group {
       padding: 4px;
       border-radius: 15px;
       background: #f1f4f8;
       gap: 2px;
     }
-    .seg {
-      min-height: 34px;
-      padding: 0 14px;
+    .list-toolbar .seg {
+      min-height: 36px;
       border-radius: 12px;
       background: transparent;
-      color: var(--muted);
-      font-weight: 600;
-      white-space: nowrap;
+      font-size: 15px;
     }
-    .seg.active { color: var(--orange); background: #fff; box-shadow: 0 2px 8px rgba(25, 36, 60, .05); }
+    .list-toolbar .seg.active { background: #fff; color: var(--orange); box-shadow: none; }
     .list-search {
-      width: min(360px, 100%);
-      min-height: 40px;
-      padding: 0 14px;
-      border: 1px solid #d9e1eb;
-      border-radius: 8px;
-      background: #fff;
+      width: min(320px, 100%);
       display: flex;
       align-items: center;
       gap: 8px;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid #d9e1eb;
+      border-radius: 6px;
+      background: #fff;
       color: var(--muted);
     }
     .list-search input {
-      min-width: 0;
       width: 100%;
+      height: 38px;
       border: 0;
       outline: 0;
       background: transparent;
       color: var(--text);
+      font-size: 15px;
     }
-
-    .project-grid { display: grid; grid-template-columns: repeat(3, minmax(240px, 1fr)); gap: 16px; }
-    .project-card {
-      min-height: 218px;
-      padding: 18px;
-      border-radius: var(--radius);
-      border: 1px solid #e7edf5;
-      background: #fff;
-      color: inherit;
-      text-align: left;
+    .project-grid {
       display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
       gap: 14px;
-      box-shadow: none;
-      transition: border .16s ease, transform .16s ease, box-shadow .16s ease;
     }
-    .project-card:hover { border-color: #ffbd80; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(15, 35, 65, .08); }
-    .project-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
-    .project-main { min-width: 0; width: 0; flex: 1 1 0; }
+    .project-card {
+      min-height: 208px;
+      padding: 22px 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 16px;
+      text-align: left;
+      color: inherit;
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .project-card:hover { border-color: #ffc36f; box-shadow: 0 8px 24px rgba(15, 35, 65, .08); transform: translateY(-1px) scale(1.012); }
+    .project-card-head,
+    .project-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .project-card-head { align-items: flex-start; }
+    .project-card h2 { margin: 0; color: var(--text); font-size: 17px; font-weight: 400; line-height: 1.35; }
     .project-title-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .project-title-line h2 {
-      margin: 0;
-      font-size: 17px;
-      font-weight: 650;
-      line-height: 1.35;
-      color: var(--text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      min-width: 0;
+    .project-title-line h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .project-percent { color: var(--orange); font-size: 18px; font-weight: 800; }
+    .project-main { display: grid; gap: 10px; min-width: 0; }
+    .project-meta-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+    .project-meta-line strong { color: var(--text); font-weight: 400; }
+    .project-card > .project-meta-line { padding-top: 2px; justify-content: space-between; gap: 10px; }
+    .project-card .progress { margin-top: 2px; }
+    .project-card-foot { padding-top: 2px; }
+    .project-card-foot-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .project-meta-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+    .project-date { margin-left: auto; white-space: nowrap; }
+    .project-product-line {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      border-radius: 6px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 13px;
     }
-    .project-main small { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
-    .project-percent { color: var(--orange); font-size: 22px; font-weight: 750; white-space: nowrap; }
-    .project-product-line { display: flex; justify-content: space-between; align-items: center; gap: 14px; color: var(--muted); }
-    .project-product-line strong { color: var(--text); font-size: 15px; font-weight: 650; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .progress { height: 8px; border-radius: 99px; background: #edf2f7; overflow: hidden; }
-    .progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ff7f00, #ffc277); }
-    .project-card-foot, .project-meta-line { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--muted); }
-    .project-meta-left strong { color: var(--text); }
-    .project-date { color: #4c596b; font-weight: 600; white-space: nowrap; }
+    .project-product-line strong { color: var(--text); font-size: 14px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+    .record-card, .need-card, .module-card, .task-card, .field {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .record-card, .need-card, .module-card, .task-card { padding: 16px; display: grid; gap: 10px; text-align: left; width: 100%; color: inherit; }
+    .record-card.active, .module-card.active { background: #fff8ef; border-color: var(--orange); box-shadow: none; }
+    .field { min-height: 72px; padding: 14px; box-shadow: none; }
+    .field label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 13px; font-weight: 400; }
+    .field strong { display: block; color: #00152e; font-size: 14px; font-weight: 400; line-height: 1.45; overflow-wrap: anywhere; }
+
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+    .title { font-size: 17px; font-weight: 400; line-height: 1.35; }
+    .muted { color: var(--muted); }
+    .mini { color: var(--muted); font-size: 12px; font-weight: 800; }
     .badge {
       min-height: 26px;
       display: inline-flex;
@@ -300,278 +319,669 @@
       gap: 6px;
       padding: 0 10px;
       border-radius: 999px;
-      background: #f4f7fb;
-      color: #596579;
+      background: #eeeeec;
+      color: #60656d;
       font-size: 13px;
-      font-weight: 650;
+      font-weight: 500;
       white-space: nowrap;
     }
-    .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .badge.orange { background: var(--orange-soft); color: var(--orange); }
-    .badge.green { background: var(--green-soft); color: #0a9e42; }
-    .badge.blue { background: var(--blue-soft); color: var(--blue); }
-    .badge.red { background: var(--red-soft); color: var(--red); }
-    .badge.purple { background: var(--purple-soft); color: var(--purple); }
-    .urgency-badge {
-      width: 26px;
-      height: 26px;
-      display: inline-grid;
-      place-items: center;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 13px;
-      flex: 0 0 auto;
-    }
-    .urgency-badge.orange { color: var(--orange); background: var(--orange-soft); }
-    .urgency-badge.red { color: var(--red); background: var(--red-soft); }
-    .urgency-badge.blue { color: var(--blue); background: var(--blue-soft); }
-    .urgency-badge.green { color: #0a9e42; background: var(--green-soft); }
+    .badge.orange { color: var(--orange); background: var(--orange-soft); }
+    .badge.green { color: #20b857; background: var(--green-soft); }
+    .badge.red { color: #f04444; background: var(--red-soft); }
+    .badge.blue { color: var(--blue); background: var(--blue-soft); }
+    .badge.purple { color: var(--purple); background: var(--purple-soft); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; }
+    .progress { height: 6px; border-radius: 999px; background: #efeeeb; overflow: hidden; }
+    .progress span { display: block; height: 100%; border-radius: 999px; background: var(--orange); }
 
-    .field {
-      min-height: 74px;
-      padding: 14px 16px;
-      border-radius: 14px;
-      background: #f8fafc;
-      border: 1px solid #edf2f7;
-    }
-    .field label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 13px; }
-    .field strong { display: block; font-size: 15px; font-weight: 650; color: var(--text); line-height: 1.45; word-break: break-word; }
-    .field.wide { grid-column: 1 / -1; }
-    .field input, .field select, .field textarea {
+    .input, .select, textarea {
       width: 100%;
-      border: 0;
+      min-height: 40px;
+      border: 1px solid #d9e1eb;
+      border-radius: 6px;
+      background: #fff;
+      padding: 0 12px;
+      color: #00152e;
       outline: 0;
-      background: transparent;
-      color: var(--text);
-      font-weight: 600;
-      resize: vertical;
     }
-    .field textarea { min-height: 56px; line-height: 1.5; }
-
-    .detail-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    textarea { min-height: 96px; padding: 10px 12px; line-height: 1.6; resize: vertical; }
+    .detail-groups { display: grid; gap: 14px; }
     .detail-card {
-      padding: 16px;
-      border: 1px solid #e7edf5;
-      border-radius: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
       background: #fff;
-    }
-    .detail-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-    .detail-card-head strong { font-size: 16px; font-weight: 650; }
-    .detail-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-
-    .support-switch { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
-    .support-switch input { display: none; }
-    .switch-track { width: 38px; height: 22px; border-radius: 999px; background: #d5dee9; position: relative; transition: .16s ease; }
-    .switch-track:after { content: ""; width: 18px; height: 18px; border-radius: 50%; background: #fff; position: absolute; left: 2px; top: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.18); transition: .16s ease; }
-    .support-switch input:checked + .switch-track { background: var(--orange); }
-    .support-switch input:checked + .switch-track:after { transform: translateX(16px); }
-
-    .timeline { display: grid; gap: 0; }
-    .timeline-item {
+      padding: 18px 20px;
       display: grid;
-      grid-template-columns: 30px minmax(0, 1fr);
-      gap: 10px;
-      position: relative;
-      padding-bottom: 18px;
+      gap: 16px;
     }
-    .timeline-item:before { content: ""; position: absolute; left: 14px; top: 28px; bottom: 0; width: 1px; background: #e2e9f2; }
-    .timeline-item:last-child:before { display: none; }
-    .timeline-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--orange); font-weight: 800; font-size: 12px; z-index: 1; }
-    .timeline-copy { min-width: 0; padding-top: 2px; }
-    .timeline-copy strong { display: block; font-size: 15px; margin-bottom: 4px; }
-    .timeline-copy span { color: var(--muted); line-height: 1.5; }
-
-    .task-table { width: 100%; border-collapse: collapse; }
-    .task-table th, .task-table td { padding: 14px 10px; border-bottom: 1px solid #edf2f7; text-align: left; vertical-align: top; }
-    .task-table th { color: var(--muted); font-size: 13px; font-weight: 600; background: #fbfcfe; }
-    .task-table td { color: #344156; }
-    .task-table strong { color: var(--text); }
-    .task-table tr:last-child td { border-bottom: 0; }
-
-    .module-grid { display: grid; grid-template-columns: repeat(4, minmax(190px, 1fr)); gap: 14px; }
-    .module-card {
-      min-height: 176px;
-      padding: 16px;
-      border-radius: 16px;
-      background: #fbfcfe;
-      border: 1px solid #e7edf5;
-      display: grid;
-      gap: 12px;
-    }
-    .module-card h3 { margin: 0; font-size: 16px; font-weight: 650; }
-    .member-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); }
-    .mini-avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #8293aa; font-size: 12px; font-weight: 800; }
-    .member-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .member-left strong { color: var(--text); font-weight: 650; }
-
-    .kanban { display: grid; grid-template-columns: repeat(4, minmax(210px, 1fr)); gap: 14px; }
-    .lane {
-      min-height: 420px;
-      border-radius: 18px;
-      background: #f7f9fc;
-      border: 1px solid #e6edf5;
-      padding: 14px;
-    }
-    .lane-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .lane-head strong { font-size: 16px; font-weight: 650; }
-    .task-card {
-      padding: 14px;
-      border-radius: 14px;
+    .detail-card.is-collapsed { background: #f8fafc; gap: 0; }
+    .detail-card h3 { margin: 0; font-size: 17px; font-weight: 400; }
+    .detail-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .detail-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .detail-field { display: grid; gap: 8px; align-content: start; }
+    .detail-field span { color: var(--muted); font-size: 13px; font-weight: 400; }
+    .detail-field textarea { min-height: 54px; background: #fff; }
+    .detail-field textarea:disabled { color: #8a8f98; cursor: not-allowed; }
+    .detail-field.long { grid-column: span 2; }
+    .detail-field.full { grid-column: 1 / -1; }
+    .module-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .module-tab {
+      min-height: 104px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
       background: #fff;
-      border: 1px solid #e8eef5;
+      box-shadow: var(--shadow);
       display: grid;
-      gap: 10px;
+      gap: 14px;
+      text-align: left;
+      color: inherit;
+      transition: background .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .module-tab:hover { border-color: #ffc36f; background: #fff8ef; box-shadow: 0 8px 24px rgba(15, 35, 65, .08); transform: translateY(-1px) scale(1.012); }
+    .module-tab.active { border-color: var(--orange); background: #fff4e7; box-shadow: none; }
+    .module-tab.active strong { color: var(--orange); }
+    .module-tab.active .muted { color: #c46b00; }
+    .module-tab strong { font-size: 17px; font-weight: 400; line-height: 1.3; }
+    .dispatch-list { display: grid; gap: 14px; }
+    .dispatch-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 0;
+      display: grid;
+      gap: 0;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .dispatch-card:hover { border-color: #ffc36f; box-shadow: 0 8px 24px rgba(15, 35, 65, .08); transform: translateY(-1px) scale(1.006); }
+    .dispatch-card.is-open { box-shadow: var(--shadow); }
+    .dispatch-summary {
+      min-height: 68px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: #fff;
       text-align: left;
       color: inherit;
       width: 100%;
-      margin-bottom: 10px;
     }
-    .task-card h3 { margin: 0; font-size: 15px; line-height: 1.45; font-weight: 650; }
-    .task-card p { margin: 0; color: var(--muted); line-height: 1.5; }
-    .task-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
-
-    .upload {
-      min-height: 180px;
-      border: 1px dashed #d3ddea;
-      border-radius: 18px;
-      background: #fbfcfe;
+    .dispatch-summary h3 { margin: 0; font-size: 17px; font-weight: 400; line-height: 1.35; }
+    .dispatch-summary-meta { display: flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 400; white-space: nowrap; }
+    .dispatch-chevron { color: var(--orange); font-size: 17px; line-height: 1; transition: transform .16s ease; }
+    .dispatch-card.is-open .dispatch-chevron { transform: rotate(180deg); }
+    .dispatch-detail { padding: 0 20px 20px; display: grid; gap: 16px; }
+    .dispatch-main { display: grid; gap: 16px; }
+    .demand-text {
+      min-height: 136px;
+      padding: 16px;
+      border: 1px solid #e4eaf2;
+      border-radius: var(--radius);
+      background: #f8fafc;
+      line-height: 1.72;
+      color: #34363b;
+    }
+    .demand-text strong { display: block; margin-bottom: 8px; color: #1f2024; font-weight: 400; }
+    .assign-box {
+      padding: 16px;
+      border: 1px solid #e4eaf2;
+      border-radius: var(--radius);
+      background: #fffaf3;
       display: grid;
-      place-items: center;
-      text-align: center;
-      padding: 24px;
+      gap: 12px;
+      align-content: start;
     }
-    .upload strong { display: block; font-size: 17px; margin-bottom: 8px; }
-    .upload span { display: block; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
-    .empty { min-height: 180px; display: grid; place-items: center; color: var(--muted); text-align: center; }
-
-    .risk-list { display: grid; gap: 12px; }
-    .risk-item {
-      padding: 14px;
-      border-radius: 14px;
-      background: #fff7f7;
-      border: 1px solid #ffd7da;
-      display: grid;
-      gap: 8px;
-    }
-    .risk-item strong { color: var(--red); }
-    .risk-item span { color: #6d7788; line-height: 1.5; }
-    .compact-list { display: grid; gap: 10px; }
-    .compact-item {
-      padding: 14px;
-      border-radius: 14px;
-      border: 1px solid #e7edf5;
+    .assign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .assign-field { display: grid; gap: 7px; }
+    .assign-field span { color: var(--muted); font-size: 12px; font-weight: 400; }
+    .task-builder {
+      border: 1px solid #e4eaf2;
+      border-radius: var(--radius);
       background: #fff;
+      overflow: hidden;
+    }
+    .task-builder-head {
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid #f0ece6;
+      background: #fff8ef;
+    }
+    .task-builder-head strong { display: block; font-size: 16px; font-weight: 400; }
+    .task-list { display: grid; }
+    .task-row {
       display: grid;
-      gap: 8px;
+      grid-template-columns: 34px minmax(220px, 1fr) 170px 160px 92px 72px;
+      gap: 12px;
+      align-items: end;
+      padding: 14px 16px;
+      border-top: 1px solid #e8eef5;
     }
-    .compact-item strong { font-size: 15px; }
-    .compact-item span { color: var(--muted); line-height: 1.5; }
-    .muted { color: var(--muted); }
-
-    .drawer-mask {
-      position: fixed;
-      inset: 0;
-      background: rgba(6, 18, 38, .28);
-      z-index: 50;
-      opacity: 0;
-      pointer-events: none;
-      transition: .18s ease;
+    .task-row:first-child { border-top: 0; }
+    .task-index {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff4e3;
+      color: var(--orange);
+      font-weight: 400;
     }
-    .drawer {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: min(520px, 100vw);
-      height: 100vh;
+    .task-field { display: grid; gap: 7px; }
+    .task-field span { color: var(--muted); font-size: 12px; font-weight: 400; }
+    .task-remove {
+      height: 40px;
+      padding: 0 14px;
+      color: #ff8f0f;
+      background: #fffaf3;
+    }
+    .task-actions {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid #e8eef5;
       background: #fff;
-      z-index: 60;
-      transform: translateX(102%);
-      transition: .2s ease;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      box-shadow: -18px 0 40px rgba(10, 28, 54, .16);
     }
-    .drawer.open { transform: translateX(0); }
-    .drawer-mask.open { opacity: 1; pointer-events: auto; }
-    .drawer-head, .drawer-foot {
-      min-height: 64px;
-      padding: 16px 20px;
+    .task-review-line {
+      grid-column: 2 / -1;
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) minmax(240px, 2fr) auto auto;
+      gap: 10px;
+      align-items: end;
+      padding: 12px;
+      border: 1px solid rgba(124, 92, 230, .22);
+      border-radius: var(--radius);
+      background: #fbf8ff;
+    }
+    .task-review-line.is-done {
+      grid-template-columns: minmax(190px, 1fr);
+      border-color: rgba(42, 203, 98, .22);
+      background: #f7fcf8;
+    }
+    .review-copy { display: grid; gap: 4px; min-width: 0; }
+    .review-copy strong { font-size: 14px; font-weight: 400; color: #00152e; }
+    .review-copy span { color: var(--muted); font-size: 13px; }
+    .my-task-tools {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+      flex-wrap: nowrap;
+    }
+    .my-task-tools .seg-group {
+      padding: 4px;
+      border-radius: 15px;
+      background: #f1f4f8;
+      gap: 2px;
+    }
+    .my-task-tools .seg {
+      min-height: 36px;
+      border-radius: 12px;
+      background: transparent;
+      font-size: 15px;
+    }
+    .my-task-tools .seg.active { background: #fff; color: var(--orange); box-shadow: none; }
+    .task-filter-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+      flex-wrap: nowrap;
+    }
+    .member-switch {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .member-switch { flex: 0 0 auto; white-space: nowrap; }
+    .member-switch .select { width: 156px; min-width: 156px; }
+    .task-filter-right > .select { width: 170px; min-width: 170px; }
+    .task-search { width: 240px; min-width: 200px; }
+    .my-task-list { display: grid; gap: 14px; }
+    .my-task-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .my-task-card:hover { border-color: #ffc36f; box-shadow: 0 8px 24px rgba(15, 35, 65, .08); transform: translateY(-1px) scale(1.006); }
+    .my-task-head {
+      padding: 16px 18px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
       border-bottom: 1px solid #e8eef5;
+      background: #fff;
+    }
+    .my-task-head h3 { margin: 0 0 7px; font-size: 17px; font-weight: 400; line-height: 1.35; }
+    .my-task-body { padding: 16px 18px; display: grid; gap: 14px; }
+    .task-name { font-size: 16px; font-weight: 400; color: #00152e; }
+    .task-note {
+      padding: 12px 14px;
+      border: 1px solid #e4eaf2;
+      border-radius: var(--radius);
+      background: #f8fafc;
+      color: #3f4248;
+      line-height: 1.65;
+    }
+    .task-upload {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      padding: 12px 14px;
+      border: 1px dashed #d9e1eb;
+      border-radius: var(--radius);
+      background: #fff;
+      flex-wrap: wrap;
     }
-    .drawer-foot { border-top: 1px solid #e8eef5; border-bottom: 0; justify-content: flex-end; }
-    .drawer-head h2 { margin: 0; font-size: 20px; font-weight: 650; }
-    .drawer-body { padding: 20px; overflow: auto; display: grid; align-content: start; gap: 14px; }
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: #f4f7fb;
-      color: #596579;
-      font-size: 20px;
+    .task-upload-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+    .task-upload-title { color: #00152e; font-size: 14px; }
+    .task-files { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .file-chip {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f1f4f8;
+      color: #526074;
+      font-size: 12px;
+      max-width: 260px;
+    }
+    .file-chip-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-remove {
+      width: 16px;
+      height: 16px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #526074;
+      font-size: 12px;
+      line-height: 1;
+      padding: 0;
+    }
+    .file-remove:hover { background: var(--red-soft); color: var(--red); }
+    .task-upload input { display: none; }
+    .task-upload-btn {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border: 1px solid #d9e1eb;
+      border-radius: 7px;
+      background: #fff;
+      color: #00152e;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .task-review-result {
+      padding: 12px 14px;
+      border: 1px solid #e4eaf2;
+      border-radius: var(--radius);
+      background: #f8fafc;
+      color: #526074;
+      line-height: 1.55;
+    }
+    .task-review-result.is-reviewing {
+      border-color: rgba(124, 92, 230, .22);
+      background: #fbf8ff;
+      color: #5b46bd;
+    }
+    .task-review-result.is-rejected {
+      border-color: rgba(255, 66, 70, .18);
+      background: #fff7f7;
+      color: #c43737;
+    }
+    .task-review-result.is-approved {
+      border-color: rgba(42, 203, 98, .22);
+      background: #f7fcf8;
+      color: #1b9d4b;
+    }
+    .my-task-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .delay-form {
+      display: grid;
+      grid-template-columns: 190px minmax(260px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid rgba(255, 153, 15, .28);
+      border-radius: 12px;
+      background: #fffaf3;
+    }
+    .delay-form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .data-toolbar {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr)) auto;
+      gap: 12px;
+      align-items: end;
+    }
+    .data-filter-panel { margin-bottom: 18px; }
+    .filter-field {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+    .range-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .bar-list { display: grid; gap: 14px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 116px minmax(160px, 1fr) 66px;
+      gap: 12px;
+      align-items: center;
+      color: #00152e;
+      font-size: 14px;
+    }
+    .bar-row strong { font-weight: 400; }
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #eef3f8;
+      overflow: hidden;
+    }
+    .bar-fill { height: 100%; border-radius: 999px; background: var(--orange); }
+    .bar-fill.green { background: var(--green); }
+    .bar-fill.blue { background: var(--blue); }
+    .bar-fill.purple { background: var(--purple); }
+    .bar-fill.red { background: var(--red); }
+    .support-switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--orange);
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .support-switch input {
+      position: absolute;
+      width: 42px;
+      height: 24px;
+      margin: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .switch-track {
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: #dedbd5;
+      position: relative;
+      transition: background .16s ease;
+    }
+    .switch-track::after {
+      content: "";
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      box-shadow: 0 2px 6px rgba(20,20,20,.18);
+      transition: transform .16s ease;
+    }
+    .support-switch input:checked + .switch-track { background: var(--orange); }
+    .support-switch input:checked + .switch-track::after { transform: translateX(18px); }
+    .upload {
+      min-height: 150px;
+      border: 1px dashed #d3dce8;
+      border-radius: var(--radius);
+      background: #fff;
       display: grid;
       place-items: center;
+      text-align: center;
+      padding: 22px;
     }
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 26px;
-      transform: translate(-50%, 18px);
-      min-height: 42px;
-      padding: 0 18px;
-      border-radius: 999px;
-      background: #00152e;
-      color: #fff;
+    .upload strong { display: block; font-size: 17px; font-weight: 400; margin-bottom: 14px; }
+    .seg-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .seg {
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 9px;
+      background: #f1f4f8;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .seg.active { background: #fff; color: #25262a; box-shadow: 0 1px 2px rgba(20,20,20,.05); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th { height: 58px; background: #f8fafc; color: #00152e; font-size: 15px; font-weight: 500; text-align: left; border-bottom: 1px solid var(--line); padding: 0 16px; }
+    td { padding: 18px 16px; border-bottom: 1px solid #e8eef5; vertical-align: middle; line-height: 1.45; color: #00152e; font-size: 15px; }
+    td strong { font-weight: 400; }
+    tr:hover td { background: #f8fafc; }
+    .check { width: 18px; height: 18px; accent-color: var(--green); }
+
+    .node-record-stack { display: grid; gap: 14px; }
+    .node-timeline {
+      overflow-x: auto;
+      border: 1px solid #e8eef5;
+      border-radius: var(--radius);
+      background: #fff;
+    }
+    .timeline-grid {
+      --timeline-cols: 1;
+      display: grid;
+      grid-template-columns: 230px repeat(var(--timeline-cols), minmax(58px, 1fr));
+    }
+    .timeline-head {
+      min-height: 40px;
+      padding: 0 8px;
+      border-bottom: 1px solid #e8eef5;
+      background: #f8fafc;
+      color: var(--muted);
       display: flex;
       align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      position: relative;
+    }
+    .timeline-head:not(.timeline-title), .timeline-cell { border-left: 1px solid #edf2f7; }
+    .timeline-title { justify-content: flex-start; padding-left: 14px; color: #00152e; }
+    .timeline-task {
+      min-height: 56px;
+      padding: 10px 14px;
+      border-right: 1px solid #edf2f7;
+      border-bottom: 1px solid #edf2f7;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      background: #fff;
+    }
+    .timeline-task-name { color: #00152e; font-size: 14px; font-weight: 400; line-height: 1.3; }
+    .timeline-task-meta { color: var(--muted); font-size: 12px; }
+    .timeline-task .badge { min-height: 22px; width: max-content; padding: 0 8px; font-size: 12px; }
+    .timeline-cell {
+      min-height: 56px;
+      border-bottom: 1px solid #edf2f7;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .timeline-head.today-head, .timeline-cell.today-cell { background: #fffafa; }
+    .timeline-head.today-head { color: var(--red); }
+    .timeline-head.today-head::after {
+      content: "今";
+      position: absolute;
+      top: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--red);
+      font-size: 12px;
+      line-height: 1;
+    }
+    .timeline-cell.today-cell::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: rgba(255, 66, 70, .62);
+    }
+    .timeline-marker {
+      width: 14px;
+      height: 22px;
+      border-radius: 6px;
+      background: #cbd4df;
+      box-shadow: 0 0 0 4px #fff;
+      position: relative;
+      z-index: 1;
+      transition: transform .16s ease;
+    }
+    .timeline-marker:hover { transform: scale(1.08); }
+    .timeline-marker.green { background: var(--green); }
+    .timeline-marker.orange { background: var(--orange); }
+    .timeline-marker.blue { background: var(--blue); }
+    .timeline-marker.red { background: var(--red); }
+    .timeline-marker.purple { background: var(--purple); }
+    .timeline-marker.gray { background: #cbd4df; }
+
+    .chart { min-height: 260px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: end; padding: 18px; background: #fbfaf8; border: 1px solid var(--line); border-radius: var(--radius); }
+    .chart-item { display: grid; gap: 10px; justify-items: center; color: var(--muted); }
+    .chart-bar { width: 56px; border-radius: 12px 12px 0 0; background: linear-gradient(180deg, var(--orange), #ffd08a); }
+
+    .drawer-mask { position: fixed; inset: 0; background: rgba(32,33,36,.28); opacity: 0; pointer-events: none; transition: opacity .16s ease; z-index: 50; }
+    .drawer-mask.show { opacity: 1; pointer-events: auto; }
+    .drawer {
+      width: min(540px, 96vw);
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      right: 0;
+      background: #fff;
+      border-left: 1px solid var(--line);
+      border-radius: 16px 0 0 16px;
+      box-shadow: -18px 0 36px rgba(0,0,0,.15);
+      transform: translateX(100%);
+      transition: transform .18s ease;
+      z-index: 55;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+    .drawer.wide { width: min(1120px, 96vw); }
+    .drawer.show { transform: translateX(0); }
+    .drawer-head, .drawer-foot { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+    .drawer-foot { border-top: 1px solid var(--line); border-bottom: 0; justify-content: flex-end; }
+    .drawer h2 { margin: 0; font-size: 20px; }
+    .drawer-body { padding: 22px 24px; overflow: auto; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 10px; background: #f4f2ee; color: #4b5058; font-size: 18px; }
+    .toast {
+      position: fixed;
+      top: 84px;
+      left: 50%;
+      transform: translate(-50%, -10px);
       opacity: 0;
       pointer-events: none;
-      transition: .18s ease;
-      z-index: 80;
-      box-shadow: 0 10px 28px rgba(0, 21, 46, .25);
+      min-height: 42px;
+      max-width: min(520px, calc(100vw - 40px));
+      padding: 0 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      background: #1f2937;
+      color: #fff;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+      transition: opacity .16s ease, transform .16s ease;
+      z-index: 70;
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
     @media (max-width: 1180px) {
-      .project-grid { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
-      .grid-main, .grid-2 { grid-template-columns: 1fr; }
-      .module-grid, .kanban { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+      .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .data-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+      .analysis-grid { grid-template-columns: 1fr; }
+      .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
+      .my-task-tools, .task-filter-right { flex-wrap: wrap; }
     }
-    @media (max-width: 860px) {
-      .topbar { gap: 12px; padding: 0 14px; }
-      .brand span:last-child, .workbench, .top-actions strong, .link-btn { display: none; }
-      .brand { min-width: 36px; }
-      main { padding: 20px 14px 34px; }
-      .head { align-items: flex-start; flex-direction: column; }
-      .actions { width: 100%; justify-content: flex-start; }
-      .process, .stats, .project-grid, .detail-groups, .module-grid, .kanban { grid-template-columns: 1fr; }
+    @media (max-width: 720px) {
+      .topbar { padding: 0 14px; gap: 10px; overflow-x: auto; }
+      .brand { min-width: 36px; font-size: 0; }
+      .workbench, .top-actions { font-size: 14px; }
+      .nav { height: 60px; }
+      .nav button { min-height: 60px; padding: 0 12px; font-size: 14px; }
+      .nav button.active:before { width: 18px; height: 2px; left: 50%; top: auto; bottom: 0; transform: translateX(-50%); border-radius: 99px; }
+      main { margin-left: 0; padding: 24px 14px 42px; }
+      .head { display: grid; }
+      .head h1 { font-size: 24px; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .chart, .project-grid { grid-template-columns: 1fr; }
+      .task-review-line { grid-column: 1; }
+      .bar-row { grid-template-columns: 1fr; }
+      .range-actions { justify-content: flex-start; }
+      .my-task-tools { display: grid; }
+      .task-filter-right { justify-content: flex-start; }
+      .task-search, .task-filter-right > .select { width: 100%; min-width: 0; }
+      .detail-field.long { grid-column: auto; }
       .list-toolbar { align-items: stretch; flex-direction: column; }
-      .seg-group { width: 100%; overflow-x: auto; justify-content: flex-start; }
       .list-search { width: 100%; }
-      .field-grid, .detail-fields { grid-template-columns: 1fr; }
-      .task-table { min-width: 760px; }
-      .table-scroll { overflow-x: auto; }
+      table { min-width: 760px; }
     }
+
   </style>
 </head>
 <body>
   <div class="shell">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark">CRM</span><span>新池集团</span></div>
-      <strong class="workbench">排期工作台</strong>
+      <div class="brand"><span class="brand-mark">X</span><span>新池集团</span></div>
+      <strong class="workbench">新池工作台</strong>
       <nav class="nav" id="nav"></nav>
-      <div class="top-actions"><button class="link-btn" data-action="workbench">返回工作台</button><span class="admin-badge">OPS</span><strong>管理员</strong></div>
-      <div class="user"><span class="avatar"></span><strong>陈以琳</strong></div>
+      <div class="top-actions"><button class="link-btn">返回工作台</button><span class="admin-badge">BABI</span><strong>管理员</strong></div>
+      <div class="user"><span class="avatar"></span><strong>刘曼曼</strong></div>
     </header>
     <main id="app"></main>
   </div>
 
   <div class="drawer-mask" id="mask"></div>
   <aside class="drawer" id="drawer" aria-hidden="true">
-    <div class="drawer-head"><h2 id="drawerTitle">详情</h2><button class="icon-btn" id="drawerClose" aria-label="关闭">×</button></div>
+    <div class="drawer-head"><h2 id="drawerTitle">详情</h2><button class="icon-btn" id="drawerClose">×</button></div>
     <div class="drawer-body" id="drawerBody"></div>
     <div class="drawer-foot" id="drawerFoot"></div>
   </aside>
@@ -579,292 +989,387 @@
 
   <script>
     const tabs = [
-      { id: "overview", name: "排期总览" },
-      { id: "entry", name: "需求录入" },
-      { id: "dispatch", name: "智能派工" },
-      { id: "board", name: "执行看板" },
-      { id: "archive", name: "复盘归档" }
+      { id: "list", name: "专场列表" },
+      { id: "entry", name: "达人专场录入" },
+      { id: "dispatch", name: "需求派工" },
+      { id: "myTasks", name: "我的任务" },
+      { id: "dataCenter", name: "数据中心" }
     ];
 
-    const steps = [
-      { id: "entry", title: "需求录入", desc: "销售提交客户窗口、目标、资源与限制条件" },
-      { id: "confirm", title: "排期确认", desc: "运营核对直播档期、货盘、达人与预算" },
-      { id: "execute", title: "执行协同", desc: "内容、投放、客服、履约按节点推进" },
-      { id: "review", title: "数据复盘", desc: "沉淀成交、线索、费用与下次跟进计划" }
-    ];
+    const modules = {
+      content: { name: "内容需求", owner: "李晴", cls: "blue", scope: "脚本、预热内容、话题点、出镜人员" },
+      edit: { name: "剪辑需求", owner: "陈响", cls: "purple", scope: "素材收集、剪辑排期、视频版本、审核修改" },
+      ads: { name: "投放需求", owner: "赵敏", cls: "orange", scope: "达人画像、千川合作码、人群包、预算费比" },
+      ops: { name: "运营需求", owner: "刘曼曼", cls: "green", scope: "设备、镜像、化妆、样品、福利品、开播检查" }
+    };
 
-    const owners = ["刘曼曼", "张一凡", "王可", "李晴", "陈响", "周宁", "林悦", "赵敏", "宋然", "陈舟", "何璐"];
+    const owners = ["刘曼曼", "张一凡", "王可", "李晴", "陈响", "周宁", "林悦", "赵敏", "宋然", "陈舟", "何璐", "待分配"];
+    const moduleOrder = ["content", "edit", "ads", "ops"];
+    const moduleMembers = {
+      content: ["李晴", "王可", "张一凡", "待分配"],
+      edit: ["陈响", "周宁", "林悦", "待分配"],
+      ads: ["赵敏", "宋然", "陈舟", "待分配"],
+      ops: ["刘曼曼", "张一凡", "何璐", "待分配"]
+    };
+    const actionDate = "2026-06-12";
+    const state = {
+      view: "list",
+      selected: "ZC-0620",
+      module: "content",
+      dispatchOpen: "",
+      taskUser: "刘曼曼",
+      taskStatusFilter: "all",
+      taskModuleFilter: "all",
+      taskSearch: "",
+      listFilter: "all",
+      listSearch: "",
+      dataStart: "2026-06-01",
+      dataEnd: "2026-06-30",
+      dataModule: "all",
+      dataMember: "all",
+      dataStatus: "all"
+    };
 
-    const records = [
+    const dispatchAssignments = {
+      "ZC-0620": {
+        content: { owner: "王可", due: "2026-06-15", status: "待派发" },
+        edit: { owner: "陈响", due: "2026-06-16", status: "待派发" },
+        ads: { owner: "赵敏", due: "2026-06-16", status: "待派发" },
+        ops: { owner: "刘曼曼", due: "2026-06-14", status: "已派发" }
+      },
+      "ZC-0624": {
+        content: { owner: "李晴", due: "2026-06-20", status: "已派发" },
+        edit: { owner: "周宁", due: "2026-06-21", status: "待派发" },
+        ads: { owner: "赵敏", due: "2026-06-21", status: "待派发" },
+        ops: { owner: "何璐", due: "2026-06-20", status: "已派发" }
+      },
+      "ZC-0601": {
+        content: { owner: "李晴", due: "2026-05-29", status: "已完成" },
+        edit: { owner: "陈响", due: "2026-05-30", status: "已完成" },
+        ads: { owner: "宋然", due: "2026-05-30", status: "已完成" },
+        ops: { owner: "张一凡", due: "2026-05-31", status: "已完成" }
+      }
+    };
+
+    const taskTemplates = {
+      content: ["预热视频脚本确认", "主页种草脚本", "千川视频脚本"],
+      edit: ["千川视频剪辑", "主页视频剪辑", "二创投放素材"],
+      ads: ["千川合作码核验", "达人画像与人群包", "投放计划配置"],
+      ops: ["直播设备确认", "样品与福利品确认", "开播前检查"]
+    };
+
+    const dispatchTasks = {
+      "ZC-0620": {
+        content: [
+          { title: "预热视频脚本确认", owner: "王可", due: "2026-06-15", status: "待处理" },
+          { title: "千川视频脚本", owner: "李晴", due: "2026-06-16", status: "进行中" }
+        ],
+        edit: [
+          { title: "剪辑千川视频 3 条", owner: "陈响", due: "2026-06-16", status: "待处理" },
+          { title: "主页视频审核版", owner: "周宁", due: "2026-06-17", status: "待处理" }
+        ],
+        ads: [
+          { title: "千川合作码核验", owner: "赵敏", due: "2026-06-16", status: "待处理" },
+          { title: "达人画像与人群包", owner: "宋然", due: "2026-06-17", status: "待处理" }
+        ],
+        ops: [
+          { title: "直播设备与镜像确认", owner: "刘曼曼", due: "2026-06-14", status: "进行中" },
+          { title: "样品试用与福利品库存", owner: "张一凡", due: "2026-06-15", status: "延期中", originalDue: "2026-06-15", delayDue: "2026-06-17", delayReason: "商家补寄样品，签收时间后移。" }
+        ]
+      },
+      "ZC-0624": {
+        content: [
+          { title: "防晒专场预热脚本", owner: "李晴", due: "2026-06-20", status: "待处理" }
+        ],
+        edit: [
+          { title: "主页视频剪辑", owner: "周宁", due: "2026-06-21", status: "待处理" }
+        ],
+        ads: [
+          { title: "人群包复用校验", owner: "赵敏", due: "2026-06-21", status: "待处理" }
+        ],
+        ops: [
+          { title: "开播设备与样品检查", owner: "刘曼曼", due: "2026-06-20", status: "待处理" }
+        ]
+      },
+      "ZC-0601": {
+        content: [
+          { title: "复盘素材补充", owner: "李晴", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
+        ],
+        ops: [
+          { title: "直播间执行记录回填", owner: "刘曼曼", due: "2026-06-02", status: "已完成", completedAt: "2026-06-02" }
+        ]
+      }
+    };
+
+    const supportNeeds = {
+      edit: { enabled: true, title: "剪辑支持", content: "需要收集产品素材，剪辑千川视频 3 条，直播前完成审核版本。" },
+      content: { enabled: true, title: "内容支持", content: "需要输出预热视频脚本，确认达人内容偏好、禁忌和出镜人员。" },
+      ads: { enabled: true, title: "投放支持", content: "需要核验千川合作码，建立达人画像、人群包和投放计划。" },
+      ops: { enabled: true, title: "运营支持", content: "需要确认直播设备、镜像、化妆、样品试用和福利品秒杀库存。" }
+    };
+
+    const specialDetailGroups = [
       {
-        id: "crm-001",
-        title: "华东医美客户 618 专场",
-        customer: "宁波悦颜医疗",
-        crmId: "CRM-202606-0188",
-        product: "抗衰修护组合",
-        channel: "抖音直播",
-        owner: "刘曼曼",
-        sales: "华东销售一组",
-        liveTime: "2026-06-20 20:00",
-        status: "排期确认",
-        urgency: "S",
-        progress: 68,
-        nodesDone: 1,
-        budget: "¥180,000",
-        leads: 420,
-        stage: "方案锁定",
-        risk: "达人脚本仍需法务二审"
+        title: "专场信息",
+        fields: [
+          { label: "背景", value: "达人安然与商务敲定 6/20 胶原蛋白套盒专场，主打夏季修护与礼盒囤货场景。", wide: "full" },
+          { label: "紧急程度", value: "S" },
+          { label: "预估销售额", value: "¥180万" },
+          { label: "主推产品", value: "胶原蛋白套盒" },
+          { label: "主推机制", value: "买二送一，前 20 分钟加赠旅行装", wide: "long" },
+          { label: "次推产品", value: "玻尿酸精华套装" },
+          { label: "次推机制", value: "第二件半价，组合装限时券" },
+          { label: "是否有试用", value: "有，达人及助播试用 20 份" },
+          { label: "福袋需求", value: "有，开场福袋 1 轮，整点福袋 2 轮", wide: "long" },
+          { label: "福利品（即秒杀品）", value: "9.9 元洁面小样 200 单" },
+          { label: "开播时间", value: "2026-06-20 20:00" },
+          { label: "达人配合度", value: "高，可配合提前预热、直播口播和短视频确认", wide: "long" }
+        ]
       },
       {
-        id: "crm-002",
-        title: "北区母婴品牌月度排期",
-        customer: "北京乐禾母婴",
-        crmId: "CRM-202606-0214",
-        product: "新生儿安心礼盒",
-        channel: "视频号直播",
-        owner: "张一凡",
-        sales: "北区大客户",
-        liveTime: "2026-06-24 19:30",
-        status: "执行中",
-        urgency: "A",
-        progress: 82,
-        nodesDone: 2,
-        budget: "¥96,000",
-        leads: 260,
-        stage: "素材制作",
-        risk: "样品到仓晚于计划 1 天"
+        title: "运营支持",
+        supportKey: "ops",
+        switchLabel: "需要运营支持",
+        fields: [
+          { label: "常用直播设备", value: "双机位、补光灯、收音麦" },
+          { label: "是否镜像", value: "是" },
+          { label: "是否需要化妆", value: "是" },
+          { label: "化妆人数", value: "2 人" },
+          { label: "达人禁忌与喜好", value: "避免夸大功效，喜欢真实体验表达；不要强行催单。", wide: "full" }
+        ]
       },
       {
-        id: "crm-003",
-        title: "西南家清渠道试播",
-        customer: "成都洁净生活",
-        crmId: "CRM-202606-0161",
-        product: "浓缩洗护套装",
-        channel: "店播矩阵",
-        owner: "王可",
-        sales: "西南渠道",
-        liveTime: "2026-06-27 14:00",
-        status: "需求录入",
-        urgency: "B",
-        progress: 35,
-        nodesDone: 0,
-        budget: "¥58,000",
-        leads: 120,
-        stage: "信息补全",
-        risk: "客户未确认最终 SKU"
+        title: "内容支持",
+        supportKey: "content",
+        switchLabel: "需要内容支持",
+        fields: [
+          { label: "达人内容偏好", value: "真实测评、生活化种草、口播自然，避免硬广感。", wide: "long" },
+          { label: "最早可预热时间", value: "2026-06-16 18:00" },
+          { label: "出镜人员", value: "达人本人、品牌讲解员 1 人" },
+          { label: "来公司时间", value: "2026-06-20 14:00" },
+          { label: "近期话题点", value: "夏季修护、熬夜肌急救、礼盒囤货、618 后补货", wide: "long" },
+          { label: "视频条数（主页x条/千川x条）", value: "主页 2 条 / 千川 3 条" }
+        ]
       },
       {
-        id: "crm-004",
-        title: "华南食品连锁会员节",
-        customer: "广州鲜语连锁",
-        crmId: "CRM-202606-0199",
-        product: "轻食代餐礼盒",
-        channel: "小红书买手直播",
-        owner: "李晴",
-        sales: "华南销售二组",
-        liveTime: "2026-07-02 21:00",
-        status: "派工中",
-        urgency: "A",
-        progress: 52,
-        nodesDone: 1,
-        budget: "¥132,000",
-        leads: 360,
-        stage: "资源排布",
-        risk: "投放预算需财务确认"
+        title: "剪辑支持",
+        supportKey: "edit",
+        switchLabel: "需要剪辑支持",
+        fields: [
+          { label: "拍剪需求", value: "需要拍摄产品展示、达人试用反馈和机制讲解素材", wide: "long" },
+          { label: "拍剪条数", value: "主页 2 条 / 千川 3 条" },
+          { label: "二创剪辑", value: "需要二创剪辑 2 条，用于投放素材补充", wide: "long" }
+        ]
       },
       {
-        id: "crm-005",
-        title: "全国 SaaS 客户私域转化",
-        customer: "企服云栈",
-        crmId: "CRM-202606-0230",
-        product: "年度旗舰版",
-        channel: "私域直播间",
-        owner: "陈响",
-        sales: "KA 解决方案",
-        liveTime: "2026-07-08 15:00",
-        status: "待复盘",
-        urgency: "C",
-        progress: 100,
-        nodesDone: 3,
-        budget: "¥75,000",
-        leads: 96,
-        stage: "复盘整理",
-        risk: "无"
-      },
-      {
-        id: "crm-006",
-        title: "东区宠物品牌新品首发",
-        customer: "杭州尾巴计划",
-        crmId: "CRM-202606-0256",
-        product: "冻干主粮新品",
-        channel: "抖音达人专场",
-        owner: "周宁",
-        sales: "东区新消费",
-        liveTime: "2026-07-12 20:30",
-        status: "排期确认",
-        urgency: "B",
-        progress: 61,
-        nodesDone: 1,
-        budget: "¥110,000",
-        leads: 210,
-        stage: "货盘确认",
-        risk: "价格机制待客户盖章"
+        title: "投放支持",
+        supportKey: "ads",
+        switchLabel: "需要投放支持",
+        fields: [
+          { label: "达人类型", value: "美妆护肤类" },
+          { label: "粉丝性别", value: "女 78%" },
+          { label: "年龄", value: "25-34 岁为主" },
+          { label: "地域", value: "一二线城市为主" },
+          { label: "八大人群", value: "精致妈妈、新锐白领、资深中产", wide: "long" },
+          { label: "场均GMV", value: "¥80万" },
+          { label: "场均客单", value: "¥298" },
+          { label: "场均在线", value: "3500" },
+          { label: "粉丝高活时间段", value: "20:00-23:00" },
+          { label: "达人抖音号", value: "dy987650" },
+          { label: "达人千川合作码", value: "QC-ANR-620，需核验" },
+          { label: "坑位费", value: "¥5万" },
+          { label: "星图费用", value: "¥3万" },
+          { label: "线上佣金", value: "20%" },
+          { label: "投放费比", value: "8%" },
+          { label: "综合费比", value: "27%" }
+        ]
       }
     ];
 
-    const tasks = [
-      { id: "T-101", record: "crm-001", title: "完成达人脚本法务二审", owner: "林悦", module: "内容", status: "进行中", due: "06-17 18:00", lane: "doing", delay: false },
-      { id: "T-102", record: "crm-001", title: "确认 618 专场最终货盘", owner: "陈舟", module: "商品", status: "待处理", due: "06-17 20:00", lane: "todo", delay: false },
-      { id: "T-103", record: "crm-002", title: "视频号封面与预热视频输出", owner: "何璐", module: "设计", status: "进行中", due: "06-18 14:00", lane: "doing", delay: false },
-      { id: "T-104", record: "crm-002", title: "样品入仓并同步履约批次", owner: "宋然", module: "履约", status: "延期申请", due: "06-18 12:00", lane: "risk", delay: true },
-      { id: "T-105", record: "crm-004", title: "小红书投放预算审批", owner: "赵敏", module: "投放", status: "待处理", due: "06-19 10:00", lane: "todo", delay: false },
-      { id: "T-106", record: "crm-005", title: "私域线索复盘与 CRM 标签回写", owner: "陈响", module: "数据", status: "已完成", due: "06-15 16:00", lane: "done", delay: false },
-      { id: "T-107", record: "crm-006", title: "新品首发价格机制确认", owner: "周宁", module: "销售", status: "进行中", due: "06-20 12:00", lane: "doing", delay: false },
-      { id: "T-108", record: "crm-003", title: "补齐试播 SKU 与佣金比例", owner: "王可", module: "销售", status: "待处理", due: "06-18 19:00", lane: "todo", delay: false }
+    const records = [
+      {
+        id: "ZC-0620",
+        title: "安然 6/20 胶原蛋白套盒专场",
+        talent: "安然",
+        uid: "dy987650",
+        urgency: "S",
+        status: "待识别",
+        liveTime: "2026-06-20 20:00",
+        business: "王龙",
+        expectedGmv: "¥180万",
+        actualGmv: "待回填",
+        sales: "¥180万",
+        product: "胶原蛋白套盒",
+        mechanism: "买二送一，前 20 分钟加赠旅行装",
+        source: "商务已填写专场记录表，待 AI 分析需求。",
+        progress: 25,
+        nodesDone: 1,
+        nodesTotal: 4
+      },
+      {
+        id: "ZC-0624",
+        title: "小鹿 6/24 夏季防晒专场",
+        talent: "小鹿",
+        uid: "dy552209",
+        urgency: "A",
+        status: "派工中",
+        liveTime: "2026-06-24 19:30",
+        business: "朱琴",
+        expectedGmv: "¥95万",
+        actualGmv: "待回填",
+        sales: "¥95万",
+        product: "清爽防晒喷雾",
+        mechanism: "第二件半价，组合装限时券",
+        source: "需求已识别，运营与投放任务待分配。",
+        progress: 58,
+        nodesDone: 2,
+        nodesTotal: 4
+      },
+      {
+        id: "ZC-0601",
+        title: "林野 6/01 零食礼盒专场",
+        talent: "林野",
+        uid: "dy110218",
+        urgency: "B",
+        status: "待复盘",
+        liveTime: "2026-06-01 20:30",
+        completedDate: "2026-06-02",
+        business: "王龙",
+        expectedGmv: "¥132万",
+        actualGmv: "¥136万",
+        sales: "¥132万",
+        product: "山野零食礼盒",
+        mechanism: "满 199 减 40，直播间赠品",
+        source: "专场任务已结束，等待复盘结论。",
+        progress: 92,
+        nodesDone: 3,
+        nodesTotal: 4
+      }
+    ];
+
+    const projectNodes = [
+      { id: "record", name: "专场记录表填写", owner: "商务", status: "已完成", date: "06/10", type: "record", note: "商务填写专场记录表" },
+      { id: "analysis", name: "需求识别与确认", owner: "刘曼曼", status: "进行中", date: "06/11", type: "analysis", note: "识别内容、剪辑、投放、运营需求" },
+      { id: "dispatch", name: "四类负责人派工", owner: "四线负责人", status: "待执行", date: "06/12", type: "dispatch", note: "负责人为组员安排任务" },
+      { id: "review", name: "数据复盘", owner: "刘曼曼", status: "待执行", date: "06/21", type: "review", note: "任务结束后汇总复盘" }
     ];
 
     const logs = [
-      { time: "06-16 15:42", user: "刘曼曼", text: "华东医美 618 专场完成排期确认，等待法务二审脚本。" },
-      { time: "06-16 14:10", user: "张一凡", text: "北区母婴样品延迟到仓，已提交延期申请。" },
-      { time: "06-16 11:36", user: "李晴", text: "华南食品会员节新增小红书买手直播资源。" },
-      { time: "06-15 18:20", user: "陈响", text: "企服云栈复盘数据已回写 CRM 标签。" }
+      { time: "2026-06-10 10:15:33", user: "商务", action: "创建了专场记录表", color: "green" },
+      { time: "2026-06-10 10:21:08", user: "AI", action: "识别出 7 条需求，包含内容、剪辑、投放、运营", color: "orange" },
+      { time: "2026-06-10 10:26:42", user: "刘曼曼", action: "确认了需求识别结果，并进入派工", color: "green" },
+      { time: "2026-06-10 11:05:17", user: "赵敏", action: "标记千川合作码需二次核验", color: "orange" },
+      { time: "2026-06-10 14:32:21", user: "张一凡", action: "提交样品签收延期原因：商家补寄样品", color: "orange" }
     ];
 
-    const modules = [
-      { name: "销售协同", people: ["王可", "周宁"], queue: 8, color: "orange" },
-      { name: "内容制作", people: ["林悦", "何璐"], queue: 11, color: "blue" },
-      { name: "投放运营", people: ["赵敏", "刘曼曼"], queue: 6, color: "purple" },
-      { name: "履约客服", people: ["宋然", "陈舟"], queue: 5, color: "green" }
+    const needs = [
+      { id: "N-C1", module: "content", title: "预热视频脚本", exists: true, status: "待派工", source: "视频条数：主页 2 条 / 千川 3 条", confidence: 94 },
+      { id: "N-C2", module: "content", title: "达人内容偏好确认", exists: true, status: "已派工", source: "真实体验，避免硬广口播", confidence: 91 },
+      { id: "N-E1", module: "edit", title: "素材收集与剪辑排期", exists: true, status: "待派工", source: "主推产品变更，需要重新收集素材", confidence: 88 },
+      { id: "N-A1", module: "ads", title: "达人画像与人群包", exists: true, status: "待派工", source: "粉丝女性 25-34，一二线为主", confidence: 96 },
+      { id: "N-A2", module: "ads", title: "千川合作码核验", exists: true, status: "需确认", source: "QC-ANR-620，需核验授权", confidence: 68 },
+      { id: "N-O1", module: "ops", title: "直播设备与化妆需求", exists: true, status: "已派工", source: "双机位、补光灯、收音麦；化妆 2 人", confidence: 92 },
+      { id: "N-O2", module: "ops", title: "样品试用与福利品", exists: true, status: "待派工", source: "试用 20 份；9.9 元洁面秒杀 200 单", confidence: 89 }
     ];
 
-    const state = {
-      view: "overview",
-      selected: "crm-001",
-      listFilter: "all",
-      listSearch: "",
-      support: { content: true, ads: true, service: true }
-    };
+    const tasks = [
+      { id: "T-C1", need: "N-C2", module: "content", title: "确认达人内容偏好与禁忌", owner: "李晴", due: "06/13", status: "已完成", done: true },
+      { id: "T-C2", need: "N-C1", module: "content", title: "输出预热视频脚本", owner: "王可", due: "06/15", status: "进行中", done: false },
+      { id: "T-E1", need: "N-E1", module: "edit", title: "收集产品素材和达人历史高转化片段", owner: "陈响", due: "06/14", status: "待执行", done: false },
+      { id: "T-A1", need: "N-A1", module: "ads", title: "建立达人画像与人群包", owner: "赵敏", due: "06/16", status: "待执行", done: false },
+      { id: "T-O1", need: "N-O1", module: "ops", title: "确认直播设备与镜像设置", owner: "刘曼曼", due: "06/14", status: "已完成", done: true },
+      { id: "T-O2", need: "N-O2", module: "ops", title: "确认样品试用名单与签收时间", owner: "张一凡", due: "06/15", status: "延期申请", done: false }
+    ];
 
     const $ = selector => document.querySelector(selector);
     const selectedRecord = () => records.find(item => item.id === state.selected) || records[0];
     const badge = (text, cls = "") => `<span class="badge ${cls}"><span class="dot"></span>${text}</span>`;
-    const field = (label, value, cls = "") => `<div class="field ${cls}"><label>${label}</label><strong>${value}</strong></div>`;
-
-    function statusClass(status) {
-      if (status.includes("复盘") || status.includes("完成")) return "green";
-      if (status.includes("执行") || status.includes("确认")) return "orange";
-      if (status.includes("延期") || status.includes("风险")) return "red";
-      if (status.includes("派工")) return "blue";
-      return "purple";
-    }
-
-    function urgencyClass(level) {
-      return { S: "red", A: "orange", B: "blue", C: "green" }[(level || "B").toUpperCase()] || "blue";
-    }
-
-    function urgencyBadge(level) {
-      const value = (level || "B").toUpperCase();
-      return `<span class="urgency-badge ${urgencyClass(value)}">${value}</span>`;
-    }
+    const field = (label, value) => `<div class="field"><label>${label}</label><strong>${value}</strong></div>`;
 
     function render() {
       renderNav();
       const app = $("#app");
-      const pages = {
-        overview: pageOverview,
-        entry: pageEntry,
-        dispatch: pageDispatch,
-        board: pageBoard,
-        archive: pageArchive,
-        detail: pageDetail
-      };
-      app.innerHTML = (pages[state.view] || pageOverview)();
+      if (state.view === "list") app.innerHTML = pageList();
+      if (state.view === "entry") app.innerHTML = pageEntry();
+      if (state.view === "dispatch") app.innerHTML = pageDispatch();
+      if (state.view === "myTasks") app.innerHTML = pageMyTasks();
+      if (state.view === "dataCenter") app.innerHTML = pageDataCenter();
+      if (state.view === "detail") app.innerHTML = pageDetail();
+      bind();
+    }
+
+    function openProject(id) {
+      state.selected = id;
+      state.view = "detail";
+      render();
+    }
+
+    function goList() {
+      state.view = "list";
+      render();
     }
 
     function renderNav() {
       $("#nav").innerHTML = tabs.map(tab => {
-        const active = state.view === tab.id || (tab.id === "overview" && state.view === "detail");
+        const active = state.view === tab.id || (tab.id === "list" && state.view === "detail");
         return `<button class="${active ? "active" : ""}" data-view="${tab.id}">${tab.name}</button>`;
       }).join("");
     }
 
-    function head(title, actions = "", sub = "") {
-      return `<div class="head"><div><h1>${title}</h1>${sub ? `<small>${sub}</small>` : ""}</div><div class="actions">${actions}</div></div>`;
+    function head(title, actions = "") {
+      return `<div class="head"><div><h1>${title}</h1></div><div class="actions">${actions}</div></div>`;
     }
 
-    function processMap(record = selectedRecord()) {
-      const currentIndex = Math.max(0, Math.min(steps.length - 1, record.nodesDone));
-      return `<section class="process">${steps.map((step, index) => `<button class="step-card ${index === currentIndex ? "active" : ""}" data-action="stepDetail" data-step="${step.id}">
+    function processMap() {
+      const currentIndex = Math.max(0, Math.min(projectNodes.length - 1, selectedRecord().nodesDone));
+      return `<section class="process">${projectNodes.map((step, index) => `<button class="step-card ${index === currentIndex ? "active" : ""}" data-node="${step.id}">
         <span class="step-index">${index + 1}</span>
-        <strong>${step.title}</strong>
-        <span>${step.desc}</span>
+        <strong>${step.name}</strong>
+        <span>${step.note}</span>
       </button>`).join("")}</section>`;
     }
 
     function stats() {
-      const running = records.filter(item => item.status !== "待复盘").length;
-      const review = records.filter(item => item.status === "待复盘").length;
-      const delayed = tasks.filter(item => item.delay).length;
-      const week = records.filter(item => item.liveTime.includes("06-2")).length;
+      const pendingNeeds = needs.filter(item => item.status === "待派工").length;
+      const doneTasks = tasks.filter(item => item.done).length;
+      const delayTasks = tasks.filter(item => item.status.includes("延期")).length;
       return `<section class="stats">
-        <button class="stat stat-orange is-clickable" data-stat-filter="all"><div><strong>${records.length}</strong><span>全部排期</span></div></button>
-        <button class="stat stat-green is-clickable" data-stat-filter="running"><div><strong>${running}</strong><span>进行中</span></div></button>
-        <button class="stat stat-blue is-clickable" data-stat-filter="week"><div><strong>${week}</strong><span>本周直播</span></div></button>
-        <button class="stat stat-red is-clickable" data-stat-filter="risk"><div><strong>${delayed}</strong><span>延期风险</span></div></button>
+        <div class="stat stat-orange"><div><strong>${records.length}</strong><span>专场记录</span></div></div>
+        <div class="stat stat-blue"><div><strong>${needs.length}</strong><span>识别需求</span></div></div>
+        <div class="stat stat-green"><div><strong>${doneTasks}</strong><span>已完成任务</span></div></div>
+        <div class="stat stat-red"><div><strong>${delayTasks}</strong><span>延期申请</span></div></div>
       </section>`;
     }
 
-    function filteredRecords() {
-      const keyword = state.listSearch.trim().toLowerCase();
-      return records.filter(record => {
-        const statusMatched =
-          state.listFilter === "all" ||
-          (state.listFilter === "running" && record.status !== "待复盘") ||
-          (state.listFilter === "review" && record.status === "待复盘") ||
-          (state.listFilter === "risk" && tasks.some(task => task.record === record.id && task.delay));
-        const searchText = [record.title, record.customer, record.crmId, record.product, record.channel, record.owner, record.status].join(" ").toLowerCase();
-        return statusMatched && (!keyword || searchText.includes(keyword));
-      });
-    }
-
-    function pageOverview() {
+    function pageList() {
       const running = records.filter(item => item.status !== "待复盘").length;
       const review = records.filter(item => item.status === "待复盘").length;
-      const filtered = filteredRecords();
-      return `${head("排期管理总览", `<button class="btn ghost" data-action="export">⇩ 导出排期</button><button class="btn primary" data-action="newSchedule">+ 新建排期</button>`, "CRM 线索、客户窗口、直播资源与执行任务的统一排期看板")}
-      ${processMap()}
-      ${stats()}
-      <section class="grid-main">
-        <div class="panel">
-          <div class="panel-body">
-            <div class="list-toolbar">
-              <div class="seg-group">
-                ${listFilterButton("all", "全部", records.length)}
-                ${listFilterButton("running", "进行中", running)}
-                ${listFilterButton("review", "待复盘", review)}
-                ${listFilterButton("risk", "有风险", tasks.filter(item => item.delay).length)}
-              </div>
-              <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索客户、CRM编号、产品、负责人" data-list-search></label>
+      const delayed = tasks.filter(item => item.status.includes("延期")).length;
+      const keyword = state.listSearch.trim().toLowerCase();
+      const filteredRecords = records.filter(record => {
+        const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘") || (state.listFilter === "review" && record.status === "待复盘");
+        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, record.urgency].join(" ").toLowerCase();
+        return statusMatched && (!keyword || searchText.includes(keyword));
+      });
+      return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
+      <section class="stats list-stats">
+        <div class="stat stat-orange"><div><strong>${records.length}</strong><span>全部专场</span></div></div>
+        <div class="stat stat-green"><div><strong>${running}</strong><span>进行中</span></div></div>
+        <div class="stat stat-blue"><div><strong>${needs.length}</strong><span>识别需求</span></div></div>
+        <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期申请</span></div></div>
+      </section>
+      <section class="panel list-panel">
+        <div class="panel-body">
+          <div class="list-toolbar">
+            <div class="seg-group">
+              ${listFilterButton("all", "全部", records.length)}
+              ${listFilterButton("running", "进行中", running)}
+              ${listFilterButton("review", "待复盘", review)}
             </div>
-            ${filtered.length ? `<div class="project-grid">${filtered.map(projectCard).join("")}</div>` : `<div class="empty"><strong>暂无匹配排期</strong></div>`}
+            <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
           </div>
+          ${filteredRecords.length ? `<div class="project-grid">${filteredRecords.map(record => projectCard(record)).join("")}</div>` : `<div class="upload"><div><strong>暂无匹配专场</strong></div></div>`}
         </div>
-        <aside class="stack">
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">今日节奏</h2><p class="panel-subtitle">06-16 关键动作</p></div></div>
-            <div class="panel-body">
-              <div class="timeline">
-                ${logs.map((item, index) => `<div class="timeline-item"><span class="timeline-dot">${index + 1}</span><div class="timeline-copy"><strong>${item.time} · ${item.user}</strong><span>${item.text}</span></div></div>`).join("")}
-              </div>
-            </div>
-          </section>
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">风险提醒</h2><p class="panel-subtitle">延期、缺资料、待审批</p></div></div>
-            <div class="panel-body risk-list">
-              ${records.filter(item => item.risk !== "无").slice(0, 3).map(item => `<button class="risk-item" data-open-project="${item.id}"><strong>${item.title}</strong><span>${item.risk}</span></button>`).join("")}
-            </div>
-          </section>
-        </aside>
       </section>`;
     }
 
@@ -872,371 +1377,1353 @@
       return `<button class="seg ${state.listFilter === key ? "active" : ""}" data-list-filter="${key}">${label} ${count}</button>`;
     }
 
+    function urgencyClass(level) {
+      const map = { S: "red", A: "orange", B: "blue", C: "green" };
+      return map[(level || "B").toUpperCase()] || "orange";
+    }
+
+    function urgencyBadge(level) {
+      const value = (level || "B").toUpperCase();
+      return badge(value, urgencyClass(value));
+    }
+
     function projectCard(record) {
-      const cls = statusClass(record.status);
+      const cls = record.status === "待复盘" ? "green" : record.status === "派工中" ? "blue" : "orange";
       return `<button class="project-card" data-open-project="${record.id}">
         <div class="project-card-head">
           <div class="project-main">
             <div class="project-title-line">${urgencyBadge(record.urgency)}<h2>${record.title}</h2></div>
-            <small>${record.customer} · ${record.crmId}</small>
           </div>
           <span class="project-percent">${record.progress}%</span>
         </div>
         <div class="project-product-line"><span>主推产品</span><strong>${record.product}</strong></div>
         <div class="progress"><span style="width:${record.progress}%"></span></div>
-        <div class="project-card-foot"><span>${badge(record.status, cls)}</span><span class="muted">${record.sales}</span></div>
-        <div class="project-meta-line"><span class="project-meta-left">负责人 <strong>${record.owner}</strong></span><span class="project-date">${record.liveTime}</span></div>
+        <div class="project-card-foot"><span class="project-card-foot-left">${badge(record.status, cls)}</span><span class="muted">${record.sales}</span></div>
+        <div class="project-meta-line"><span class="project-meta-left"><span>达人 <strong>${record.talent}</strong></span></span><span class="project-date">${record.liveTime}</span></div>
       </button>`;
+    }
+
+    function pageEntry() {
+      return `${head("达人专场录入")}
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2 class="panel-title">专场文档录入</h2></div>
+          ${badge("待识别", "orange")}
+        </div>
+        <div class="panel-body stack">
+          <div class="upload">
+            <div>
+              <strong>上传达人专场文档</strong>
+              <button class="btn primary" data-action="recognizeDoc">选择文档</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      ${specialDetailSection()}`;
+    }
+
+    function specialDetailSection() {
+      return `<section class="panel" style="margin-top:18px">
+        <div class="panel-head">
+          <div><h2 class="panel-title">专场详情</h2></div>
+        </div>
+        <div class="panel-body">
+          <div class="detail-groups">${specialDetailGroups.map((group, groupIndex) => detailCard(group, groupIndex)).join("")}</div>
+          <div class="panel-actions"><button class="btn primary" data-action="createProjectFromEntry">发布需求</button></div>
+        </div>
+      </section>`;
+    }
+
+    function detailCard(group, groupIndex) {
+      const enabled = !group.supportKey || supportNeeds[group.supportKey].enabled;
+      return `<div class="detail-card ${enabled ? "" : "is-collapsed"}">
+        <div class="detail-card-head">
+          <h3>${group.title}</h3>
+          ${group.supportKey ? supportSwitch(group.supportKey, group.switchLabel) : ""}
+        </div>
+        ${enabled ? `<div class="detail-fields">${group.fields.map((item, fieldIndex) => detailField(groupIndex, fieldIndex, item)).join("")}</div>` : ""}
+      </div>`;
+    }
+
+    function supportSwitch(key, label) {
+      return `<label class="support-switch">
+        <input type="checkbox" data-detail-support-toggle="${key}" ${supportNeeds[key].enabled ? "checked" : ""}>
+        <span class="switch-track"></span>
+        <span>${label}</span>
+      </label>`;
+    }
+
+    function detailField(groupIndex, fieldIndex, item, disabled = false) {
+      const cls = item.wide ? ` ${item.wide}` : "";
+      return `<label class="detail-field${cls}">
+        <span>${item.label}</span>
+        <textarea data-special-detail="${groupIndex}:${fieldIndex}" ${disabled ? "disabled" : ""}>${item.value}</textarea>
+      </label>`;
     }
 
     function pageDetail() {
       const record = selectedRecord();
-      const recordTasks = tasks.filter(task => task.record === record.id);
-      return `${head(record.title, `<button class="btn ghost" data-action="goOverview">← 返回列表</button><button class="btn primary" data-action="confirmSchedule">✓ 确认排期</button>`, `${record.customer} · ${record.crmId}`)}
-      ${processMap(record)}
-      <section class="grid-main">
-        <div class="stack">
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">排期详情</h2><p class="panel-subtitle">${record.stage}</p></div>${badge(record.status, statusClass(record.status))}</div>
-            <div class="panel-body">
-              <div class="field-grid">
-                ${field("客户名称", record.customer)}
-                ${field("CRM 编号", record.crmId)}
-                ${field("直播时间", record.liveTime)}
-                ${field("渠道", record.channel)}
-                ${field("预算", record.budget)}
-                ${field("目标线索", `${record.leads} 条`)}
-                ${field("主推产品", record.product)}
-                ${field("负责人", record.owner)}
-                ${field("当前风险", record.risk, "wide")}
-              </div>
-            </div>
-          </section>
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">任务清单</h2><p class="panel-subtitle">按负责人、模块与截止时间跟进</p></div><button class="btn ghost" data-action="addTask">+ 任务</button></div>
-            <div class="panel-body table-scroll">
-              <table class="task-table">
-                <thead><tr><th>任务</th><th>模块</th><th>负责人</th><th>状态</th><th>截止</th></tr></thead>
-                <tbody>${recordTasks.length ? recordTasks.map(task => `<tr data-task="${task.id}"><td><strong>${task.title}</strong><br><span class="muted">${task.id}</span></td><td>${task.module}</td><td>${task.owner}</td><td>${badge(task.status, statusClass(task.status))}</td><td>${task.due}</td></tr>`).join("") : `<tr><td colspan="5" class="muted">暂无任务</td></tr>`}</tbody>
-              </table>
-            </div>
-          </section>
+      return `${projectHeader(record)}
+      ${projectProgress(record)}
+      <section class="panel" style="margin-bottom:18px">
+        <div class="panel-head">
+          <div><h2 class="panel-title">抄送人</h2></div>
+          <button class="btn ghost" data-drawer="copy">编辑</button>
         </div>
-        <aside class="stack">
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">节点动态</h2><p class="panel-subtitle">自动沉淀操作记录</p></div></div>
-            <div class="panel-body">
-              <div class="timeline">
-                ${steps.map((step, index) => `<div class="timeline-item"><span class="timeline-dot">${index + 1}</span><div class="timeline-copy"><strong>${step.title}</strong><span>${index <= record.nodesDone ? "已推进到该节点" : "等待前序节点完成"}</span></div></div>`).join("")}
-              </div>
-            </div>
-          </section>
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">协同成员</h2><p class="panel-subtitle">销售、运营、内容、履约</p></div></div>
-            <div class="panel-body compact-list">
-              ${owners.slice(0, 5).map((owner, index) => `<div class="compact-item"><strong>${owner}</strong><span>${["销售跟进", "排期运营", "内容脚本", "投放执行", "履约客服"][index]} · ${index + 2} 个待办</span></div>`).join("")}
-            </div>
-          </section>
-        </aside>
-      </section>`;
-    }
-
-    function pageEntry() {
-      return `${head("需求录入", `<button class="btn ghost" data-action="recognizeDoc">⌁ 识别文档</button><button class="btn primary" data-action="createFromEntry">发布需求</button>`, "从 CRM 机会、客户 brief 或销售表单生成排期需求")}
-      <section class="grid-2">
-        <aside class="panel">
-          <div class="panel-head"><div><h2 class="panel-title">客户 Brief</h2><p class="panel-subtitle">销售侧提交入口</p></div></div>
+      </section>
+      <section class="detail-main">
+        <div class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">任务记录</h2></div>${badge(`${projectTaskRecords(record).length} 条任务`, "orange")}</div>
+          <div class="panel-body node-record-stack">${nodeTimeline(record)}<div class="table-wrap">${nodeTable(record)}</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">项目详情</h2><button class="btn ghost" data-drawer="record">原始记录</button></div>
           <div class="panel-body stack">
-            <div class="upload">
-              <div><strong>CRM 需求文档</strong><span>支持客户 brief、商品清单、直播目标表</span><button class="btn primary" data-action="recognizeDoc">选择文档</button></div>
-            </div>
-            <div class="field-grid">
-              ${field("识别客户", "宁波悦颜医疗")}
-              ${field("建议优先级", "S")}
-              ${field("推荐渠道", "抖音直播")}
-              ${field("建议档期", "2026-06-20 20:00")}
-            </div>
+            <div class="field-grid">${field("达人 UID", record.uid)}${field("紧急程度", record.urgency || "B")}${field("开播时间", record.liveTime)}${field("预估销售额", record.sales)}${field("主推产品", record.product)}${field("主推机制", record.mechanism)}${field("当前状态", record.status)}</div>
+            <div class="panel" style="box-shadow:none"><div class="panel-head"><h3 class="panel-title">需求识别概览</h3></div><div class="panel-body"><div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div></div></div>
           </div>
-        </aside>
-        <section class="panel">
-          <div class="panel-head"><div><h2 class="panel-title">排期信息</h2><p class="panel-subtitle">确认后进入智能派工</p></div></div>
-          <div class="panel-body">
-            <div class="detail-groups">
-              ${entryGroup("客户与机会", [
-                ["客户名称", "宁波悦颜医疗"],
-                ["CRM 编号", "CRM-202606-0188"],
-                ["销售团队", "华东销售一组"],
-                ["商机阶段", "合同已签"]
-              ])}
-              ${entryGroup("直播目标", [
-                ["GMV 目标", "¥1,200,000"],
-                ["线索目标", "420 条"],
-                ["直播渠道", "抖音直播"],
-                ["预算上限", "¥180,000"]
-              ])}
-              ${entryGroup("资源需求", [
-                ["达人等级", "A+ 级健康护理达人"],
-                ["主推产品", "抗衰修护组合"],
-                ["样品状态", "已寄出"],
-                ["素材支持", "需要短视频预热"]
-              ], "content")}
-              ${entryGroup("限制条件", [
-                ["合规要求", "医美功效表达需法务审核"],
-                ["价格机制", "618 专享券包"],
-                ["库存保障", "首批 3500 套"],
-                ["发货承诺", "48 小时内"]
-              ], "service")}
-            </div>
-            <div class="panel-actions"><button class="btn ghost" data-action="saveDraft">暂存草稿</button><button class="btn primary" data-action="createFromEntry">发布需求</button></div>
-          </div>
-        </section>
+        </div>
       </section>`;
     }
 
-    function entryGroup(title, items, supportKey = "") {
-      const support = supportKey ? `<label class="support-switch"><input type="checkbox" data-support="${supportKey}" ${state.support[supportKey] ? "checked" : ""}><span class="switch-track"></span></label>` : "";
-      return `<div class="detail-card">
-        <div class="detail-card-head"><strong>${title}</strong>${support}</div>
-        <div class="detail-fields">${items.map(item => editableField(item[0], item[1])).join("")}</div>
+    function projectHeader(record) {
+      const cls = record.status === "待复盘" ? "green" : record.status === "派工中" ? "blue" : "orange";
+      return `<section class="panel" style="margin-bottom:18px">
+        <div class="panel-head" style="min-height:96px">
+          <div class="row" style="justify-content:flex-start">
+            <button class="btn ghost" data-view="list" onclick="goList()">‹</button>
+            <div>
+              <div class="meta">${urgencyBadge(record.urgency)}${badge(record.status, cls)}</div>
+              <h1 style="font-size:24px;margin:8px 0 0">${record.title}</h1>
+            </div>
+          </div>
+          <button class="btn ghost" data-action="openLog" onclick="openLogDrawer()">项目事件日志</button>
+        </div>
+      </section>`;
+    }
+
+    function projectProgress(record) {
+      return `<section class="panel" style="margin-bottom:18px">
+        <div class="panel-body">
+          <div class="row"><span class="muted">${record.nodesDone}/${record.nodesTotal} 节点</span><strong style="color:var(--orange)">${record.progress}%</strong></div>
+          <div style="height:10px"></div>
+          <div class="progress"><span style="width:${record.progress}%"></span></div>
+        </div>
+      </section>`;
+    }
+
+    function projectTaskRecords(record) {
+      const recordTasks = dispatchTasks[record.id] || {};
+      const rows = [];
+      moduleOrder.forEach(moduleKey => {
+        const module = modules[moduleKey];
+        const support = supportNeeds[moduleKey];
+        const taskList = recordTasks[moduleKey] || [];
+        taskList.forEach((task, index) => {
+          const status = task.status || "待处理";
+          const due = task.delayDue || task.due || assignmentFor(record.id, moduleKey).due;
+          rows.push({
+            id: `${record.id}:${moduleKey}:${index}`,
+            name: task.title,
+            moduleKey,
+            moduleName: support.title,
+            moduleOwner: module.owner,
+            owner: task.owner || assignmentFor(record.id, moduleKey).owner,
+            status,
+            date: timelineTaskDate(due),
+            fullDate: due,
+            note: `${support.title} · ${task.owner || module.owner}负责执行`
+          });
+        });
+      });
+      return rows.length ? rows : projectNodes.map((node, index) => {
+        const status = nodeStatus(record, index);
+        return { ...node, owner: node.owner, status, date: node.date, fullDate: node.date, moduleName: "流程节点", moduleOwner: node.owner };
+      });
+    }
+
+    function timelineTaskDate(value) {
+      if (!value) return "";
+      if (value.includes("-")) return value.slice(5, 10).replace("-", "/");
+      if (value.includes("/")) {
+        const parts = value.split("/");
+        return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : value;
+      }
+      return value;
+    }
+
+    function nodeStatus(record, index) {
+      return index < record.nodesDone ? "已完成" : index === record.nodesDone ? "执行中" : "待执行";
+    }
+
+    function nodeStatusClass(status) {
+      return taskStatusClass(status);
+    }
+
+    function taskStatusClass(status) {
+      if (status === "已完成") return "green";
+      if (status === "延期中") return "red";
+      if (status === "待审核") return "purple";
+      if (status === "进行中" || status === "执行中" || status === "已派发") return "blue";
+      if (status === "待处理" || status === "待派发" || status === "待执行") return "orange";
+      return "gray";
+    }
+
+    function nodeTable(record) {
+      const rows = projectTaskRecords(record);
+      return `<table><colgroup><col style="width:34%"><col style="width:16%"><col style="width:18%"><col style="width:16%"><col style="width:16%"></colgroup>
+        <thead><tr><th>任务名称</th><th>负责人</th><th>计划时间</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>${rows.map(row => {
+          const cls = nodeStatusClass(row.status);
+          return `<tr>
+            <td><strong>${row.name}</strong><div class="muted">${row.moduleName}</div></td>
+            <td>${row.owner}</td>
+            <td>${formatDate(row.fullDate)}</td>
+            <td>${badge(row.status, cls === "gray" ? "" : cls)}</td>
+            <td><button class="btn ghost" data-node-detail="${row.id}">查看</button></td>
+          </tr>`;
+        }).join("")}</tbody></table>`;
+    }
+
+    function nodeTimeline(record) {
+      const rows = projectTaskRecords(record);
+      const dates = timelineDates(rows);
+      const today = "06/08";
+      return `<div class="node-timeline">
+        <div class="timeline-grid" style="--timeline-cols:${dates.length};min-width:${230 + dates.length * 58}px">
+          <div class="timeline-head timeline-title">任务名称</div>
+          ${dates.map(date => `<div class="timeline-head ${date === today ? "today-head" : ""}">${date}</div>`).join("")}
+          ${rows.map(row => {
+            const cls = nodeStatusClass(row.status);
+            return `<div class="timeline-task">
+              <div class="timeline-task-name">${row.name}</div>
+              <div class="timeline-task-meta">${row.moduleName} · ${row.owner}</div>
+              ${badge(row.status, cls === "gray" ? "" : cls)}
+            </div>
+            ${dates.map(date => `<div class="timeline-cell ${date === today ? "today-cell" : ""}">
+              ${date === row.date ? `<button class="timeline-marker ${cls}" data-node-detail="${row.id}" aria-label="${row.name} ${row.status}"></button>` : ""}
+            </div>`).join("")}`;
+          }).join("")}
+        </div>
       </div>`;
     }
 
-    function editableField(label, value) {
-      return `<div class="field"><label>${label}</label><input value="${value}"></div>`;
+    function timelineDates(rows) {
+      const today = parseTimelineDate("06/08");
+      const nodeDates = rows.map(row => parseTimelineDate(row.date)).filter(date => !Number.isNaN(date.getTime()));
+      const start = new Date(Math.min(today.getTime(), ...nodeDates.map(date => date.getTime())));
+      const end = new Date(Math.max(today.getTime(), ...nodeDates.map(date => date.getTime())));
+      const dates = [];
+      for (let date = new Date(start); date <= end; date = addTimelineDay(date, 1)) {
+        dates.push(formatTimelineDate(date));
+      }
+      return dates;
     }
 
-    function pageDispatch() {
-      return `${head("智能派工", `<button class="btn ghost" data-action="batchAssign">↻ 重新计算</button><button class="btn primary" data-action="notifyOwners">通知负责人</button>`, "按档期窗口、团队负载、任务模板自动拆解执行项")}
+    function parseTimelineDate(value) {
+      const [month, day] = value.split("/").map(Number);
+      return new Date(2026, month - 1, day);
+    }
+
+    function addTimelineDay(date, amount) {
+      const next = new Date(date);
+      next.setDate(next.getDate() + amount);
+      return next;
+    }
+
+    function formatTimelineDate(date) {
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${month}/${day}`;
+    }
+
+    function pageRecord() {
+      const record = selectedRecord();
+      return `${head("专场记录", `<button class="btn primary" data-action="newRecord">新增专场记录</button><button class="btn ghost" data-go="analysis">提交需求识别</button>`)}
       ${stats()}
-      <section class="panel">
-        <div class="panel-head"><div><h2 class="panel-title">模块负载</h2><p class="panel-subtitle">当前队列与可承接成员</p></div></div>
-        <div class="panel-body">
-          <div class="module-grid">
-            ${modules.map(module => `<div class="module-card">
-              <h3>${module.name}</h3>
-              ${badge(`${module.queue} 个待办`, module.color)}
-              ${module.people.map(person => `<div class="member-row"><span class="member-left"><span class="mini-avatar">${person.slice(0, 1)}</span><strong>${person}</strong></span><span>${Math.ceil(Math.random() * 4) + 2} 项</span></div>`).join("")}
-            </div>`).join("")}
+      <section class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">专场记录表</h2></div>${badge("商务填写", "orange")}</div>
+          <div class="panel-body stack">
+            ${records.map(item => `<button class="record-card ${item.id === state.selected ? "active" : ""}" data-record="${item.id}">
+              <div class="row"><span class="title">${item.title}</span>${badge(item.status, item.status === "待复盘" ? "green" : item.status === "派工中" ? "blue" : "orange")}</div>
+              <div class="meta"><span>${item.talent}</span><span>${item.uid}</span><span>${item.liveTime}</span></div>
+              <div class="progress"><span style="width:${item.progress}%"></span></div>
+              <span class="muted">${item.source}</span>
+            </button>`).join("")}
           </div>
         </div>
-      </section>
-      <section class="panel">
-        <div class="panel-head"><div><h2 class="panel-title">待派工需求</h2><p class="panel-subtitle">从排期确认节点进入</p></div></div>
-        <div class="panel-body table-scroll">
-          <table class="task-table">
-            <thead><tr><th>排期</th><th>客户</th><th>任务模板</th><th>建议负责人</th><th>状态</th><th>操作</th></tr></thead>
-            <tbody>${records.filter(item => item.status !== "待复盘").map(record => `<tr>
-              <td><strong>${record.title}</strong><br><span class="muted">${record.liveTime}</span></td>
-              <td>${record.customer}</td>
-              <td>内容 / 投放 / 商品 / 履约</td>
-              <td>${record.owner}</td>
-              <td>${badge(record.status, statusClass(record.status))}</td>
-              <td><button class="btn ghost" data-open-project="${record.id}">查看</button></td>
-            </tr>`).join("")}</tbody>
-          </table>
+        <div class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">${record.title}</h2></div><button class="btn ghost" data-drawer="record">查看原始记录</button></div>
+          <div class="panel-body stack">
+            <div class="field-grid">${field("达人 UID", record.uid)}${field("紧急程度", record.urgency || "B")}${field("开播时间", record.liveTime)}${field("预估销售额", record.sales)}${field("主推产品", record.product)}${field("主推机制", record.mechanism)}${field("当前状态", record.status)}</div>
+            <div class="upload"><div><strong>专场记录表入口</strong><button class="btn primary" data-go="analysis">提交需求识别</button></div></div>
+          </div>
         </div>
       </section>`;
     }
 
-    function pageBoard() {
-      const lanes = [
-        { id: "todo", title: "待处理", cls: "blue" },
-        { id: "doing", title: "进行中", cls: "orange" },
-        { id: "risk", title: "延期风险", cls: "red" },
-        { id: "done", title: "已完成", cls: "green" }
-      ];
-      return `${head("执行看板", `<button class="btn ghost" data-action="syncCRM">↻ 同步 CRM</button><button class="btn primary" data-action="addTask">+ 新增任务</button>`, "按执行节点跟踪跨团队任务")}
-      <section class="kanban">
-        ${lanes.map(lane => {
-          const laneTasks = tasks.filter(task => task.lane === lane.id);
-          return `<div class="lane">
-            <div class="lane-head"><strong>${lane.title}</strong>${badge(laneTasks.length, lane.cls)}</div>
-            ${laneTasks.map(taskCard).join("") || `<div class="empty">暂无任务</div>`}
-          </div>`;
-        }).join("")}
+    function pageAnalysis() {
+      return `${head("需求识别", `<button class="btn primary" data-action="runAnalysis">重新识别字段</button><button class="btn ghost" data-go="dispatch">进入任务派工</button>`)}
+      <section class="grid-main">
+        <div class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">需求识别结果</h2></div>${badge("7 条需求", "blue")}</div>
+          <div class="panel-body">
+            <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div>
+            <div style="height:18px"></div>
+            <div class="stack">${needs.map(needCard).join("")}</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">识别依据</h2>${badge("字段分析", "orange")}</div>
+          <div class="panel-body stack">
+            ${field("内容判断", "出现视频条数、达人内容偏好、预热时间，因此存在内容需求。")}
+            ${field("剪辑判断", "出现素材与视频版本交付，因此存在剪辑需求。")}
+            ${field("投放判断", "出现千川合作码、粉丝画像、费比，因此存在投放需求。")}
+            ${field("运营判断", "出现设备、镜像、化妆、福利品、样品，因此存在运营需求。")}
+          </div>
+        </div>
       </section>`;
     }
 
-    function taskCard(task) {
-      const record = records.find(item => item.id === task.record);
-      return `<button class="task-card" data-task-open="${task.id}">
-        <h3>${task.title}</h3>
-        <p>${record ? record.title : ""}</p>
-        <div class="task-meta"><span>${task.owner} · ${task.module}</span><span>${task.due}</span></div>
-        ${badge(task.status, statusClass(task.status))}
+    function moduleNeedSummary(key, module) {
+      const list = needs.filter(item => item.module === key && item.exists);
+      return `<button class="module-card ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">
+        <div class="row"><strong>${module.name}</strong>${badge(`${list.length} 条`, module.cls)}</div>
+        <div class="progress"><span style="width:${Math.min(100, list.length * 28)}%"></span></div>
+        <span class="muted">负责人：${module.owner}</span>
       </button>`;
     }
 
-    function pageArchive() {
-      return `${head("复盘归档", `<button class="btn ghost" data-action="exportReview">⇩ 导出复盘</button><button class="btn primary" data-action="newSchedule">+ 继续排期</button>`, "成交、线索、费用与下一次跟进动作沉淀")}
-      <section class="stats">
-        <div class="stat stat-green"><div><strong>1</strong><span>已归档</span></div></div>
-        <div class="stat stat-blue"><div><strong>96</strong><span>CRM 线索</span></div></div>
-        <div class="stat stat-orange"><div><strong>17.6%</strong><span>线索转化率</span></div></div>
-        <div class="stat stat-purple"><div><strong>¥75k</strong><span>投放成本</span></div></div>
-      </section>
-      <section class="grid-main">
-        <div class="panel">
-          <div class="panel-head"><div><h2 class="panel-title">归档排期</h2><p class="panel-subtitle">已完成复盘的客户活动</p></div></div>
-          <div class="panel-body table-scroll">
-            <table class="task-table">
-              <thead><tr><th>排期</th><th>客户</th><th>成交结果</th><th>线索</th><th>负责人</th><th>状态</th></tr></thead>
-              <tbody>${records.filter(item => item.status === "待复盘").map(record => `<tr>
-                <td><strong>${record.title}</strong><br><span class="muted">${record.liveTime}</span></td>
-                <td>${record.customer}</td>
-                <td>GMV ¥428,000</td>
-                <td>${record.leads}</td>
-                <td>${record.owner}</td>
-                <td>${badge("待复盘", "green")}</td>
-              </tr>`).join("")}</tbody>
-            </table>
-          </div>
+    function needCard(need) {
+      const module = modules[need.module];
+      const statusCls = need.status === "需确认" ? "red" : need.status === "已派工" ? "green" : "orange";
+      return `<button class="need-card" data-need="${need.id}">
+        <div class="row"><strong>${need.title}</strong>${badge(need.status, statusCls)}</div>
+        <div class="meta">${badge(module.name, module.cls)}<span>置信度 ${need.confidence}%</span><span>${need.source}</span></div>
+      </button>`;
+    }
+
+    function pageDispatch() {
+      const module = modules[state.module];
+      const enabled = supportNeeds[state.module] ? supportNeeds[state.module].enabled : true;
+      const pending = records.filter(record => assignmentFor(record.id, state.module).status === "待派发").length;
+      const reviewing = allDispatchTaskItems().filter(item => item.moduleKey === state.module && item.task.status === "待审核").length;
+      return `${head("需求派工")}
+      <section class="module-tabs">${moduleOrder.map(moduleTab).join("")}</section>
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2 class="panel-title">${supportNeeds[state.module].title}工作台</h2></div>
+          ${reviewing ? badge(`${reviewing} 个待审核`, "purple") : badge(`${pending} 个待派发`, pending ? "orange" : "green")}
         </div>
-        <aside class="panel">
-          <div class="panel-head"><div><h2 class="panel-title">复盘模板</h2><p class="panel-subtitle">回写 CRM 字段</p></div></div>
-          <div class="panel-body compact-list">
-            ${["成交与退款", "线索质量", "投放费用", "客户反馈", "下次跟进"].map((item, index) => `<div class="compact-item"><strong>${index + 1}. ${item}</strong><span>${["订单、客单价、退款率", "有效线索、重复线索、标签", "达人费、投流费、制作费", "直播间评论与销售反馈", "二次触达日期与责任人"][index]}</span></div>`).join("")}
-          </div>
-        </aside>
+        <div class="panel-body">
+          ${enabled ? `<div class="dispatch-list">${records.map(record => dispatchCard(record, state.module)).join("")}</div>` : emptyDispatch(module)}
+        </div>
       </section>`;
     }
 
-    function openDrawer(title, body, foot = `<button class="btn primary" data-action="drawerOk">确定</button>`) {
+    function moduleTab(key) {
+      const module = modules[key];
+      const pending = records.filter(record => assignmentFor(record.id, key).status === "待派发").length;
+      const reviewing = allDispatchTaskItems().filter(item => item.moduleKey === key && item.task.status === "待审核").length;
+      return `<button class="module-tab ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">
+        <div class="row"><strong>${supportNeeds[key].title}</strong>${reviewing ? badge(`${reviewing} 待审核`, "purple") : badge(`${pending} 待派发`, pending ? "orange" : "green")}</div>
+        <span class="muted">负责人：${module.owner}</span>
+      </button>`;
+    }
+
+    function assignmentFor(recordId, moduleKey) {
+      if (!dispatchAssignments[recordId]) dispatchAssignments[recordId] = {};
+      if (!dispatchAssignments[recordId][moduleKey]) {
+        dispatchAssignments[recordId][moduleKey] = {
+          owner: moduleMembers[moduleKey][0],
+          due: defaultDue(records.find(record => record.id === recordId)),
+          status: "待派发"
+        };
+      }
+      return dispatchAssignments[recordId][moduleKey];
+    }
+
+    function defaultDue(record) {
+      return record && record.liveTime ? record.liveTime.slice(0, 10) : "2026-06-17";
+    }
+
+    function tasksFor(recordId, moduleKey) {
+      if (!dispatchTasks[recordId]) dispatchTasks[recordId] = {};
+      if (!dispatchTasks[recordId][moduleKey]) {
+        const assignment = assignmentFor(recordId, moduleKey);
+        dispatchTasks[recordId][moduleKey] = [{
+          title: taskTemplates[moduleKey][0],
+          owner: assignment.owner,
+          due: assignment.due
+        }];
+      }
+      return dispatchTasks[recordId][moduleKey];
+    }
+
+    function dispatchDue(recordId, moduleKey) {
+      const dates = tasksFor(recordId, moduleKey).map(task => task.delayDue || task.due).filter(Boolean).sort();
+      return dates[dates.length - 1] || assignmentFor(recordId, moduleKey).due;
+    }
+
+    function dispatchCard(record, moduleKey) {
+      const assignment = assignmentFor(record.id, moduleKey);
+      const module = modules[moduleKey];
+      const taskList = tasksFor(record.id, moduleKey);
+      const statusCls = taskStatusClass(assignment.status);
+      const dispatchKey = `${record.id}:${moduleKey}`;
+      const open = state.dispatchOpen === dispatchKey;
+      return `<article class="dispatch-card ${open ? "is-open" : ""}">
+        <button class="dispatch-summary" data-toggle-dispatch="${dispatchKey}">
+          <h3>${record.title}</h3>
+          <div class="dispatch-summary-meta"><span>预计完成 ${formatDate(dispatchDue(record.id, moduleKey))}</span><span class="dispatch-chevron">⌄</span></div>
+        </button>
+        ${open ? `<div class="dispatch-detail">
+          <div class="dispatch-main">
+            <div class="demand-text">
+              <strong>${supportNeeds[moduleKey].title}需求内容</strong>
+              ${demandText(record, moduleKey)}
+            </div>
+            <div class="task-builder">
+              <div class="task-builder-head">
+                <div>
+                  <strong>新建任务</strong>
+                </div>
+                ${badge(`${taskList.length} 条子任务`, module.cls)}
+              </div>
+              <div class="task-list">
+                ${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}
+              </div>
+              <div class="task-actions">
+                ${badge(assignment.status, statusCls)}
+                <button class="btn ghost" data-add-subtask="${record.id}:${moduleKey}">+ 新建任务</button>
+                <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "更新派工"}</button>
+              </div>
+            </div>
+          </div>
+        </div>` : ""}
+      </article>`;
+    }
+
+    function taskRow(recordId, moduleKey, task, index) {
+      const key = `${recordId}:${moduleKey}:${index}`;
+      const status = task.status || "待处理";
+      const statusCls = taskStatusClass(status);
+      return `<div class="task-row">
+        <span class="task-index">${index + 1}</span>
+        <label class="task-field">
+          <span>任务名称</span>
+          <input class="input" value="${task.title}" data-subtask-title="${key}">
+        </label>
+        <label class="task-field">
+          <span>执行组员</span>
+          <select class="select" data-subtask-owner="${key}">${moduleMembers[moduleKey].map(owner => `<option ${owner === task.owner ? "selected" : ""}>${owner}</option>`).join("")}</select>
+        </label>
+        <label class="task-field">
+          <span>完成日期</span>
+          <input class="input" type="date" value="${task.due}" data-subtask-due="${key}">
+        </label>
+        <div class="task-field">
+          <span>状态</span>
+          ${badge(status, statusCls === "gray" ? "" : statusCls)}
+        </div>
+        <button class="btn ghost task-remove" data-remove-subtask="${key}">删除</button>
+        ${taskReviewLine(key, moduleKey, task)}
+      </div>`;
+    }
+
+    function taskReviewLine(key, moduleKey, task) {
+      const module = modules[moduleKey];
+      if (task.status === "待审核") {
+        return `<div class="task-review-line">
+          <div class="review-copy">
+            <strong>待负责人审核</strong>
+            <span>${task.owner} 于 ${formatDate(task.submittedAt)} 提交，负责人：${module.owner}</span>
+          </div>
+          <input class="input" value="${task.reviewComment || ""}" placeholder="驳回原因（驳回时必填）" data-review-comment="${key}">
+          <button class="btn ghost" data-review-reject="${key}">驳回修改</button>
+          <button class="btn primary" data-review-approve="${key}">审核通过</button>
+        </div>`;
+      }
+      if (task.status === "已完成" && task.reviewedAt) {
+        return `<div class="task-review-line is-done">
+          <div class="review-copy">
+            <strong>负责人已审核通过</strong>
+            <span>${module.owner} 于 ${formatDate(task.reviewedAt)} 完成审核</span>
+          </div>
+        </div>`;
+      }
+      return "";
+    }
+
+    function formatDate(date) {
+      return date ? date.replaceAll("-", "/") : "待选择";
+    }
+
+    function demandText(record, moduleKey) {
+      const text = {
+        content: `内容偏好：真实测评、生活化种草；最早预热：${record.liveTime.slice(0, 10)} 前；视频条数：主页 2 条 / 千川 3 条；出镜：达人本人、品牌讲解员。`,
+        edit: `拍剪需求：产品展示、机制讲解、达人试用反馈；拍剪条数：主页 2 条 / 千川 3 条；二创剪辑：补充 2 条投放素材。`,
+        ads: `达人类型：美妆护肤类；达人抖音号：${record.uid}；合作码：QC-ANR-620 待核验；投放费比 8%，综合费比 27%。`,
+        ops: `设备：双机位、补光灯、收音麦；镜像：是；化妆：2 人；福利品：9.9 元洁面小样 200 单；需确认样品与开播检查。`
+      }[moduleKey];
+      return `<span>${text}</span>`;
+    }
+
+    function emptyDispatch(module) {
+      return `<div class="upload"><div><strong>${supportNeeds[state.module].title}未开启</strong><button class="btn ghost" data-view="entry">返回录入页调整</button></div></div>`;
+    }
+
+    function allDispatchTaskItems() {
+      const items = [];
+      records.forEach(record => {
+        const recordTasks = dispatchTasks[record.id] || {};
+        Object.entries(recordTasks).forEach(([moduleKey, list]) => {
+          list.forEach((task, index) => {
+            if (!task.status) task.status = "待处理";
+            items.push({ record, moduleKey, task, index, key: `${record.id}:${moduleKey}:${index}` });
+          });
+        });
+      });
+      return items;
+    }
+
+    function pageMyTasks() {
+      const userItems = allDispatchTaskItems().filter(item => item.task.owner === state.taskUser);
+      const myItems = filteredMyTaskItems(userItems);
+      const done = userItems.filter(item => item.task.status === "已完成").length;
+      const delayed = userItems.filter(item => item.task.status === "延期中").length;
+      const reviewing = userItems.filter(item => item.task.status === "待审核").length;
+      const doing = userItems.filter(item => item.task.status !== "已完成").length;
+      const pending = userItems.filter(item => item.task.status === "待处理").length;
+      const running = userItems.filter(item => item.task.status === "进行中").length;
+      return `${head("我的任务")}
+      <div class="my-task-tools">
+        <div class="seg-group">
+          ${taskStatusFilterButton("all", "全部", userItems.length)}
+          ${taskStatusFilterButton("pending", "待处理", pending)}
+          ${taskStatusFilterButton("running", "进行中", running)}
+          ${taskStatusFilterButton("reviewing", "待审核", reviewing)}
+          ${taskStatusFilterButton("done", "已完成", done)}
+          ${taskStatusFilterButton("delayed", "延期中", delayed)}
+        </div>
+        <div class="task-filter-right">
+          <div class="member-switch">
+            <span>成员视角</span>
+            <select class="select" data-task-user>${owners.filter(owner => owner !== "待分配").map(owner => `<option ${owner === state.taskUser ? "selected" : ""}>${owner}</option>`).join("")}</select>
+          </div>
+          <select class="select" data-task-module-filter><option value="all">全部支持</option>${moduleOrder.map(key => `<option value="${key}" ${state.taskModuleFilter === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select>
+          <input class="input task-search" value="${state.taskSearch}" placeholder="搜索任务..." data-task-search>
+        </div>
+      </div>
+      <section class="stats">
+        <div class="stat stat-orange"><div><strong>${userItems.length}</strong><span>我的任务</span></div></div>
+        <div class="stat stat-blue"><div><strong>${doing}</strong><span>待处理</span></div></div>
+        <div class="stat stat-green"><div><strong>${done}</strong><span>已完成</span></div></div>
+        <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h2 class="panel-title">${state.taskUser}的达人专场任务</h2></div>${badge(`${myItems.length} 条任务`, "orange")}</div>
+        <div class="panel-body">
+          ${myItems.length ? `<div class="my-task-list">${myItems.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
+        </div>
+      </section>`;
+    }
+
+    function taskStatusFilterButton(key, label, count) {
+      return `<button class="seg ${state.taskStatusFilter === key ? "active" : ""}" data-task-status-filter="${key}">${label} ${count}</button>`;
+    }
+
+    function filteredMyTaskItems(items) {
+      const statusMap = {
+        pending: "待处理",
+        running: "进行中",
+        reviewing: "待审核",
+        done: "已完成",
+        delayed: "延期中"
+      };
+      const keyword = state.taskSearch.trim().toLowerCase();
+      return items.filter(item => {
+        const statusMatched = state.taskStatusFilter === "all" || item.task.status === statusMap[state.taskStatusFilter];
+        const moduleMatched = state.taskModuleFilter === "all" || item.moduleKey === state.taskModuleFilter;
+        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner].join(" ").toLowerCase();
+        return statusMatched && moduleMatched && (!keyword || searchText.includes(keyword));
+      });
+    }
+
+    function myTaskCard(item) {
+      const { record, moduleKey, task, key } = item;
+      const module = modules[moduleKey];
+      const statusCls = taskStatusClass(task.status);
+      const actionContent = task.status === "已完成"
+        ? `<span class="muted">负责人已审核通过</span>`
+        : task.status === "待审核"
+          ? `<span class="muted">等待${module.owner}审核</span>`
+          : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn primary" data-complete-task="${key}">提交完成</button>`;
+      return `<article class="my-task-card">
+        <div class="my-task-head">
+          <div>
+            <h3>${record.title}</h3>
+            <div class="meta"><span>${record.talent}</span><span>${record.liveTime}</span><span>${record.product}</span>${badge(supportNeeds[moduleKey].title, module.cls)}</div>
+          </div>
+          ${badge(task.status, statusCls)}
+        </div>
+        <div class="my-task-body">
+          <div class="row">
+            <div>
+              <div class="task-name">${task.title}</div>
+              <div class="meta"><span>负责人：${module.owner}</span><span>完成时间：${formatDate(task.due)}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}${task.reviewedAt ? `<span>审核于：${formatDate(task.reviewedAt)}</span>` : ""}${task.rejectedAt ? `<span>驳回于：${formatDate(task.rejectedAt)}</span>` : ""}</div>
+            </div>
+          </div>
+          <div class="task-note">${demandText(record, moduleKey)}</div>
+          ${taskReviewNotice(task, module)}
+          ${taskUpload(key, task)}
+          ${task.delayEditing ? delayForm(key, task) : ""}
+          <div class="my-task-actions">
+            ${actionContent}
+          </div>
+        </div>
+      </article>`;
+    }
+
+    function taskReviewNotice(task, module) {
+      if (task.status === "待审核") {
+        return `<div class="task-review-result is-reviewing">已提交给${module.owner}审核，负责人通过后任务才会进入已完成。</div>`;
+      }
+      if (task.rejectReason) {
+        return `<div class="task-review-result is-rejected">驳回原因：${task.rejectReason}</div>`;
+      }
+      if (task.status === "已完成" && task.reviewedAt) {
+        return `<div class="task-review-result is-approved">${module.owner}已审核通过，本任务已闭环。</div>`;
+      }
+      return "";
+    }
+
+    function taskUpload(key, task) {
+      const files = task.files || [];
+      return `<div class="task-upload">
+        <div class="task-upload-main">
+          <span class="task-upload-title">完成文件</span>
+          <span class="task-files">${files.length ? files.map((name, index) => `<span class="file-chip"><span class="file-chip-name">${name}</span><button class="file-remove" data-remove-task-file="${key}:${index}" aria-label="删除${name}">x</button></span>`).join("") : `<span class="muted">未上传文件</span>`}</span>
+        </div>
+        <label class="task-upload-btn">
+          上传完成文件
+          <input type="file" multiple data-task-upload="${key}">
+        </label>
+      </div>`;
+    }
+
+    function delayForm(key, task) {
+      return `<div class="delay-form">
+        <label class="task-field"><span>新的完成时间</span><input class="input" type="date" value="${task.delayDue || task.due}" data-delay-due="${key}"></label>
+        <label class="task-field"><span>延期原因</span><input class="input" value="${task.delayReason || ""}" placeholder="填写无法按期完成的原因" data-delay-reason="${key}"></label>
+        <div class="delay-form-actions"><button class="btn ghost" data-cancel-delay="${key}">取消</button><button class="btn primary" data-save-delay="${key}">保存延期</button></div>
+      </div>`;
+    }
+
+    function pageDataCenter() {
+      const items = filteredDataItems();
+      const total = items.length;
+      const done = items.filter(item => item.task.status === "已完成").length;
+      const delayed = items.filter(item => item.task.status === "延期中").length;
+      const pending = total - done;
+      const rate = total ? Math.round(done / total * 100) : 0;
+      return `${head("数据中心")}
+      ${dataToolbar()}
+      <section class="stats">
+        <div class="stat stat-orange"><div><strong>${total}</strong><span>任务总数</span></div></div>
+        <button class="stat stat-green is-clickable" data-action="openCompletedSpecials"><div><strong>${done}</strong><span>已完成</span></div></button>
+        <div class="stat stat-blue"><div><strong>${rate}%</strong><span>完成率</span></div></div>
+        <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
+      </section>
+      <section class="analysis-grid">
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">支持类型完成情况</h2>${badge(`${pending} 待处理`, pending ? "orange" : "green")}</div>
+          <div class="panel-body">${moduleCompletionBars(items)}</div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">成员任务完成情况</h2>${badge(`${ownersWithTasks(items).length} 人`, "blue")}</div>
+          <div class="panel-body">${memberCompletionBars(items)}</div>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">任务明细</h2>${badge(`${items.length} 条`, "orange")}</div>
+        <div class="panel-body table-wrap">${dataTaskTable(items)}</div>
+      </section>`;
+    }
+
+    function dataToolbar() {
+      return `<section class="panel data-filter-panel">
+        <div class="panel-body">
+          <div class="data-toolbar">
+            <label class="filter-field"><span>开始时间</span><input class="input" type="date" value="${state.dataStart}" data-data-start></label>
+            <label class="filter-field"><span>结束时间</span><input class="input" type="date" value="${state.dataEnd}" data-data-end></label>
+            <label class="filter-field"><span>支持类型</span><select class="select" data-data-module><option value="all">全部</option>${moduleOrder.map(key => `<option value="${key}" ${state.dataModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
+            <label class="filter-field"><span>成员</span><select class="select" data-data-member><option value="all">全部</option>${ownersWithTasks(allDispatchTaskItems()).map(owner => `<option ${state.dataMember === owner ? "selected" : ""}>${owner}</option>`).join("")}</select></label>
+            <label class="filter-field"><span>状态</span><select class="select" data-data-status>${["all:全部", "待处理:待处理", "进行中:进行中", "待审核:待审核", "延期中:延期中", "已完成:已完成"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.dataStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
+            <div class="range-actions"><button class="btn ghost" data-data-range="week">近 7 天</button><button class="btn ghost" data-data-range="month">本月</button><button class="btn ghost" data-data-range="all">全部</button></div>
+          </div>
+        </div>
+      </section>`;
+    }
+
+    function filteredDataItems() {
+      return allDispatchTaskItems().filter(item => {
+        const date = taskDataDate(item.task);
+        const inRange = date >= state.dataStart && date <= state.dataEnd;
+        const moduleMatched = state.dataModule === "all" || item.moduleKey === state.dataModule;
+        const memberMatched = state.dataMember === "all" || item.task.owner === state.dataMember;
+        const statusMatched = state.dataStatus === "all" || item.task.status === state.dataStatus;
+        return inRange && moduleMatched && memberMatched && statusMatched;
+      });
+    }
+
+    function taskDataDate(task) {
+      return task.completedAt || task.reviewedAt || task.submittedAt || task.delayDue || task.due || "2026-06-01";
+    }
+
+    function ownersWithTasks(items) {
+      return [...new Set(items.map(item => item.task.owner).filter(owner => owner && owner !== "待分配"))];
+    }
+
+    function moduleCompletionBars(items) {
+      return `<div class="bar-list">${moduleOrder.map(key => {
+        const list = items.filter(item => item.moduleKey === key);
+        const done = list.filter(item => item.task.status === "已完成").length;
+        const pct = list.length ? Math.round(done / list.length * 100) : 0;
+        return barRow(supportNeeds[key].title, pct, `${done}/${list.length}`, modules[key].cls);
+      }).join("")}</div>`;
+    }
+
+    function memberCompletionBars(items) {
+      const owners = ownersWithTasks(items);
+      if (!owners.length) return `<div class="upload"><div><strong>暂无数据</strong></div></div>`;
+      return `<div class="bar-list">${owners.map(owner => {
+        const list = items.filter(item => item.task.owner === owner);
+        const done = list.filter(item => item.task.status === "已完成").length;
+        const pct = list.length ? Math.round(done / list.length * 100) : 0;
+        return barRow(owner, pct, `${done}/${list.length}`, "blue");
+      }).join("")}</div>`;
+    }
+
+    function barRow(label, pct, value, cls = "") {
+      return `<div class="bar-row"><strong>${label}</strong><div class="bar-track"><span class="bar-fill ${cls}" style="width:${pct}%"></span></div><span>${value}</span></div>`;
+    }
+
+    function completedSpecialRows() {
+      return records
+        .filter(record => record.completedDate && record.completedDate >= state.dataStart && record.completedDate <= state.dataEnd)
+        .map(record => ({
+          date: record.completedDate,
+          title: record.title,
+          talent: record.talent,
+          uid: record.uid,
+          business: record.business || "待填写",
+          expectedGmv: record.expectedGmv || record.sales,
+          actualGmv: record.actualGmv || "待回填",
+          taskOwners: completedSpecialTaskOwners(record)
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    function completedSpecialTaskOwners(record) {
+      const recordTasks = dispatchTasks[record.id] || {};
+      return moduleOrder.map(moduleKey => {
+        const list = recordTasks[moduleKey] || [];
+        if (!list.length) return "";
+        const owners = list.map(task => `${task.title}-${task.owner || "待分配"}`).join("；");
+        return `${supportNeeds[moduleKey].title}：${owners}`;
+      }).filter(Boolean).join("；");
+    }
+
+    function completedSpecialTable(rows) {
+      if (!rows.length) return `<div class="upload"><div><strong>当前时间范围内暂无已完成专场</strong></div></div>`;
+      return `<table><colgroup><col style="width:12%"><col style="width:20%"><col style="width:10%"><col style="width:12%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:16%"></colgroup>
+        <thead><tr><th>完成日期</th><th>专场名</th><th>达人名称</th><th>达人UID</th><th>跟进商务</th><th>预计GMV</th><th>实际GMV</th><th>子任务负责人</th></tr></thead>
+        <tbody>${rows.map(row => `<tr><td>${formatDate(row.date)}</td><td><strong>${row.title}</strong></td><td>${row.talent}</td><td>${row.uid}</td><td>${row.business}</td><td>${row.expectedGmv}</td><td>${row.actualGmv}</td><td>${row.taskOwners || "暂无子任务"}</td></tr>`).join("")}</tbody></table>`;
+    }
+
+    function dataTaskTable(items) {
+      if (!items.length) return `<div class="upload"><div><strong>暂无数据</strong></div></div>`;
+      return `<table><colgroup><col style="width:26%"><col style="width:16%"><col style="width:13%"><col style="width:13%"><col style="width:14%"><col style="width:18%"></colgroup>
+        <thead><tr><th>任务</th><th>达人专场</th><th>支持类型</th><th>成员</th><th>完成时间</th><th>状态</th></tr></thead>
+        <tbody>${items.map(item => {
+          const cls = taskStatusClass(item.task.status);
+          return `<tr><td><strong>${item.task.title}</strong></td><td>${item.record.title}</td><td>${supportNeeds[item.moduleKey].title}</td><td>${item.task.owner}</td><td>${formatDate(taskDataDate(item.task))}</td><td>${badge(item.task.status, cls)}</td></tr>`;
+        }).join("")}</tbody></table>`;
+    }
+
+    function taskSuggestion(module) {
+      return {
+        content: "补充预热视频脚本并确认出镜",
+        edit: "剪辑千川视频第一版",
+        ads: "核验千川合作码并建立人群包",
+        ops: "确认样品签收与福利品库存"
+      }[module];
+    }
+
+    function taskTable(list) {
+      return `<table><colgroup><col style="width:48px"><col style="width:42%"><col style="width:16%"><col style="width:15%"><col style="width:15%"><col style="width:12%"></colgroup>
+        <thead><tr><th></th><th>任务</th><th>组员</th><th>完成时间</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>${list.map(task => `<tr>
+          <td><input class="check" type="checkbox" ${task.done ? "checked" : ""} data-task-done="${task.id}"></td>
+          <td><strong>${task.title}</strong><div class="muted">${modules[task.module].name}</div></td>
+          <td>${task.owner}</td><td>${task.due}</td>
+          <td>${badge(task.status, task.status === "已完成" ? "green" : task.status.includes("延期") ? "red" : "orange")}</td>
+          <td><button class="btn ghost" data-task="${task.id}">详情</button></td>
+        </tr>`).join("")}</tbody></table>`;
+    }
+
+    function pageReview() {
+      const done = tasks.filter(item => item.done).length;
+      return `${head("数据复盘", `<button class="btn primary" data-action="archive">生成复盘报告</button>`)}
+      <section class="stats">
+        <div class="stat stat-orange"><div><strong>¥407万</strong><span>累计预估销售额</span></div></div>
+        <div class="stat stat-green"><div><strong>${Math.round(done / tasks.length * 100)}%</strong><span>任务完成率</span></div></div>
+        <div class="stat stat-blue"><div><strong>${needs.length}</strong><span>识别需求总数</span></div></div>
+        <div class="stat stat-red"><div><strong>${tasks.filter(t => t.status.includes("延期")).length}</strong><span>延期任务</span></div></div>
+      </section>
+      <section class="grid-main">
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">四类需求任务完成情况</h2>${badge("复盘", "orange")}</div>
+          <div class="panel-body"><div class="chart">${Object.entries(modules).map(([key, module]) => {
+            const list = tasks.filter(task => task.module === key);
+            const count = list.filter(task => task.done).length;
+            return `<div class="chart-item"><div class="chart-bar" style="height:${Math.max(24, count * 72)}px"></div><strong>${module.name}</strong><span>${count}/${list.length} 已完成</span></div>`;
+          }).join("")}</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">复盘结论</h2></div>
+          <div class="panel-body stack">
+            ${field("主要卡点", "样品签收延期、千川合作码需二次核验、主推产品变更影响脚本与素材。")}
+            ${field("流程建议", "专场记录表字段需标准化，低置信字段进入人工确认后再派工。")}
+            ${field("可复用经验", "同类美妆修护达人可复用预热脚本结构和投放人群包。")}
+          </div>
+        </div>
+      </section>
+      <section class="panel" style="margin-top:18px">
+        <div class="panel-head"><h2 class="panel-title">专场复盘汇总</h2><span class="badge green">全量记录</span></div>
+        <div class="panel-body table-wrap">
+          <table><thead><tr><th>专场</th><th>状态</th><th>开播时间</th><th>预估销售额</th><th>进度</th></tr></thead><tbody>
+            ${records.map(record => `<tr><td><strong>${record.title}</strong></td><td>${badge(record.status, record.status === "待复盘" ? "green" : "orange")}</td><td>${record.liveTime}</td><td>${record.sales}</td><td><div class="progress"><span style="width:${record.progress}%"></span></div></td></tr>`).join("")}
+          </tbody></table>
+        </div>
+      </section>`;
+    }
+
+    function bind() {
+      document.querySelectorAll("[data-view]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.view; render(); }));
+      document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.go; render(); }));
+      document.querySelectorAll("[data-open-project]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.openProject; state.view = "detail"; render(); }));
+      document.querySelectorAll("[data-record]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.record; render(); }));
+      document.querySelectorAll("[data-list-filter]").forEach(btn => btn.addEventListener("click", () => { state.listFilter = btn.dataset.listFilter; render(); }));
+      document.querySelectorAll("[data-list-search]").forEach(input => input.addEventListener("input", () => {
+        const cursor = input.selectionStart;
+        state.listSearch = input.value;
+        render();
+        const next = document.querySelector("[data-list-search]");
+        if (next) {
+          next.focus();
+          next.setSelectionRange(cursor, cursor);
+        }
+      }));
+      document.querySelectorAll("[data-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.module; state.dispatchOpen = ""; if (btn.dataset.go) state.view = btn.dataset.go; render(); }));
+      document.querySelectorAll("[data-need]").forEach(btn => btn.addEventListener("click", () => openNeed(btn.dataset.need)));
+      document.querySelectorAll("[data-task]").forEach(btn => btn.addEventListener("click", () => openTask(btn.dataset.task)));
+      document.querySelectorAll("[data-task-done]").forEach(input => input.addEventListener("change", () => toggleTask(input.dataset.taskDone, input.checked)));
+      document.querySelectorAll("[data-node-detail]").forEach(btn => btn.addEventListener("click", () => openNode(btn.dataset.nodeDetail)));
+      document.querySelectorAll("[data-toggle-dispatch]").forEach(btn => btn.addEventListener("click", () => {
+        state.dispatchOpen = state.dispatchOpen === btn.dataset.toggleDispatch ? "" : btn.dataset.toggleDispatch;
+        render();
+      }));
+      document.querySelectorAll("[data-subtask-title]").forEach(input => input.addEventListener("input", () => {
+        const [recordId, moduleKey, index] = input.dataset.subtaskTitle.split(":");
+        tasksFor(recordId, moduleKey)[Number(index)].title = input.value;
+      }));
+      document.querySelectorAll("[data-subtask-owner]").forEach(input => input.addEventListener("change", () => {
+        const [recordId, moduleKey, index] = input.dataset.subtaskOwner.split(":");
+        tasksFor(recordId, moduleKey)[Number(index)].owner = input.value;
+      }));
+      document.querySelectorAll("[data-subtask-due]").forEach(input => input.addEventListener("change", () => {
+        const [recordId, moduleKey, index] = input.dataset.subtaskDue.split(":");
+        tasksFor(recordId, moduleKey)[Number(index)].due = input.value;
+      }));
+      document.querySelectorAll("[data-add-subtask]").forEach(btn => btn.addEventListener("click", () => addDispatchTask(btn.dataset.addSubtask)));
+      document.querySelectorAll("[data-remove-subtask]").forEach(btn => btn.addEventListener("click", () => removeDispatchTask(btn.dataset.removeSubtask)));
+      document.querySelectorAll("[data-assign-owner]").forEach(input => input.addEventListener("change", () => {
+        const [recordId, moduleKey] = input.dataset.assignOwner.split(":");
+        assignmentFor(recordId, moduleKey).owner = input.value;
+      }));
+      document.querySelectorAll("[data-assign-due]").forEach(input => input.addEventListener("change", () => {
+        const [recordId, moduleKey] = input.dataset.assignDue.split(":");
+        assignmentFor(recordId, moduleKey).due = input.value;
+      }));
+      document.querySelectorAll("[data-publish-dispatch]").forEach(btn => btn.addEventListener("click", () => publishDispatch(btn.dataset.publishDispatch)));
+      document.querySelectorAll("[data-detail-support-toggle]").forEach(input => input.addEventListener("change", () => {
+        supportNeeds[input.dataset.detailSupportToggle].enabled = input.checked;
+        render();
+      }));
+      document.querySelectorAll("[data-special-detail]").forEach(input => input.addEventListener("input", () => {
+        const [groupIndex, fieldIndex] = input.dataset.specialDetail.split(":").map(Number);
+        specialDetailGroups[groupIndex].fields[fieldIndex].value = input.value;
+      }));
+      document.querySelectorAll("[data-drawer]").forEach(btn => btn.addEventListener("click", () => openRecordDrawer()));
+      document.querySelectorAll("[data-task-user]").forEach(input => input.addEventListener("change", () => {
+        state.taskUser = input.value;
+        render();
+      }));
+      document.querySelectorAll("[data-task-status-filter]").forEach(btn => btn.addEventListener("click", () => {
+        state.taskStatusFilter = btn.dataset.taskStatusFilter;
+        render();
+      }));
+      document.querySelectorAll("[data-task-module-filter]").forEach(input => input.addEventListener("change", () => {
+        state.taskModuleFilter = input.value;
+        render();
+      }));
+      document.querySelectorAll("[data-task-search]").forEach(input => input.addEventListener("input", () => {
+        const cursor = input.selectionStart;
+        state.taskSearch = input.value;
+        render();
+        const next = document.querySelector("[data-task-search]");
+        if (next) {
+          next.focus();
+          next.setSelectionRange(cursor, cursor);
+        }
+      }));
+      document.querySelectorAll("[data-complete-task]").forEach(btn => btn.addEventListener("click", () => completeMyTask(btn.dataset.completeTask)));
+      document.querySelectorAll("[data-task-upload]").forEach(input => input.addEventListener("change", () => uploadTaskFiles(input.dataset.taskUpload, input.files)));
+      document.querySelectorAll("[data-remove-task-file]").forEach(btn => btn.addEventListener("click", () => removeTaskFile(btn.dataset.removeTaskFile)));
+      document.querySelectorAll("[data-review-comment]").forEach(input => input.addEventListener("input", () => {
+        const task = taskByKey(input.dataset.reviewComment);
+        if (task) task.reviewComment = input.value;
+      }));
+      document.querySelectorAll("[data-review-approve]").forEach(btn => btn.addEventListener("click", () => approveTask(btn.dataset.reviewApprove)));
+      document.querySelectorAll("[data-review-reject]").forEach(btn => btn.addEventListener("click", () => rejectTask(btn.dataset.reviewReject)));
+      document.querySelectorAll("[data-delay-task]").forEach(btn => btn.addEventListener("click", () => startDelayTask(btn.dataset.delayTask)));
+      document.querySelectorAll("[data-delay-due]").forEach(input => input.addEventListener("change", () => {
+        const task = taskByKey(input.dataset.delayDue);
+        if (task) task.delayDue = input.value;
+      }));
+      document.querySelectorAll("[data-delay-reason]").forEach(input => input.addEventListener("input", () => {
+        const task = taskByKey(input.dataset.delayReason);
+        if (task) task.delayReason = input.value;
+      }));
+      document.querySelectorAll("[data-cancel-delay]").forEach(btn => btn.addEventListener("click", () => cancelDelayTask(btn.dataset.cancelDelay)));
+      document.querySelectorAll("[data-save-delay]").forEach(btn => btn.addEventListener("click", () => saveDelayTask(btn.dataset.saveDelay)));
+      document.querySelectorAll("[data-data-start]").forEach(input => input.addEventListener("change", () => { state.dataStart = input.value; render(); }));
+      document.querySelectorAll("[data-data-end]").forEach(input => input.addEventListener("change", () => { state.dataEnd = input.value; render(); }));
+      document.querySelectorAll("[data-data-module]").forEach(input => input.addEventListener("change", () => { state.dataModule = input.value; render(); }));
+      document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
+      document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
+      document.querySelectorAll("[data-data-range]").forEach(btn => btn.addEventListener("click", () => setDataRange(btn.dataset.dataRange)));
+      document.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
+    }
+
+    function setDataRange(range) {
+      if (range === "week") {
+        state.dataStart = "2026-06-02";
+        state.dataEnd = "2026-06-08";
+      }
+      if (range === "month") {
+        state.dataStart = "2026-06-01";
+        state.dataEnd = "2026-06-30";
+      }
+      if (range === "all") {
+        state.dataStart = "2026-05-01";
+        state.dataEnd = "2026-06-30";
+      }
+      render();
+    }
+
+    function addDispatchTask(key) {
+      const [recordId, moduleKey] = key.split(":");
+      const list = tasksFor(recordId, moduleKey);
+      const templates = taskTemplates[moduleKey];
+      const template = templates[list.length % templates.length];
+      list.push({
+        title: template,
+        owner: moduleMembers[moduleKey][0],
+        due: dispatchDue(recordId, moduleKey)
+      });
+      state.dispatchOpen = key;
+      render();
+    }
+
+    function removeDispatchTask(key) {
+      const [recordId, moduleKey, index] = key.split(":");
+      const list = tasksFor(recordId, moduleKey);
+      list.splice(Number(index), 1);
+      syncAssignmentStatus(recordId, moduleKey);
+      state.dispatchOpen = `${recordId}:${moduleKey}`;
+      toast("已删除该条任务");
+      render();
+    }
+
+    function taskByKey(key) {
+      const [recordId, moduleKey, index] = key.split(":");
+      return tasksFor(recordId, moduleKey)[Number(index)];
+    }
+
+    function uploadTaskFiles(key, fileList) {
+      const task = taskByKey(key);
+      if (!task) return;
+      const names = Array.from(fileList || []).map(file => file.name).filter(Boolean);
+      if (!names.length) return;
+      task.files = [...(task.files || []), ...names];
+      toast("完成文件已上传");
+      render();
+    }
+
+    function removeTaskFile(fileKey) {
+      const parts = fileKey.split(":");
+      const fileIndex = Number(parts.pop());
+      const task = taskByKey(parts.join(":"));
+      if (!task || !task.files || Number.isNaN(fileIndex)) return;
+      task.files.splice(fileIndex, 1);
+      toast("已删除上传文件");
+      render();
+    }
+
+    function completeMyTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      if (!task.files || !task.files.length) {
+        toast("请先上传完成文件");
+        return;
+      }
+      task.status = "待审核";
+      task.submittedAt = actionDate;
+      delete task.completedAt;
+      delete task.reviewedAt;
+      delete task.reviewResult;
+      delete task.rejectedAt;
+      delete task.rejectReason;
+      task.reviewComment = "";
+      syncAssignmentStatusFromTaskKey(key);
+      toast("已提交负责人审核");
+      render();
+    }
+
+    function approveTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      task.status = "已完成";
+      task.completedAt = actionDate;
+      task.reviewedAt = actionDate;
+      task.reviewResult = "通过";
+      delete task.rejectReason;
+      delete task.rejectedAt;
+      task.reviewComment = "";
+      syncAssignmentStatusFromTaskKey(key);
+      toast("审核通过，任务已完成");
+      render();
+    }
+
+    function rejectTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      const reason = (task.reviewComment || "").trim();
+      if (!reason) {
+        toast("请先填写驳回原因");
+        return;
+      }
+      task.status = "进行中";
+      task.rejectReason = reason;
+      task.rejectedAt = actionDate;
+      delete task.completedAt;
+      delete task.reviewedAt;
+      delete task.reviewResult;
+      task.reviewComment = "";
+      syncAssignmentStatusFromTaskKey(key);
+      toast("已驳回，任务退回组员修改");
+      render();
+    }
+
+    function syncAssignmentStatusFromTaskKey(key) {
+      const [recordId, moduleKey] = key.split(":");
+      syncAssignmentStatus(recordId, moduleKey);
+    }
+
+    function syncAssignmentStatus(recordId, moduleKey) {
+      const list = tasksFor(recordId, moduleKey);
+      const assignment = assignmentFor(recordId, moduleKey);
+      assignment.due = dispatchDue(recordId, moduleKey);
+      if (!list.length) {
+        assignment.status = "待派发";
+        return;
+      }
+      if (list.every(task => task.status === "已完成")) {
+        assignment.status = "已完成";
+        return;
+      }
+      if (list.some(task => task.status === "待审核")) {
+        assignment.status = "待审核";
+        return;
+      }
+      if (list.some(task => task.status === "延期中")) {
+        assignment.status = "延期中";
+        return;
+      }
+      if (assignment.status !== "待派发") assignment.status = "已派发";
+    }
+
+    function startDelayTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      if (!task.delayEditing) {
+        task.delayBackup = {
+          status: task.status,
+          due: task.due,
+          originalDue: task.originalDue,
+          delayDue: task.delayDue,
+          delayReason: task.delayReason
+        };
+      }
+      task.delayEditing = true;
+      task.status = "延期中";
+      task.originalDue = task.originalDue || task.due;
+      task.delayDue = task.delayDue || task.due;
+      task.delayReason = task.delayReason || "";
+      syncAssignmentStatusFromTaskKey(key);
+      render();
+    }
+
+    function cancelDelayTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      if (task.delayBackup) {
+        task.status = task.delayBackup.status;
+        task.due = task.delayBackup.due;
+        task.originalDue = task.delayBackup.originalDue;
+        task.delayDue = task.delayBackup.delayDue;
+        task.delayReason = task.delayBackup.delayReason;
+      }
+      delete task.delayEditing;
+      delete task.delayBackup;
+      syncAssignmentStatusFromTaskKey(key);
+      toast("已取消延期编辑");
+      render();
+    }
+
+    function saveDelayTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      if (!task.delayDue || !task.delayReason.trim()) {
+        toast("请填写新的完成时间和延期原因");
+        return;
+      }
+      task.due = task.delayDue;
+      task.status = "延期中";
+      delete task.delayEditing;
+      delete task.delayBackup;
+      syncAssignmentStatusFromTaskKey(key);
+      toast("延期信息已回填");
+      render();
+    }
+
+    function publishDispatch(key) {
+      const [recordId, moduleKey] = key.split(":");
+      const assignment = assignmentFor(recordId, moduleKey);
+      const taskList = tasksFor(recordId, moduleKey);
+      assignment.status = "已派发";
+      assignment.owner = taskList[0]?.owner || assignment.owner;
+      assignment.due = dispatchDue(recordId, moduleKey);
+      const record = records.find(item => item.id === recordId);
+      if (record && record.status === "待识别") record.status = "派工中";
+      toast(`已发布${supportNeeds[moduleKey].title} ${taskList.length} 条任务`);
+      render();
+    }
+
+    function action(name) {
+      if (name === "newRecord") toast("已创建一条待填写的专场记录");
+      if (name === "recognizeDoc") toast("AI 已识别字段，并生成四类需求池建议");
+      if (name === "createProjectFromEntry") {
+        const newId = `ZC-${Date.now()}`;
+        records.unshift({
+          id: newId,
+          title: "安然 6/20 胶原蛋白套盒专场",
+          talent: "安然",
+          uid: "dy987650",
+          urgency: entryUrgency(),
+          status: "待识别",
+          liveTime: "2026-06-20 20:00",
+          business: "商务",
+          expectedGmv: "¥180万",
+          actualGmv: "待回填",
+          sales: "¥180万",
+          product: "胶原蛋白套盒",
+          mechanism: "买二送一，前 20 分钟加赠旅行装",
+          source: "商务通过文档录入发布专场需求，待各支持组负责人派工。",
+          progress: 25,
+          nodesDone: 1,
+          nodesTotal: 4
+        });
+        state.selected = newId;
+        state.module = "content";
+        state.view = "dispatch";
+        toast("需求已发布，进入支持组派工");
+        render();
+        return;
+      }
+      if (name === "runAnalysis") toast("已重新识别字段，并刷新四类需求判断");
+      if (name === "archive") toast("复盘报告已生成");
+      if (name === "openCompletedSpecials") {
+        openCompletedSpecialsDrawer();
+        return;
+      }
+      if (name === "downloadOrders") {
+        downloadOrders();
+        return;
+      }
+      if (name === "openLog") {
+        openLogDrawer();
+        return;
+      }
+      if (name === "createTask") {
+        const moduleNeeds = needs.filter(item => item.module === state.module);
+        if (!moduleNeeds.length) { toast("当前模块暂无需求"); return; }
+        const task = {
+          id: `T-${Date.now()}`,
+          need: moduleNeeds[0].id,
+          module: state.module,
+          title: $("#taskTitle") ? $("#taskTitle").value : taskSuggestion(state.module),
+          owner: $("#taskOwner") ? $("#taskOwner").value : "待分配",
+          due: $("#taskDue") ? $("#taskDue").value : "06/17",
+          status: "待执行",
+          done: false
+        };
+        tasks.push(task);
+        moduleNeeds[0].status = "已派工";
+        toast("已为组员安排任务");
+      }
+      render();
+    }
+
+    function openCompletedSpecialsDrawer() {
+      const rows = completedSpecialRows();
+      openDrawer(
+        "每日完成专场统计",
+        `<div class="stack"><div class="meta">${badge(`${rows.length} 个专场`, rows.length ? "green" : "")}<span>${formatDate(state.dataStart)} - ${formatDate(state.dataEnd)}</span></div><div class="table-wrap">${completedSpecialTable(rows)}</div></div>`,
+        `<button class="btn ghost" data-close>关闭</button><button class="btn primary" data-action="downloadOrders">下载订单</button>`,
+        true
+      );
+    }
+
+    function downloadOrders() {
+      const rows = completedSpecialRows();
+      if (!rows.length) {
+        toast("当前时间范围内暂无可下载订单");
+        return;
+      }
+      const headers = ["完成日期", "专场名", "达人名称", "达人UID", "跟进商务", "预计GMV", "实际GMV", "子任务负责人"];
+      const csvRows = rows.map(row => [formatDate(row.date), row.title, row.talent, row.uid, row.business, row.expectedGmv, row.actualGmv, row.taskOwners || "暂无子任务"]);
+      const csv = [headers, ...csvRows].map(row => row.map(csvCell).join(",")).join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `达人专场订单_${state.dataStart}_${state.dataEnd}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast("订单文件已生成");
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "");
+      return `"${text.replaceAll('"', '""')}"`;
+    }
+
+    function entryUrgency() {
+      const infoGroup = specialDetailGroups.find(group => group.title === "专场信息");
+      const urgencyField = infoGroup ? infoGroup.fields.find(field => field.label === "紧急程度") : null;
+      const value = urgencyField ? urgencyField.value.trim().toUpperCase() : "";
+      return ["S", "A", "B", "C"].includes(value) ? value : "B";
+    }
+
+    function openNode(id) {
+      const record = selectedRecord();
+      const node = projectTaskRecords(record).find(item => item.id === id);
+      if (!node) return;
+      openDrawer(node.name, `<div class="stack">
+        ${field("所属专场", record.title)}
+        ${field("支持模块", node.moduleName)}
+        ${field("模块负责人", node.moduleOwner)}
+        ${field("执行组员", node.owner)}
+        ${field("计划完成", formatDate(node.fullDate))}
+        ${field("任务说明", node.note)}
+        ${field("完成状态", node.status)}
+      </div>`);
+    }
+
+    function openNeed(id) {
+      const need = needs.find(item => item.id === id);
+      const module = modules[need.module];
+      openDrawer(need.title, `<div class="stack">${field("需求模块", module.name)}${field("负责人", module.owner)}${field("识别依据", need.source)}${field("识别置信度", `${need.confidence}%`)}${field("当前状态", need.status)}</div>`, `<button class="btn ghost" data-close>关闭</button><button class="btn primary" data-jump-module="${need.module}">去派工</button>`);
+    }
+
+    function openTask(id) {
+      const task = tasks.find(item => item.id === id);
+      openDrawer(task.title, `<div class="stack">${field("所属模块", modules[task.module].name)}${field("组员", task.owner)}${field("完成时间", task.due)}${field("当前状态", task.status)}</div>`, `<button class="btn ghost" data-close>关闭</button><button class="btn primary" data-complete="${task.id}">${task.done ? "恢复任务" : "标记完成"}</button>`);
+    }
+
+    function openRecordDrawer() {
+      const record = selectedRecord();
+      openDrawer("专场记录表原文", `<div class="stack">${field("达人", record.talent)}${field("达人 UID", record.uid)}${field("紧急程度", record.urgency || "B")}${field("开播时间", record.liveTime)}${field("主推产品", record.product)}${field("主推机制", record.mechanism)}${field("记录来源", "商务填写专场记录表 / 飞书表格同步")}</div>`);
+    }
+
+    function openLogDrawer() {
+      openDrawer("项目事件日志", `<div class="stack">
+        <div style="display:grid;gap:18px">${logs.map(item => `<div style="display:grid;grid-template-columns:18px 1fr;gap:14px;align-items:start">
+          <span style="width:14px;height:14px;border-radius:50%;background:${item.color === "green" ? "var(--green)" : "var(--orange)"};margin-top:5px"></span>
+          <div><div class="muted">${item.time}</div><strong>${item.user} ${item.action}</strong></div>
+        </div>`).join("")}</div>
+      </div>`);
+    }
+
+    function toggleTask(id, done) {
+      const task = tasks.find(item => item.id === id);
+      task.done = done;
+      task.status = done ? "已完成" : "进行中";
+      toast(done ? "任务已标记完成" : "任务已恢复为进行中");
+      render();
+    }
+
+    function openDrawer(title, body, foot = `<button class="btn primary" data-close>关闭</button>`, wide = false) {
       $("#drawerTitle").textContent = title;
       $("#drawerBody").innerHTML = body;
       $("#drawerFoot").innerHTML = foot;
-      $("#drawer").classList.add("open");
-      $("#drawer").setAttribute("aria-hidden", "false");
-      $("#mask").classList.add("open");
+      $("#drawer").classList.toggle("wide", wide);
+      $("#drawer").classList.add("show");
+      $("#mask").classList.add("show");
+      bindDrawer();
     }
 
     function closeDrawer() {
-      $("#drawer").classList.remove("open");
-      $("#drawer").setAttribute("aria-hidden", "true");
-      $("#mask").classList.remove("open");
+      $("#drawer").classList.remove("show");
+      $("#drawer").classList.remove("wide");
+      $("#mask").classList.remove("show");
     }
 
-    function toast(text) {
+    function bindDrawer() {
+      document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", closeDrawer));
+      document.querySelectorAll("#drawer [data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
+      document.querySelectorAll("[data-jump-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.jumpModule; state.view = "dispatch"; closeDrawer(); render(); }));
+      document.querySelectorAll("[data-complete]").forEach(btn => btn.addEventListener("click", () => { const task = tasks.find(item => item.id === btn.dataset.complete); task.done = !task.done; task.status = task.done ? "已完成" : "进行中"; closeDrawer(); toast(task.done ? "任务已完成" : "任务已恢复"); render(); }));
+    }
+
+    function toast(message) {
       const el = $("#toast");
-      el.textContent = text;
+      el.textContent = message;
       el.classList.add("show");
-      clearTimeout(toast.timer);
-      toast.timer = setTimeout(() => el.classList.remove("show"), 1800);
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
     }
-
-    function openTask(taskId) {
-      const task = tasks.find(item => item.id === taskId);
-      if (!task) return;
-      const record = records.find(item => item.id === task.record);
-      openDrawer("任务详情", `
-        ${field("任务名称", task.title, "wide")}
-        <div class="field-grid">
-          ${field("所属排期", record ? record.title : "-")}
-          ${field("模块", task.module)}
-          ${field("负责人", task.owner)}
-          ${field("截止时间", task.due)}
-          ${field("当前状态", task.status)}
-          ${field("任务编号", task.id)}
-        </div>
-      `, `<button class="btn ghost" data-action="drawerClose">取消</button><button class="btn primary" data-action="taskDone">标记完成</button>`);
-    }
-
-    document.addEventListener("click", event => {
-      const view = event.target.closest("[data-view]");
-      if (view) {
-        state.view = view.dataset.view;
-        render();
-        return;
-      }
-
-      const filter = event.target.closest("[data-list-filter], [data-stat-filter]");
-      if (filter) {
-        state.listFilter = filter.dataset.listFilter || filter.dataset.statFilter;
-        state.view = "overview";
-        render();
-        return;
-      }
-
-      const openProject = event.target.closest("[data-open-project]");
-      if (openProject) {
-        state.selected = openProject.dataset.openProject;
-        state.view = "detail";
-        render();
-        return;
-      }
-
-      const taskOpen = event.target.closest("[data-task-open]");
-      if (taskOpen) {
-        openTask(taskOpen.dataset.taskOpen);
-        return;
-      }
-
-      const actionEl = event.target.closest("[data-action]");
-      if (!actionEl) return;
-      const action = actionEl.dataset.action;
-      const actions = {
-        goOverview: () => { state.view = "overview"; render(); },
-        newSchedule: () => {
-          state.view = "entry";
-          render();
-          toast("已进入新建排期");
-        },
-        recognizeDoc: () => toast("已识别客户 Brief，并填充排期字段"),
-        createFromEntry: () => {
-          state.view = "dispatch";
-          render();
-          toast("需求已发布，等待派工");
-        },
-        saveDraft: () => toast("草稿已暂存"),
-        confirmSchedule: () => toast("排期已确认，任务同步给执行团队"),
-        export: () => toast("排期数据已生成导出任务"),
-        exportReview: () => toast("复盘报表已生成"),
-        batchAssign: () => toast("已根据团队负载重新计算派工"),
-        notifyOwners: () => toast("已通知相关负责人"),
-        syncCRM: () => toast("CRM 数据同步完成"),
-        addTask: () => openDrawer("新增任务", `
-          ${field("任务名称", "直播前 3 天完成预热素材", "wide")}
-          <div class="field-grid">
-            ${field("所属模块", "内容制作")}
-            ${field("负责人", "林悦")}
-            ${field("截止时间", "06-18 18:00")}
-            ${field("优先级", "A")}
-          </div>
-        `),
-        stepDetail: () => {
-          const step = steps.find(item => item.id === actionEl.dataset.step);
-          if (step) openDrawer(step.title, `${field("节点说明", step.desc, "wide")}${field("当前处理人", selectedRecord().owner)}${field("关联排期", selectedRecord().title)}`);
-        },
-        workbench: () => toast("已返回排期工作台首页"),
-        drawerClose: closeDrawer,
-        drawerOk: () => { closeDrawer(); toast("已保存"); },
-        taskDone: () => { closeDrawer(); toast("任务已标记完成"); }
-      };
-      if (actions[action]) actions[action]();
-    });
-
-    document.addEventListener("input", event => {
-      if (event.target.matches("[data-list-search]")) {
-        state.listSearch = event.target.value;
-        render();
-        const input = document.querySelector("[data-list-search]");
-        if (input) {
-          input.focus();
-          input.setSelectionRange(input.value.length, input.value.length);
-        }
-      }
-    });
-
-    document.addEventListener("change", event => {
-      const support = event.target.closest("[data-support]");
-      if (support) {
-        state.support[support.dataset.support] = support.checked;
-        toast(support.checked ? "已启用协同支持" : "已关闭协同支持");
-      }
-    });
 
     $("#drawerClose").addEventListener("click", closeDrawer);
     $("#mask").addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeDrawer(); });
     render();
   </script>
 </body>
