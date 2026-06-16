@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRM 排期管理工作台</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --line: #e4eaf2;
+      --soft: #f4f7fb;
+      --text: #00152e;
+      --muted: #8b95a6;
+      --orange: #ff7f00;
+      --orange-soft: #fff4e8;
+      --green: #2acb62;
+      --green-soft: #e7f8ec;
+      --red: #ff4246;
+      --red-soft: #ffe9eb;
+      --blue: #1583ee;
+      --blue-soft: #eaf4ff;
+      --purple: #7c5ce6;
+      --purple-soft: #f1ebff;
+      --shadow: 0 4px 14px rgba(15, 35, 65, 0.04);
+      --radius: 20px;
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-size: 14px; letter-spacing: 0; }
+    button, input, select, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; }
+
+    .shell { min-height: 100vh; display: grid; grid-template-rows: 60px 1fr; }
+    .topbar {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 0 24px;
+      background: #fff;
+      border-bottom: 1px solid #dfe6ef;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand { display: flex; align-items: center; gap: 8px; min-width: 120px; font-size: 23px; font-weight: 900; color: #050505; line-height: 1; }
+    .brand-mark { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: white; background: #ff7800; font-size: 16px; font-weight: 900; }
+    .workbench { font-size: 18px; font-weight: 800; color: #0b1424; white-space: nowrap; }
+    .nav {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav button {
+      min-height: 60px;
+      width: auto;
+      padding: 0 22px;
+      border-radius: 0;
+      background: transparent;
+      color: #8b95a6;
+      font-size: 16px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-align: center;
+      position: relative;
+    }
+    .nav button.active { color: var(--orange); background: #fff; }
+    .nav button.active:before {
+      content: "";
+      width: 56px;
+      height: 1px;
+      border-radius: 99px;
+      background: var(--orange);
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+    }
+    .top-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; color: #00152e; font-size: 16px; white-space: nowrap; }
+    .link-btn { color: #00152e; background: transparent; font-size: 16px; }
+    .admin-badge { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #9b7df5; font-size: 12px; font-weight: 900; }
+    .user { display: none; align-items: center; gap: 8px; font-size: 15px; font-weight: 750; white-space: nowrap; }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 35%, #ffd9c2 0 23%, transparent 24%),
+        radial-gradient(circle at 43% 33%, #2f241f 0 3%, transparent 4%),
+        radial-gradient(circle at 57% 33%, #2f241f 0 3%, transparent 4%),
+        radial-gradient(circle at 50% 78%, #226fca 0 30%, transparent 31%),
+        linear-gradient(135deg, #b8dbe8, #e7c5f5);
+      border: 2px solid #fff;
+      box-shadow: 0 2px 7px rgba(0,0,0,.14);
+    }
+
+    main { width: auto; max-width: none; margin: 0; padding: 30px 26px 48px; min-height: calc(100vh - 60px); }
+    .head { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 24px; }
+    .head h1 { font-size: 26px; font-weight: 500; line-height: 1.35; margin: 0; color: #00152e; }
+    .head small { display: block; margin-top: 6px; color: var(--muted); font-size: 14px; }
+    .actions { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+    .btn {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 18px;
+      border-radius: 7px;
+      background: #f7f9fc;
+      color: #00152e;
+      font-size: 16px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .btn.primary { color: white; background: var(--orange); box-shadow: none; }
+    .btn.ghost { background: #fff; border: 1px solid #d9e1eb; }
+    .btn.green { color: white; background: var(--green); }
+    .btn.red { color: white; background: var(--red); }
+    .btn:active { transform: translateY(1px); }
+
+    .process {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .step-card {
+      min-height: 120px;
+      padding: 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow);
+      text-align: left;
+      color: inherit;
+      position: relative;
+      display: grid;
+      gap: 12px;
+    }
+    .step-card.active { border-color: var(--orange); background: #fff8ef; box-shadow: none; }
+    .step-index { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; color: var(--orange); background: var(--orange-soft); font-weight: 700; }
+    .step-card strong { font-size: 16px; font-weight: 600; line-height: 1.3; }
+    .step-card span { color: var(--muted); line-height: 1.5; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat {
+      min-height: 114px;
+      padding: 22px 28px;
+      border-radius: var(--radius);
+      border: 0;
+      background: #fff;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .stat strong { display: block; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; color: #00152e; }
+    .stat span { color: var(--muted); font-size: 14px; }
+    .stat.stat-orange strong { color: var(--orange); }
+    .stat.stat-green strong { color: var(--green); }
+    .stat.stat-blue strong { color: var(--blue); }
+    .stat.stat-red strong { color: var(--red); }
+    .stat.stat-purple strong { color: var(--purple); }
+    .stat.is-clickable {
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .stat.is-clickable:hover { transform: translateY(-1px) scale(1.006); box-shadow: 0 8px 24px rgba(15, 35, 65, .08); }
+
+    .panel {
+      border: 0;
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel + .panel { margin-top: 18px; }
+    .panel-head {
+      min-height: 56px;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e8eef5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-title { margin: 0; font-size: 18px; font-weight: 500; line-height: 1.35; color: #00152e; }
+    .panel-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .panel-body { padding: 18px 20px; }
+    .panel-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+
+    .grid-2 { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 18px; align-items: start; }
+    .grid-main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
+    .detail-main { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(170px, 1fr)); gap: 14px; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .stack { display: grid; gap: 12px; }
+
+    .list-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .seg-group {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px;
+      border-radius: 15px;
+      background: #f1f4f8;
+      gap: 2px;
+    }
+    .seg {
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .seg.active { color: var(--orange); background: #fff; box-shadow: 0 2px 8px rgba(25, 36, 60, .05); }
+    .list-search {
+      width: min(360px, 100%);
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid #d9e1eb;
+      border-radius: 8px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+    }
+    .list-search input {
+      min-width: 0;
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .project-grid { display: grid; grid-template-columns: repeat(3, minmax(240px, 1fr)); gap: 16px; }
+    .project-card {
+      min-height: 218px;
+      padding: 18px;
+      border-radius: var(--radius);
+      border: 1px solid #e7edf5;
+      background: #fff;
+      color: inherit;
+      text-align: left;
+      display: grid;
+      gap: 14px;
+      box-shadow: none;
+      transition: border .16s ease, transform .16s ease, box-shadow .16s ease;
+    }
+    .project-card:hover { border-color: #ffbd80; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(15, 35, 65, .08); }
+    .project-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+    .project-main { min-width: 0; width: 0; flex: 1 1 0; }
+    .project-title-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .project-title-line h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 650;
+      line-height: 1.35;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .project-main small { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
+    .project-percent { color: var(--orange); font-size: 22px; font-weight: 750; white-space: nowrap; }
+    .project-product-line { display: flex; justify-content: space-between; align-items: center; gap: 14px; color: var(--muted); }
+    .project-product-line strong { color: var(--text); font-size: 15px; font-weight: 650; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .progress { height: 8px; border-radius: 99px; background: #edf2f7; overflow: hidden; }
+    .progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ff7f00, #ffc277); }
+    .project-card-foot, .project-meta-line { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--muted); }
+    .project-meta-left strong { color: var(--text); }
+    .project-date { color: #4c596b; font-weight: 600; white-space: nowrap; }
+
+    .badge {
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f4f7fb;
+      color: #596579;
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .badge.orange { background: var(--orange-soft); color: var(--orange); }
+    .badge.green { background: var(--green-soft); color: #0a9e42; }
+    .badge.blue { background: var(--blue-soft); color: var(--blue); }
+    .badge.red { background: var(--red-soft); color: var(--red); }
+    .badge.purple { background: var(--purple-soft); color: var(--purple); }
+    .urgency-badge {
+      width: 26px;
+      height: 26px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 13px;
+      flex: 0 0 auto;
+    }
+    .urgency-badge.orange { color: var(--orange); background: var(--orange-soft); }
+    .urgency-badge.red { color: var(--red); background: var(--red-soft); }
+    .urgency-badge.blue { color: var(--blue); background: var(--blue-soft); }
+    .urgency-badge.green { color: #0a9e42; background: var(--green-soft); }
+
+    .field {
+      min-height: 74px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid #edf2f7;
+    }
+    .field label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 13px; }
+    .field strong { display: block; font-size: 15px; font-weight: 650; color: var(--text); line-height: 1.45; word-break: break-word; }
+    .field.wide { grid-column: 1 / -1; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font-weight: 600;
+      resize: vertical;
+    }
+    .field textarea { min-height: 56px; line-height: 1.5; }
+
+    .detail-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .detail-card {
+      padding: 16px;
+      border: 1px solid #e7edf5;
+      border-radius: 16px;
+      background: #fff;
+    }
+    .detail-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .detail-card-head strong { font-size: 16px; font-weight: 650; }
+    .detail-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+    .support-switch { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .support-switch input { display: none; }
+    .switch-track { width: 38px; height: 22px; border-radius: 999px; background: #d5dee9; position: relative; transition: .16s ease; }
+    .switch-track:after { content: ""; width: 18px; height: 18px; border-radius: 50%; background: #fff; position: absolute; left: 2px; top: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.18); transition: .16s ease; }
+    .support-switch input:checked + .switch-track { background: var(--orange); }
+    .support-switch input:checked + .switch-track:after { transform: translateX(16px); }
+
+    .timeline { display: grid; gap: 0; }
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 10px;
+      position: relative;
+      padding-bottom: 18px;
+    }
+    .timeline-item:before { content: ""; position: absolute; left: 14px; top: 28px; bottom: 0; width: 1px; background: #e2e9f2; }
+    .timeline-item:last-child:before { display: none; }
+    .timeline-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--orange); font-weight: 800; font-size: 12px; z-index: 1; }
+    .timeline-copy { min-width: 0; padding-top: 2px; }
+    .timeline-copy strong { display: block; font-size: 15px; margin-bottom: 4px; }
+    .timeline-copy span { color: var(--muted); line-height: 1.5; }
+
+    .task-table { width: 100%; border-collapse: collapse; }
+    .task-table th, .task-table td { padding: 14px 10px; border-bottom: 1px solid #edf2f7; text-align: left; vertical-align: top; }
+    .task-table th { color: var(--muted); font-size: 13px; font-weight: 600; background: #fbfcfe; }
+    .task-table td { color: #344156; }
+    .task-table strong { color: var(--text); }
+    .task-table tr:last-child td { border-bottom: 0; }
+
+    .module-grid { display: grid; grid-template-columns: repeat(4, minmax(190px, 1fr)); gap: 14px; }
+    .module-card {
+      min-height: 176px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #fbfcfe;
+      border: 1px solid #e7edf5;
+      display: grid;
+      gap: 12px;
+    }
+    .module-card h3 { margin: 0; font-size: 16px; font-weight: 650; }
+    .member-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); }
+    .mini-avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #8293aa; font-size: 12px; font-weight: 800; }
+    .member-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .member-left strong { color: var(--text); font-weight: 650; }
+
+    .kanban { display: grid; grid-template-columns: repeat(4, minmax(210px, 1fr)); gap: 14px; }
+    .lane {
+      min-height: 420px;
+      border-radius: 18px;
+      background: #f7f9fc;
+      border: 1px solid #e6edf5;
+      padding: 14px;
+    }
+    .lane-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .lane-head strong { font-size: 16px; font-weight: 650; }
+    .task-card {
+      padding: 14px;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid #e8eef5;
+      display: grid;
+      gap: 10px;
+      text-align: left;
+      color: inherit;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .task-card h3 { margin: 0; font-size: 15px; line-height: 1.45; font-weight: 650; }
+    .task-card p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .task-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+
+    .upload {
+      min-height: 180px;
+      border: 1px dashed #d3ddea;
+      border-radius: 18px;
+      background: #fbfcfe;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .upload strong { display: block; font-size: 17px; margin-bottom: 8px; }
+    .upload span { display: block; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+    .empty { min-height: 180px; display: grid; place-items: center; color: var(--muted); text-align: center; }
+
+    .risk-list { display: grid; gap: 12px; }
+    .risk-item {
+      padding: 14px;
+      border-radius: 14px;
+      background: #fff7f7;
+      border: 1px solid #ffd7da;
+      display: grid;
+      gap: 8px;
+    }
+    .risk-item strong { color: var(--red); }
+    .risk-item span { color: #6d7788; line-height: 1.5; }
+    .compact-list { display: grid; gap: 10px; }
+    .compact-item {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid #e7edf5;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+    }
+    .compact-item strong { font-size: 15px; }
+    .compact-item span { color: var(--muted); line-height: 1.5; }
+    .muted { color: var(--muted); }
+
+    .drawer-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 18, 38, .28);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: .18s ease;
+    }
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(520px, 100vw);
+      height: 100vh;
+      background: #fff;
+      z-index: 60;
+      transform: translateX(102%);
+      transition: .2s ease;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      box-shadow: -18px 0 40px rgba(10, 28, 54, .16);
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-mask.open { opacity: 1; pointer-events: auto; }
+    .drawer-head, .drawer-foot {
+      min-height: 64px;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e8eef5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .drawer-foot { border-top: 1px solid #e8eef5; border-bottom: 0; justify-content: flex-end; }
+    .drawer-head h2 { margin: 0; font-size: 20px; font-weight: 650; }
+    .drawer-body { padding: 20px; overflow: auto; display: grid; align-content: start; gap: 14px; }
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #f4f7fb;
+      color: #596579;
+      font-size: 20px;
+      display: grid;
+      place-items: center;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translate(-50%, 18px);
+      min-height: 42px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: #00152e;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: .18s ease;
+      z-index: 80;
+      box-shadow: 0 10px 28px rgba(0, 21, 46, .25);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 1180px) {
+      .project-grid { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+      .grid-main, .grid-2 { grid-template-columns: 1fr; }
+      .module-grid, .kanban { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+    }
+    @media (max-width: 860px) {
+      .topbar { gap: 12px; padding: 0 14px; }
+      .brand span:last-child, .workbench, .top-actions strong, .link-btn { display: none; }
+      .brand { min-width: 36px; }
+      main { padding: 20px 14px 34px; }
+      .head { align-items: flex-start; flex-direction: column; }
+      .actions { width: 100%; justify-content: flex-start; }
+      .process, .stats, .project-grid, .detail-groups, .module-grid, .kanban { grid-template-columns: 1fr; }
+      .list-toolbar { align-items: stretch; flex-direction: column; }
+      .seg-group { width: 100%; overflow-x: auto; justify-content: flex-start; }
+      .list-search { width: 100%; }
+      .field-grid, .detail-fields { grid-template-columns: 1fr; }
+      .task-table { min-width: 760px; }
+      .table-scroll { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">CRM</span><span>新池集团</span></div>
+      <strong class="workbench">排期工作台</strong>
+      <nav class="nav" id="nav"></nav>
+      <div class="top-actions"><button class="link-btn" data-action="workbench">返回工作台</button><span class="admin-badge">OPS</span><strong>管理员</strong></div>
+      <div class="user"><span class="avatar"></span><strong>陈以琳</strong></div>
+    </header>
+    <main id="app"></main>
+  </div>
+
+  <div class="drawer-mask" id="mask"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head"><h2 id="drawerTitle">详情</h2><button class="icon-btn" id="drawerClose" aria-label="关闭">×</button></div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <div class="drawer-foot" id="drawerFoot"></div>
+  </aside>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const tabs = [
+      { id: "overview", name: "排期总览" },
+      { id: "entry", name: "需求录入" },
+      { id: "dispatch", name: "智能派工" },
+      { id: "board", name: "执行看板" },
+      { id: "archive", name: "复盘归档" }
+    ];
+
+    const steps = [
+      { id: "entry", title: "需求录入", desc: "销售提交客户窗口、目标、资源与限制条件" },
+      { id: "confirm", title: "排期确认", desc: "运营核对直播档期、货盘、达人与预算" },
+      { id: "execute", title: "执行协同", desc: "内容、投放、客服、履约按节点推进" },
+      { id: "review", title: "数据复盘", desc: "沉淀成交、线索、费用与下次跟进计划" }
+    ];
+
+    const owners = ["刘曼曼", "张一凡", "王可", "李晴", "陈响", "周宁", "林悦", "赵敏", "宋然", "陈舟", "何璐"];
+
+    const records = [
+      {
+        id: "crm-001",
+        title: "华东医美客户 618 专场",
+        customer: "宁波悦颜医疗",
+        crmId: "CRM-202606-0188",
+        product: "抗衰修护组合",
+        channel: "抖音直播",
+        owner: "刘曼曼",
+        sales: "华东销售一组",
+        liveTime: "2026-06-20 20:00",
+        status: "排期确认",
+        urgency: "S",
+        progress: 68,
+        nodesDone: 1,
+        budget: "¥180,000",
+        leads: 420,
+        stage: "方案锁定",
+        risk: "达人脚本仍需法务二审"
+      },
+      {
+        id: "crm-002",
+        title: "北区母婴品牌月度排期",
+        customer: "北京乐禾母婴",
+        crmId: "CRM-202606-0214",
+        product: "新生儿安心礼盒",
+        channel: "视频号直播",
+        owner: "张一凡",
+        sales: "北区大客户",
+        liveTime: "2026-06-24 19:30",
+        status: "执行中",
+        urgency: "A",
+        progress: 82,
+        nodesDone: 2,
+        budget: "¥96,000",
+        leads: 260,
+        stage: "素材制作",
+        risk: "样品到仓晚于计划 1 天"
+      },
+      {
+        id: "crm-003",
+        title: "西南家清渠道试播",
+        customer: "成都洁净生活",
+        crmId: "CRM-202606-0161",
+        product: "浓缩洗护套装",
+        channel: "店播矩阵",
+        owner: "王可",
+        sales: "西南渠道",
+        liveTime: "2026-06-27 14:00",
+        status: "需求录入",
+        urgency: "B",
+        progress: 35,
+        nodesDone: 0,
+        budget: "¥58,000",
+        leads: 120,
+        stage: "信息补全",
+        risk: "客户未确认最终 SKU"
+      },
+      {
+        id: "crm-004",
+        title: "华南食品连锁会员节",
+        customer: "广州鲜语连锁",
+        crmId: "CRM-202606-0199",
+        product: "轻食代餐礼盒",
+        channel: "小红书买手直播",
+        owner: "李晴",
+        sales: "华南销售二组",
+        liveTime: "2026-07-02 21:00",
+        status: "派工中",
+        urgency: "A",
+        progress: 52,
+        nodesDone: 1,
+        budget: "¥132,000",
+        leads: 360,
+        stage: "资源排布",
+        risk: "投放预算需财务确认"
+      },
+      {
+        id: "crm-005",
+        title: "全国 SaaS 客户私域转化",
+        customer: "企服云栈",
+        crmId: "CRM-202606-0230",
+        product: "年度旗舰版",
+        channel: "私域直播间",
+        owner: "陈响",
+        sales: "KA 解决方案",
+        liveTime: "2026-07-08 15:00",
+        status: "待复盘",
+        urgency: "C",
+        progress: 100,
+        nodesDone: 3,
+        budget: "¥75,000",
+        leads: 96,
+        stage: "复盘整理",
+        risk: "无"
+      },
+      {
+        id: "crm-006",
+        title: "东区宠物品牌新品首发",
+        customer: "杭州尾巴计划",
+        crmId: "CRM-202606-0256",
+        product: "冻干主粮新品",
+        channel: "抖音达人专场",
+        owner: "周宁",
+        sales: "东区新消费",
+        liveTime: "2026-07-12 20:30",
+        status: "排期确认",
+        urgency: "B",
+        progress: 61,
+        nodesDone: 1,
+        budget: "¥110,000",
+        leads: 210,
+        stage: "货盘确认",
+        risk: "价格机制待客户盖章"
+      }
+    ];
+
+    const tasks = [
+      { id: "T-101", record: "crm-001", title: "完成达人脚本法务二审", owner: "林悦", module: "内容", status: "进行中", due: "06-17 18:00", lane: "doing", delay: false },
+      { id: "T-102", record: "crm-001", title: "确认 618 专场最终货盘", owner: "陈舟", module: "商品", status: "待处理", due: "06-17 20:00", lane: "todo", delay: false },
+      { id: "T-103", record: "crm-002", title: "视频号封面与预热视频输出", owner: "何璐", module: "设计", status: "进行中", due: "06-18 14:00", lane: "doing", delay: false },
+      { id: "T-104", record: "crm-002", title: "样品入仓并同步履约批次", owner: "宋然", module: "履约", status: "延期申请", due: "06-18 12:00", lane: "risk", delay: true },
+      { id: "T-105", record: "crm-004", title: "小红书投放预算审批", owner: "赵敏", module: "投放", status: "待处理", due: "06-19 10:00", lane: "todo", delay: false },
+      { id: "T-106", record: "crm-005", title: "私域线索复盘与 CRM 标签回写", owner: "陈响", module: "数据", status: "已完成", due: "06-15 16:00", lane: "done", delay: false },
+      { id: "T-107", record: "crm-006", title: "新品首发价格机制确认", owner: "周宁", module: "销售", status: "进行中", due: "06-20 12:00", lane: "doing", delay: false },
+      { id: "T-108", record: "crm-003", title: "补齐试播 SKU 与佣金比例", owner: "王可", module: "销售", status: "待处理", due: "06-18 19:00", lane: "todo", delay: false }
+    ];
+
+    const logs = [
+      { time: "06-16 15:42", user: "刘曼曼", text: "华东医美 618 专场完成排期确认，等待法务二审脚本。" },
+      { time: "06-16 14:10", user: "张一凡", text: "北区母婴样品延迟到仓，已提交延期申请。" },
+      { time: "06-16 11:36", user: "李晴", text: "华南食品会员节新增小红书买手直播资源。" },
+      { time: "06-15 18:20", user: "陈响", text: "企服云栈复盘数据已回写 CRM 标签。" }
+    ];
+
+    const modules = [
+      { name: "销售协同", people: ["王可", "周宁"], queue: 8, color: "orange" },
+      { name: "内容制作", people: ["林悦", "何璐"], queue: 11, color: "blue" },
+      { name: "投放运营", people: ["赵敏", "刘曼曼"], queue: 6, color: "purple" },
+      { name: "履约客服", people: ["宋然", "陈舟"], queue: 5, color: "green" }
+    ];
+
+    const state = {
+      view: "overview",
+      selected: "crm-001",
+      listFilter: "all",
+      listSearch: "",
+      support: { content: true, ads: true, service: true }
+    };
+
+    const $ = selector => document.querySelector(selector);
+    const selectedRecord = () => records.find(item => item.id === state.selected) || records[0];
+    const badge = (text, cls = "") => `<span class="badge ${cls}"><span class="dot"></span>${text}</span>`;
+    const field = (label, value, cls = "") => `<div class="field ${cls}"><label>${label}</label><strong>${value}</strong></div>`;
+
+    function statusClass(status) {
+      if (status.includes("复盘") || status.includes("完成")) return "green";
+      if (status.includes("执行") || status.includes("确认")) return "orange";
+      if (status.includes("延期") || status.includes("风险")) return "red";
+      if (status.includes("派工")) return "blue";
+      return "purple";
+    }
+
+    function urgencyClass(level) {
+      return { S: "red", A: "orange", B: "blue", C: "green" }[(level || "B").toUpperCase()] || "blue";
+    }
+
+    function urgencyBadge(level) {
+      const value = (level || "B").toUpperCase();
+      return `<span class="urgency-badge ${urgencyClass(value)}">${value}</span>`;
+    }
+
+    function render() {
+      renderNav();
+      const app = $("#app");
+      const pages = {
+        overview: pageOverview,
+        entry: pageEntry,
+        dispatch: pageDispatch,
+        board: pageBoard,
+        archive: pageArchive,
+        detail: pageDetail
+      };
+      app.innerHTML = (pages[state.view] || pageOverview)();
+    }
+
+    function renderNav() {
+      $("#nav").innerHTML = tabs.map(tab => {
+        const active = state.view === tab.id || (tab.id === "overview" && state.view === "detail");
+        return `<button class="${active ? "active" : ""}" data-view="${tab.id}">${tab.name}</button>`;
+      }).join("");
+    }
+
+    function head(title, actions = "", sub = "") {
+      return `<div class="head"><div><h1>${title}</h1>${sub ? `<small>${sub}</small>` : ""}</div><div class="actions">${actions}</div></div>`;
+    }
+
+    function processMap(record = selectedRecord()) {
+      const currentIndex = Math.max(0, Math.min(steps.length - 1, record.nodesDone));
+      return `<section class="process">${steps.map((step, index) => `<button class="step-card ${index === currentIndex ? "active" : ""}" data-action="stepDetail" data-step="${step.id}">
+        <span class="step-index">${index + 1}</span>
+        <strong>${step.title}</strong>
+        <span>${step.desc}</span>
+      </button>`).join("")}</section>`;
+    }
+
+    function stats() {
+      const running = records.filter(item => item.status !== "待复盘").length;
+      const review = records.filter(item => item.status === "待复盘").length;
+      const delayed = tasks.filter(item => item.delay).length;
+      const week = records.filter(item => item.liveTime.includes("06-2")).length;
+      return `<section class="stats">
+        <button class="stat stat-orange is-clickable" data-stat-filter="all"><div><strong>${records.length}</strong><span>全部排期</span></div></button>
+        <button class="stat stat-green is-clickable" data-stat-filter="running"><div><strong>${running}</strong><span>进行中</span></div></button>
+        <button class="stat stat-blue is-clickable" data-stat-filter="week"><div><strong>${week}</strong><span>本周直播</span></div></button>
+        <button class="stat stat-red is-clickable" data-stat-filter="risk"><div><strong>${delayed}</strong><span>延期风险</span></div></button>
+      </section>`;
+    }
+
+    function filteredRecords() {
+      const keyword = state.listSearch.trim().toLowerCase();
+      return records.filter(record => {
+        const statusMatched =
+          state.listFilter === "all" ||
+          (state.listFilter === "running" && record.status !== "待复盘") ||
+          (state.listFilter === "review" && record.status === "待复盘") ||
+          (state.listFilter === "risk" && tasks.some(task => task.record === record.id && task.delay));
+        const searchText = [record.title, record.customer, record.crmId, record.product, record.channel, record.owner, record.status].join(" ").toLowerCase();
+        return statusMatched && (!keyword || searchText.includes(keyword));
+      });
+    }
+
+    function pageOverview() {
+      const running = records.filter(item => item.status !== "待复盘").length;
+      const review = records.filter(item => item.status === "待复盘").length;
+      const filtered = filteredRecords();
+      return `${head("排期管理总览", `<button class="btn ghost" data-action="export">⇩ 导出排期</button><button class="btn primary" data-action="newSchedule">+ 新建排期</button>`, "CRM 线索、客户窗口、直播资源与执行任务的统一排期看板")}
+      ${processMap()}
+      ${stats()}
+      <section class="grid-main">
+        <div class="panel">
+          <div class="panel-body">
+            <div class="list-toolbar">
+              <div class="seg-group">
+                ${listFilterButton("all", "全部", records.length)}
+                ${listFilterButton("running", "进行中", running)}
+                ${listFilterButton("review", "待复盘", review)}
+                ${listFilterButton("risk", "有风险", tasks.filter(item => item.delay).length)}
+              </div>
+              <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索客户、CRM编号、产品、负责人" data-list-search></label>
+            </div>
+            ${filtered.length ? `<div class="project-grid">${filtered.map(projectCard).join("")}</div>` : `<div class="empty"><strong>暂无匹配排期</strong></div>`}
+          </div>
+        </div>
+        <aside class="stack">
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">今日节奏</h2><p class="panel-subtitle">06-16 关键动作</p></div></div>
+            <div class="panel-body">
+              <div class="timeline">
+                ${logs.map((item, index) => `<div class="timeline-item"><span class="timeline-dot">${index + 1}</span><div class="timeline-copy"><strong>${item.time} · ${item.user}</strong><span>${item.text}</span></div></div>`).join("")}
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">风险提醒</h2><p class="panel-subtitle">延期、缺资料、待审批</p></div></div>
+            <div class="panel-body risk-list">
+              ${records.filter(item => item.risk !== "无").slice(0, 3).map(item => `<button class="risk-item" data-open-project="${item.id}"><strong>${item.title}</strong><span>${item.risk}</span></button>`).join("")}
+            </div>
+          </section>
+        </aside>
+      </section>`;
+    }
+
+    function listFilterButton(key, label, count) {
+      return `<button class="seg ${state.listFilter === key ? "active" : ""}" data-list-filter="${key}">${label} ${count}</button>`;
+    }
+
+    function projectCard(record) {
+      const cls = statusClass(record.status);
+      return `<button class="project-card" data-open-project="${record.id}">
+        <div class="project-card-head">
+          <div class="project-main">
+            <div class="project-title-line">${urgencyBadge(record.urgency)}<h2>${record.title}</h2></div>
+            <small>${record.customer} · ${record.crmId}</small>
+          </div>
+          <span class="project-percent">${record.progress}%</span>
+        </div>
+        <div class="project-product-line"><span>主推产品</span><strong>${record.product}</strong></div>
+        <div class="progress"><span style="width:${record.progress}%"></span></div>
+        <div class="project-card-foot"><span>${badge(record.status, cls)}</span><span class="muted">${record.sales}</span></div>
+        <div class="project-meta-line"><span class="project-meta-left">负责人 <strong>${record.owner}</strong></span><span class="project-date">${record.liveTime}</span></div>
+      </button>`;
+    }
+
+    function pageDetail() {
+      const record = selectedRecord();
+      const recordTasks = tasks.filter(task => task.record === record.id);
+      return `${head(record.title, `<button class="btn ghost" data-action="goOverview">← 返回列表</button><button class="btn primary" data-action="confirmSchedule">✓ 确认排期</button>`, `${record.customer} · ${record.crmId}`)}
+      ${processMap(record)}
+      <section class="grid-main">
+        <div class="stack">
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">排期详情</h2><p class="panel-subtitle">${record.stage}</p></div>${badge(record.status, statusClass(record.status))}</div>
+            <div class="panel-body">
+              <div class="field-grid">
+                ${field("客户名称", record.customer)}
+                ${field("CRM 编号", record.crmId)}
+                ${field("直播时间", record.liveTime)}
+                ${field("渠道", record.channel)}
+                ${field("预算", record.budget)}
+                ${field("目标线索", `${record.leads} 条`)}
+                ${field("主推产品", record.product)}
+                ${field("负责人", record.owner)}
+                ${field("当前风险", record.risk, "wide")}
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">任务清单</h2><p class="panel-subtitle">按负责人、模块与截止时间跟进</p></div><button class="btn ghost" data-action="addTask">+ 任务</button></div>
+            <div class="panel-body table-scroll">
+              <table class="task-table">
+                <thead><tr><th>任务</th><th>模块</th><th>负责人</th><th>状态</th><th>截止</th></tr></thead>
+                <tbody>${recordTasks.length ? recordTasks.map(task => `<tr data-task="${task.id}"><td><strong>${task.title}</strong><br><span class="muted">${task.id}</span></td><td>${task.module}</td><td>${task.owner}</td><td>${badge(task.status, statusClass(task.status))}</td><td>${task.due}</td></tr>`).join("") : `<tr><td colspan="5" class="muted">暂无任务</td></tr>`}</tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <aside class="stack">
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">节点动态</h2><p class="panel-subtitle">自动沉淀操作记录</p></div></div>
+            <div class="panel-body">
+              <div class="timeline">
+                ${steps.map((step, index) => `<div class="timeline-item"><span class="timeline-dot">${index + 1}</span><div class="timeline-copy"><strong>${step.title}</strong><span>${index <= record.nodesDone ? "已推进到该节点" : "等待前序节点完成"}</span></div></div>`).join("")}
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">协同成员</h2><p class="panel-subtitle">销售、运营、内容、履约</p></div></div>
+            <div class="panel-body compact-list">
+              ${owners.slice(0, 5).map((owner, index) => `<div class="compact-item"><strong>${owner}</strong><span>${["销售跟进", "排期运营", "内容脚本", "投放执行", "履约客服"][index]} · ${index + 2} 个待办</span></div>`).join("")}
+            </div>
+          </section>
+        </aside>
+      </section>`;
+    }
+
+    function pageEntry() {
+      return `${head("需求录入", `<button class="btn ghost" data-action="recognizeDoc">⌁ 识别文档</button><button class="btn primary" data-action="createFromEntry">发布需求</button>`, "从 CRM 机会、客户 brief 或销售表单生成排期需求")}
+      <section class="grid-2">
+        <aside class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">客户 Brief</h2><p class="panel-subtitle">销售侧提交入口</p></div></div>
+          <div class="panel-body stack">
+            <div class="upload">
+              <div><strong>CRM 需求文档</strong><span>支持客户 brief、商品清单、直播目标表</span><button class="btn primary" data-action="recognizeDoc">选择文档</button></div>
+            </div>
+            <div class="field-grid">
+              ${field("识别客户", "宁波悦颜医疗")}
+              ${field("建议优先级", "S")}
+              ${field("推荐渠道", "抖音直播")}
+              ${field("建议档期", "2026-06-20 20:00")}
+            </div>
+          </div>
+        </aside>
+        <section class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">排期信息</h2><p class="panel-subtitle">确认后进入智能派工</p></div></div>
+          <div class="panel-body">
+            <div class="detail-groups">
+              ${entryGroup("客户与机会", [
+                ["客户名称", "宁波悦颜医疗"],
+                ["CRM 编号", "CRM-202606-0188"],
+                ["销售团队", "华东销售一组"],
+                ["商机阶段", "合同已签"]
+              ])}
+              ${entryGroup("直播目标", [
+                ["GMV 目标", "¥1,200,000"],
+                ["线索目标", "420 条"],
+                ["直播渠道", "抖音直播"],
+                ["预算上限", "¥180,000"]
+              ])}
+              ${entryGroup("资源需求", [
+                ["达人等级", "A+ 级健康护理达人"],
+                ["主推产品", "抗衰修护组合"],
+                ["样品状态", "已寄出"],
+                ["素材支持", "需要短视频预热"]
+              ], "content")}
+              ${entryGroup("限制条件", [
+                ["合规要求", "医美功效表达需法务审核"],
+                ["价格机制", "618 专享券包"],
+                ["库存保障", "首批 3500 套"],
+                ["发货承诺", "48 小时内"]
+              ], "service")}
+            </div>
+            <div class="panel-actions"><button class="btn ghost" data-action="saveDraft">暂存草稿</button><button class="btn primary" data-action="createFromEntry">发布需求</button></div>
+          </div>
+        </section>
+      </section>`;
+    }
+
+    function entryGroup(title, items, supportKey = "") {
+      const support = supportKey ? `<label class="support-switch"><input type="checkbox" data-support="${supportKey}" ${state.support[supportKey] ? "checked" : ""}><span class="switch-track"></span></label>` : "";
+      return `<div class="detail-card">
+        <div class="detail-card-head"><strong>${title}</strong>${support}</div>
+        <div class="detail-fields">${items.map(item => editableField(item[0], item[1])).join("")}</div>
+      </div>`;
+    }
+
+    function editableField(label, value) {
+      return `<div class="field"><label>${label}</label><input value="${value}"></div>`;
+    }
+
+    function pageDispatch() {
+      return `${head("智能派工", `<button class="btn ghost" data-action="batchAssign">↻ 重新计算</button><button class="btn primary" data-action="notifyOwners">通知负责人</button>`, "按档期窗口、团队负载、任务模板自动拆解执行项")}
+      ${stats()}
+      <section class="panel">
+        <div class="panel-head"><div><h2 class="panel-title">模块负载</h2><p class="panel-subtitle">当前队列与可承接成员</p></div></div>
+        <div class="panel-body">
+          <div class="module-grid">
+            ${modules.map(module => `<div class="module-card">
+              <h3>${module.name}</h3>
+              ${badge(`${module.queue} 个待办`, module.color)}
+              ${module.people.map(person => `<div class="member-row"><span class="member-left"><span class="mini-avatar">${person.slice(0, 1)}</span><strong>${person}</strong></span><span>${Math.ceil(Math.random() * 4) + 2} 项</span></div>`).join("")}
+            </div>`).join("")}
+          </div>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h2 class="panel-title">待派工需求</h2><p class="panel-subtitle">从排期确认节点进入</p></div></div>
+        <div class="panel-body table-scroll">
+          <table class="task-table">
+            <thead><tr><th>排期</th><th>客户</th><th>任务模板</th><th>建议负责人</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>${records.filter(item => item.status !== "待复盘").map(record => `<tr>
+              <td><strong>${record.title}</strong><br><span class="muted">${record.liveTime}</span></td>
+              <td>${record.customer}</td>
+              <td>内容 / 投放 / 商品 / 履约</td>
+              <td>${record.owner}</td>
+              <td>${badge(record.status, statusClass(record.status))}</td>
+              <td><button class="btn ghost" data-open-project="${record.id}">查看</button></td>
+            </tr>`).join("")}</tbody>
+          </table>
+        </div>
+      </section>`;
+    }
+
+    function pageBoard() {
+      const lanes = [
+        { id: "todo", title: "待处理", cls: "blue" },
+        { id: "doing", title: "进行中", cls: "orange" },
+        { id: "risk", title: "延期风险", cls: "red" },
+        { id: "done", title: "已完成", cls: "green" }
+      ];
+      return `${head("执行看板", `<button class="btn ghost" data-action="syncCRM">↻ 同步 CRM</button><button class="btn primary" data-action="addTask">+ 新增任务</button>`, "按执行节点跟踪跨团队任务")}
+      <section class="kanban">
+        ${lanes.map(lane => {
+          const laneTasks = tasks.filter(task => task.lane === lane.id);
+          return `<div class="lane">
+            <div class="lane-head"><strong>${lane.title}</strong>${badge(laneTasks.length, lane.cls)}</div>
+            ${laneTasks.map(taskCard).join("") || `<div class="empty">暂无任务</div>`}
+          </div>`;
+        }).join("")}
+      </section>`;
+    }
+
+    function taskCard(task) {
+      const record = records.find(item => item.id === task.record);
+      return `<button class="task-card" data-task-open="${task.id}">
+        <h3>${task.title}</h3>
+        <p>${record ? record.title : ""}</p>
+        <div class="task-meta"><span>${task.owner} · ${task.module}</span><span>${task.due}</span></div>
+        ${badge(task.status, statusClass(task.status))}
+      </button>`;
+    }
+
+    function pageArchive() {
+      return `${head("复盘归档", `<button class="btn ghost" data-action="exportReview">⇩ 导出复盘</button><button class="btn primary" data-action="newSchedule">+ 继续排期</button>`, "成交、线索、费用与下一次跟进动作沉淀")}
+      <section class="stats">
+        <div class="stat stat-green"><div><strong>1</strong><span>已归档</span></div></div>
+        <div class="stat stat-blue"><div><strong>96</strong><span>CRM 线索</span></div></div>
+        <div class="stat stat-orange"><div><strong>17.6%</strong><span>线索转化率</span></div></div>
+        <div class="stat stat-purple"><div><strong>¥75k</strong><span>投放成本</span></div></div>
+      </section>
+      <section class="grid-main">
+        <div class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">归档排期</h2><p class="panel-subtitle">已完成复盘的客户活动</p></div></div>
+          <div class="panel-body table-scroll">
+            <table class="task-table">
+              <thead><tr><th>排期</th><th>客户</th><th>成交结果</th><th>线索</th><th>负责人</th><th>状态</th></tr></thead>
+              <tbody>${records.filter(item => item.status === "待复盘").map(record => `<tr>
+                <td><strong>${record.title}</strong><br><span class="muted">${record.liveTime}</span></td>
+                <td>${record.customer}</td>
+                <td>GMV ¥428,000</td>
+                <td>${record.leads}</td>
+                <td>${record.owner}</td>
+                <td>${badge("待复盘", "green")}</td>
+              </tr>`).join("")}</tbody>
+            </table>
+          </div>
+        </div>
+        <aside class="panel">
+          <div class="panel-head"><div><h2 class="panel-title">复盘模板</h2><p class="panel-subtitle">回写 CRM 字段</p></div></div>
+          <div class="panel-body compact-list">
+            ${["成交与退款", "线索质量", "投放费用", "客户反馈", "下次跟进"].map((item, index) => `<div class="compact-item"><strong>${index + 1}. ${item}</strong><span>${["订单、客单价、退款率", "有效线索、重复线索、标签", "达人费、投流费、制作费", "直播间评论与销售反馈", "二次触达日期与责任人"][index]}</span></div>`).join("")}
+          </div>
+        </aside>
+      </section>`;
+    }
+
+    function openDrawer(title, body, foot = `<button class="btn primary" data-action="drawerOk">确定</button>`) {
+      $("#drawerTitle").textContent = title;
+      $("#drawerBody").innerHTML = body;
+      $("#drawerFoot").innerHTML = foot;
+      $("#drawer").classList.add("open");
+      $("#drawer").setAttribute("aria-hidden", "false");
+      $("#mask").classList.add("open");
+    }
+
+    function closeDrawer() {
+      $("#drawer").classList.remove("open");
+      $("#drawer").setAttribute("aria-hidden", "true");
+      $("#mask").classList.remove("open");
+    }
+
+    function toast(text) {
+      const el = $("#toast");
+      el.textContent = text;
+      el.classList.add("show");
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => el.classList.remove("show"), 1800);
+    }
+
+    function openTask(taskId) {
+      const task = tasks.find(item => item.id === taskId);
+      if (!task) return;
+      const record = records.find(item => item.id === task.record);
+      openDrawer("任务详情", `
+        ${field("任务名称", task.title, "wide")}
+        <div class="field-grid">
+          ${field("所属排期", record ? record.title : "-")}
+          ${field("模块", task.module)}
+          ${field("负责人", task.owner)}
+          ${field("截止时间", task.due)}
+          ${field("当前状态", task.status)}
+          ${field("任务编号", task.id)}
+        </div>
+      `, `<button class="btn ghost" data-action="drawerClose">取消</button><button class="btn primary" data-action="taskDone">标记完成</button>`);
+    }
+
+    document.addEventListener("click", event => {
+      const view = event.target.closest("[data-view]");
+      if (view) {
+        state.view = view.dataset.view;
+        render();
+        return;
+      }
+
+      const filter = event.target.closest("[data-list-filter], [data-stat-filter]");
+      if (filter) {
+        state.listFilter = filter.dataset.listFilter || filter.dataset.statFilter;
+        state.view = "overview";
+        render();
+        return;
+      }
+
+      const openProject = event.target.closest("[data-open-project]");
+      if (openProject) {
+        state.selected = openProject.dataset.openProject;
+        state.view = "detail";
+        render();
+        return;
+      }
+
+      const taskOpen = event.target.closest("[data-task-open]");
+      if (taskOpen) {
+        openTask(taskOpen.dataset.taskOpen);
+        return;
+      }
+
+      const actionEl = event.target.closest("[data-action]");
+      if (!actionEl) return;
+      const action = actionEl.dataset.action;
+      const actions = {
+        goOverview: () => { state.view = "overview"; render(); },
+        newSchedule: () => {
+          state.view = "entry";
+          render();
+          toast("已进入新建排期");
+        },
+        recognizeDoc: () => toast("已识别客户 Brief，并填充排期字段"),
+        createFromEntry: () => {
+          state.view = "dispatch";
+          render();
+          toast("需求已发布，等待派工");
+        },
+        saveDraft: () => toast("草稿已暂存"),
+        confirmSchedule: () => toast("排期已确认，任务同步给执行团队"),
+        export: () => toast("排期数据已生成导出任务"),
+        exportReview: () => toast("复盘报表已生成"),
+        batchAssign: () => toast("已根据团队负载重新计算派工"),
+        notifyOwners: () => toast("已通知相关负责人"),
+        syncCRM: () => toast("CRM 数据同步完成"),
+        addTask: () => openDrawer("新增任务", `
+          ${field("任务名称", "直播前 3 天完成预热素材", "wide")}
+          <div class="field-grid">
+            ${field("所属模块", "内容制作")}
+            ${field("负责人", "林悦")}
+            ${field("截止时间", "06-18 18:00")}
+            ${field("优先级", "A")}
+          </div>
+        `),
+        stepDetail: () => {
+          const step = steps.find(item => item.id === actionEl.dataset.step);
+          if (step) openDrawer(step.title, `${field("节点说明", step.desc, "wide")}${field("当前处理人", selectedRecord().owner)}${field("关联排期", selectedRecord().title)}`);
+        },
+        workbench: () => toast("已返回排期工作台首页"),
+        drawerClose: closeDrawer,
+        drawerOk: () => { closeDrawer(); toast("已保存"); },
+        taskDone: () => { closeDrawer(); toast("任务已标记完成"); }
+      };
+      if (actions[action]) actions[action]();
+    });
+
+    document.addEventListener("input", event => {
+      if (event.target.matches("[data-list-search]")) {
+        state.listSearch = event.target.value;
+        render();
+        const input = document.querySelector("[data-list-search]");
+        if (input) {
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      }
+    });
+
+    document.addEventListener("change", event => {
+      const support = event.target.closest("[data-support]");
+      if (support) {
+        state.support[support.dataset.support] = support.checked;
+        toast(support.checked ? "已启用协同支持" : "已关闭协同支持");
+      }
+    });
+
+    $("#drawerClose").addEventListener("click", closeDrawer);
+    $("#mask").addEventListener("click", closeDrawer);
+    render();
+  </script>
+</body>
+</html>
