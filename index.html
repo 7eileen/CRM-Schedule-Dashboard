@@ -933,6 +933,81 @@
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+    .month-filter {
+      margin-bottom: 18px;
+      overflow: visible;
+    }
+    .month-filter-grid {
+      display: grid;
+      grid-template-columns: 220px minmax(260px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+    .filter-field { display: grid; gap: 8px; color: var(--muted); font-size: 13px; }
+    .month-hint {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      border: 1px solid #e4eaf2;
+      border-radius: 8px;
+      background: #fbfcfe;
+      color: #526074;
+      line-height: 1.5;
+    }
+    .month-calendar { margin-bottom: 18px; }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .calendar-weekday {
+      padding: 0 8px 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .calendar-cell {
+      min-height: 106px;
+      padding: 10px;
+      border: 1px solid #e4eaf2;
+      border-radius: 12px;
+      background: #fff;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+    }
+    .calendar-cell.is-muted { background: #f8fafc; color: #b3bcc9; }
+    .calendar-day {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #5d6878;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .calendar-event {
+      width: 100%;
+      padding: 7px 8px;
+      border-radius: 10px;
+      background: var(--orange-soft);
+      color: #8a4a00;
+      text-align: left;
+      line-height: 1.35;
+      font-size: 12px;
+    }
+    .calendar-event.done { background: var(--green-soft); color: #14863d; }
+    .calendar-event.delay { background: var(--red-soft); color: #c43737; }
+    .calendar-event strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: inherit;
+      font-weight: 700;
+    }
+    .calendar-event span { display: block; margin-top: 3px; opacity: .78; }
+
     @media (max-width: 1180px) {
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -952,7 +1027,9 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .chart, .project-grid { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .chart, .project-grid, .month-filter-grid { grid-template-columns: 1fr; }
+      .calendar-grid { grid-template-columns: 1fr; }
+      .calendar-weekday { display: none; }
       .task-review-line { grid-column: 1; }
       .bar-row { grid-template-columns: 1fr; }
       .range-actions { justify-content: flex-start; }
@@ -1023,6 +1100,7 @@
       taskSearch: "",
       listFilter: "all",
       listSearch: "",
+      listMonth: "2026-06",
       dataStart: "2026-06-01",
       dataEnd: "2026-06-30",
       dataModule: "all",
@@ -1342,35 +1420,85 @@
     }
 
     function pageList() {
-      const running = records.filter(item => item.status !== "待复盘").length;
-      const review = records.filter(item => item.status === "待复盘").length;
+      const month = state.listMonth || "2026-06";
+      const monthRecords = records.filter(record => record.liveTime && record.liveTime.slice(0, 7) === month);
+      const running = monthRecords.filter(item => item.status !== "待复盘").length;
+      const review = monthRecords.filter(item => item.status === "待复盘").length;
       const delayed = tasks.filter(item => item.status.includes("延期")).length;
+      const completedInMonth = monthRecords.filter(item => item.status === "待复盘" || item.progress >= 90).length;
       const keyword = state.listSearch.trim().toLowerCase();
-      const filteredRecords = records.filter(record => {
+      const filteredRecords = monthRecords.filter(record => {
         const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘") || (state.listFilter === "review" && record.status === "待复盘");
         const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, record.urgency].join(" ").toLowerCase();
         return statusMatched && (!keyword || searchText.includes(keyword));
       });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
+      <section class="panel month-filter">
+        <div class="panel-body">
+          <div class="month-filter-grid">
+            <label class="filter-field"><span>排期月份</span><input class="input" type="month" value="${month}" data-list-month></label>
+            <label class="list-search" style="width:100%"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
+            <div class="month-hint">当月已直播完的专场仍展示在当月排期中，可在日历里查看完整节奏。</div>
+          </div>
+        </div>
+      </section>
       <section class="stats list-stats">
-        <div class="stat stat-orange"><div><strong>${records.length}</strong><span>全部专场</span></div></div>
+        <div class="stat stat-orange"><div><strong>${monthRecords.length}</strong><span>${month} 专场</span></div></div>
         <div class="stat stat-green"><div><strong>${running}</strong><span>进行中</span></div></div>
-        <div class="stat stat-blue"><div><strong>${needs.length}</strong><span>识别需求</span></div></div>
+        <div class="stat stat-blue"><div><strong>${completedInMonth}</strong><span>当月已直播</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期申请</span></div></div>
       </section>
+      ${monthCalendar(month, monthRecords)}
       <section class="panel list-panel">
         <div class="panel-body">
           <div class="list-toolbar">
             <div class="seg-group">
-              ${listFilterButton("all", "全部", records.length)}
+              ${listFilterButton("all", "全部", monthRecords.length)}
               ${listFilterButton("running", "进行中", running)}
               ${listFilterButton("review", "待复盘", review)}
             </div>
-            <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
+            <span class="muted">卡片列表与上方日历同步展示 ${month} 的所有专场</span>
           </div>
           ${filteredRecords.length ? `<div class="project-grid">${filteredRecords.map(record => projectCard(record)).join("")}</div>` : `<div class="upload"><div><strong>暂无匹配专场</strong></div></div>`}
         </div>
       </section>`;
+    }
+
+    function monthCalendar(month, monthRecords) {
+      const [year, rawMonth] = month.split("-").map(Number);
+      const first = new Date(year, rawMonth - 1, 1);
+      const last = new Date(year, rawMonth, 0);
+      const startOffset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+      const totalCells = Math.ceil((startOffset + last.getDate()) / 7) * 7;
+      const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+      const cells = Array.from({ length: totalCells }, (_, index) => {
+        const day = index - startOffset + 1;
+        const inMonth = day >= 1 && day <= last.getDate();
+        const dateText = inMonth ? `${month}-${String(day).padStart(2, "0")}` : "";
+        const dayRecords = inMonth ? monthRecords.filter(record => record.liveTime.slice(0, 10) === dateText) : [];
+        return `<div class="calendar-cell ${inMonth ? "" : "is-muted"}">
+          <div class="calendar-day"><span>${inMonth ? day : ""}</span>${dayRecords.length ? badge(`${dayRecords.length}场`, "orange") : ""}</div>
+          ${dayRecords.map(record => calendarEvent(record)).join("")}
+        </div>`;
+      });
+      return `<section class="panel month-calendar">
+        <div class="panel-head"><h2 class="panel-title">${month} 专场日历</h2>${badge(`${monthRecords.length} 个专场`, "blue")}</div>
+        <div class="panel-body">
+          <div class="calendar-grid">
+            ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
+            ${cells.join("")}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    function calendarEvent(record) {
+      const done = record.status === "待复盘" || record.progress >= 90;
+      const delay = record.status.includes("延期");
+      return `<button class="calendar-event ${done ? "done" : ""} ${delay ? "delay" : ""}" data-open-project="${record.id}">
+        <strong>${record.talent} · ${record.product}</strong>
+        <span>${record.liveTime.slice(11, 16)} / ${record.status}</span>
+      </button>`;
     }
 
     function listFilterButton(key, label, count) {
@@ -2217,6 +2345,11 @@
       document.querySelectorAll("[data-open-project]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.openProject; state.view = "detail"; render(); }));
       document.querySelectorAll("[data-record]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.record; render(); }));
       document.querySelectorAll("[data-list-filter]").forEach(btn => btn.addEventListener("click", () => { state.listFilter = btn.dataset.listFilter; render(); }));
+      document.querySelectorAll("[data-list-month]").forEach(input => input.addEventListener("change", () => {
+        state.listMonth = input.value;
+        state.listFilter = "all";
+        render();
+      }));
       document.querySelectorAll("[data-list-search]").forEach(input => input.addEventListener("input", () => {
         const cursor = input.selectionStart;
         state.listSearch = input.value;
