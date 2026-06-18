@@ -213,7 +213,12 @@
       gap: 14px;
       margin-bottom: 18px;
     }
+    .list-toolbar .muted {
+      flex: 1;
+      min-width: 0;
+    }
     .list-toolbar .seg-group {
+      margin-left: auto;
       padding: 4px;
       border-radius: 15px;
       background: #f1f4f8;
@@ -1670,12 +1675,12 @@
       <section class="panel list-panel">
         <div class="panel-body">
           <div class="list-toolbar">
+            <span class="muted">卡片列表与上方日历同步展示 ${month} 的所有专场</span>
             <div class="seg-group">
               ${listFilterButton("all", "全部", monthRecords.length)}
               ${listFilterButton("running", "进行中", running)}
               ${listFilterButton("review", "待复盘", review)}
             </div>
-            <span class="muted">卡片列表与上方日历同步展示 ${month} 的所有专场</span>
           </div>
           ${filteredRecords.length ? `<div class="project-grid">${filteredRecords.map(record => projectCard(record)).join("")}</div>` : `<div class="upload"><div><strong>暂无匹配专场</strong></div></div>`}
         </div>
