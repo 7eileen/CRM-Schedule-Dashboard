@@ -723,7 +723,7 @@
     .delay-form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .data-toolbar {
       display: grid;
-      grid-template-columns: repeat(5, minmax(150px, 1fr)) auto;
+      grid-template-columns: repeat(6, minmax(140px, 1fr)) auto;
       gap: 12px;
       align-items: end;
     }
@@ -748,6 +748,52 @@
       gap: 18px;
       margin-bottom: 18px;
     }
+    .data-block-stack { display: grid; gap: 18px; margin-bottom: 18px; }
+    .data-block-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .data-note {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .rate-pill {
+      min-width: 58px;
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f1f4f8;
+      color: #60656d;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .rate-pill.green { color: var(--green); background: var(--green-soft); }
+    .rate-pill.orange { color: var(--orange); background: var(--orange-soft); }
+    .rate-pill.red { color: var(--red); background: var(--red-soft); }
+    .rate-pill.blue { color: var(--blue); background: var(--blue-soft); }
+    .access-lock {
+      min-height: 142px;
+      border: 1px dashed #d8e1ec;
+      border-radius: var(--radius);
+      background: #fbfcfe;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+    }
+    .access-lock strong { display: block; color: #00152e; font-size: 17px; font-weight: 500; margin-bottom: 8px; }
     .bar-list { display: grid; gap: 14px; }
     .bar-row {
       display: grid;
@@ -1073,7 +1119,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .chart, .project-grid, .month-filter-grid, .product-select-row { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .data-block-grid, .chart, .project-grid, .month-filter-grid, .product-select-row { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .task-review-line { grid-column: 1; }
@@ -1152,7 +1198,8 @@
       dataEnd: "2026-06-30",
       dataModule: "all",
       dataMember: "all",
-      dataStatus: "all"
+      dataStatus: "all",
+      dataRole: "admin"
     };
 
     const dispatchAssignments = {
@@ -1219,6 +1266,12 @@
       "ZC-0601": {
         content: [
           { title: "复盘素材补充", owner: "李晴", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
+        ],
+        edit: [
+          { title: "直播切片剪辑复盘", owner: "陈响", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
+        ],
+        ads: [
+          { title: "投放消耗与达标复盘", owner: "宋然", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
         ],
         ops: [
           { title: "直播间执行记录回填", owner: "刘曼曼", due: "2026-06-02", status: "已完成", completedAt: "2026-06-02" }
@@ -1344,6 +1397,7 @@
         business: "王龙",
         expectedGmv: "¥180万",
         actualGmv: "待回填",
+        adsForecastGmv: "¥168万",
         sales: "¥180万",
         product: "胶原蛋白套盒",
         mechanism: "买二送一，前 20 分钟加赠旅行装",
@@ -1363,6 +1417,7 @@
         business: "朱琴",
         expectedGmv: "¥95万",
         actualGmv: "待回填",
+        adsForecastGmv: "¥108万",
         sales: "¥95万",
         product: "清爽防晒喷雾",
         mechanism: "第二件半价，组合装限时券",
@@ -1383,6 +1438,7 @@
         business: "王龙",
         expectedGmv: "¥132万",
         actualGmv: "¥136万",
+        adsForecastGmv: "¥128万",
         sales: "¥132万",
         product: "山野零食礼盒",
         mechanism: "满 199 减 40，直播间赠品",
@@ -2251,6 +2307,7 @@
       const delayed = items.filter(item => item.task.status === "延期中").length;
       const pending = total - done;
       const rate = total ? Math.round(done / total * 100) : 0;
+      const businessView = state.dataRole === "business";
       return `${head("数据中心")}
       ${dataToolbar()}
       <section class="stats">
@@ -2258,6 +2315,11 @@
         <button class="stat stat-green is-clickable" data-action="openCompletedSpecials"><div><strong>${done}</strong><span>已完成</span></div></button>
         <div class="stat stat-blue"><div><strong>${rate}%</strong><span>完成率</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
+      </section>
+      <section class="data-block-stack">
+        ${businessView ? lockedDataPanel("数据板块1：成员承接与达标率", "该管理指标仅组长和管理层可查看。") : teamAchievementPanel()}
+        ${specialAchievementPanel()}
+        ${businessView ? lockedDataPanel("数据板块3：投放预估达标率", "该投放内部指标仅投放组长和管理层可查看。") : adsForecastPanel()}
       </section>
       <section class="analysis-grid">
         <div class="panel">
@@ -2284,10 +2346,145 @@
             <label class="filter-field"><span>支持类型</span><select class="select" data-data-module><option value="all">全部</option>${moduleOrder.map(key => `<option value="${key}" ${state.dataModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
             <label class="filter-field"><span>成员</span><select class="select" data-data-member><option value="all">全部</option>${ownersWithTasks(allDispatchTaskItems()).map(owner => `<option ${state.dataMember === owner ? "selected" : ""}>${owner}</option>`).join("")}</select></label>
             <label class="filter-field"><span>状态</span><select class="select" data-data-status>${["all:全部", "待处理:待处理", "进行中:进行中", "待审核:待审核", "延期中:延期中", "已完成:已完成"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.dataStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
+            <label class="filter-field"><span>查看身份</span><select class="select" data-data-role><option value="admin" ${state.dataRole === "admin" ? "selected" : ""}>管理/组长</option><option value="business" ${state.dataRole === "business" ? "selected" : ""}>商务</option></select></label>
             <div class="range-actions"><button class="btn ghost" data-data-range="week">近 7 天</button><button class="btn ghost" data-data-range="month">本月</button><button class="btn ghost" data-data-range="all">全部</button></div>
           </div>
         </div>
       </section>`;
+    }
+
+    function lockedDataPanel(title, message) {
+      return `<section class="panel">
+        <div class="panel-head"><h2 class="panel-title">${title}</h2>${badge("商务不可查看", "red")}</div>
+        <div class="panel-body"><div class="access-lock"><div><strong>当前身份无权查看</strong><span>${message}</span></div></div></div>
+      </section>`;
+    }
+
+    function teamAchievementPanel() {
+      return `<section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">数据板块1：内容 / 剪辑 / 投放成员承接与达标率</h2>
+          <div class="row">${badge("商务不可查看", "red")}<span class="data-note">按实际销售额 / 目标销售额计算</span></div>
+        </div>
+        <div class="panel-body">
+          <div class="data-block-grid">
+            ${memberAchievementTable("week")}
+            ${memberAchievementTable("month")}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    function memberAchievementTable(period) {
+      const range = periodRange(period);
+      const rows = memberAchievementRows(range);
+      const label = period === "week" ? "周度" : "月度";
+      if (!rows.length) return `<div class="access-lock"><div><strong>${label}暂无承接任务</strong><span>${formatDate(range.start)} - ${formatDate(range.end)}</span></div></div>`;
+      return `<div class="table-wrap">
+        <div class="row" style="margin-bottom:10px"><strong>${label}承接</strong><span class="data-note">${formatDate(range.start)} - ${formatDate(range.end)}</span></div>
+        <table><colgroup><col style="width:22%"><col style="width:20%"><col style="width:18%"><col style="width:20%"><col style="width:20%"></colgroup>
+          <thead><tr><th>支持类型</th><th>成员</th><th>任务数</th><th>专场数</th><th>平均达标率</th></tr></thead>
+          <tbody>${rows.map(row => `<tr><td>${supportNeeds[row.moduleKey].title}</td><td><strong>${row.owner}</strong></td><td>${row.taskCount}</td><td>${row.specialCount}</td><td>${ratePill(row.avgRate)}</td></tr>`).join("")}</tbody>
+        </table>
+      </div>`;
+    }
+
+    function periodRange(period) {
+      if (period === "week") return { start: "2026-06-02", end: "2026-06-08" };
+      return { start: "2026-06-01", end: "2026-06-30" };
+    }
+
+    function memberAchievementRows(range) {
+      const targetModules = ["content", "edit", "ads"];
+      const groups = new Map();
+      allDispatchTaskItems()
+        .filter(item => targetModules.includes(item.moduleKey) && inDateRange(taskDataDate(item.task), range.start, range.end))
+        .forEach(item => {
+          const key = `${item.moduleKey}:${item.task.owner}`;
+          if (!groups.has(key)) groups.set(key, { moduleKey: item.moduleKey, owner: item.task.owner, taskCount: 0, records: new Map() });
+          const group = groups.get(key);
+          group.taskCount += 1;
+          group.records.set(item.record.id, item.record);
+        });
+      return [...groups.values()]
+        .map(group => {
+          const groupRecords = [...group.records.values()];
+          return { ...group, specialCount: groupRecords.length, avgRate: averageRate(groupRecords.map(record => attainmentRate(record))) };
+        })
+        .sort((a, b) => moduleOrder.indexOf(a.moduleKey) - moduleOrder.indexOf(b.moduleKey) || b.taskCount - a.taskCount || a.owner.localeCompare(b.owner));
+    }
+
+    function specialAchievementPanel() {
+      const rows = filteredSpecialRecords();
+      return `<section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">数据板块2：不同专场达标率</h2>
+          <div class="row">${badge("商务可查看", "green")}<span class="data-note">${formatDate(state.dataStart)} - ${formatDate(state.dataEnd)}</span></div>
+        </div>
+        <div class="panel-body table-wrap">
+          ${rows.length ? `<table><colgroup><col style="width:26%"><col style="width:12%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:20%"></colgroup>
+            <thead><tr><th>专场</th><th>达人</th><th>负责商务</th><th>目标销售额</th><th>实际销售额</th><th>专场达标率</th></tr></thead>
+            <tbody>${rows.map(record => `<tr><td><strong>${record.title}</strong></td><td>${record.talent}</td><td>${record.business || "待填写"}</td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td></tr>`).join("")}</tbody>
+          </table>` : `<div class="access-lock"><div><strong>当前范围暂无专场</strong><span>请调整开始时间或结束时间</span></div></div>`}
+        </div>
+      </section>`;
+    }
+
+    function adsForecastPanel() {
+      const rows = filteredSpecialRecords();
+      return `<section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">数据板块3：投放预估达标率</h2>
+          <div class="row">${badge("商务不可查看", "red")}<span class="data-note">按投放预估销售额 / 目标销售额计算</span></div>
+        </div>
+        <div class="panel-body table-wrap">
+          ${rows.length ? `<table><colgroup><col style="width:26%"><col style="width:14%"><col style="width:14%"><col style="width:16%"><col style="width:15%"><col style="width:15%"></colgroup>
+            <thead><tr><th>专场</th><th>投放老师</th><th>目标销售额</th><th>投放预估销售额</th><th>预估达标率</th><th>实际达标率</th></tr></thead>
+            <tbody>${rows.map(record => `<tr><td><strong>${record.title}</strong></td><td>${adsOwnerFor(record)}</td><td>${record.expectedGmv || record.sales}</td><td>${record.adsForecastGmv || "待预估"}</td><td>${ratePill(attainmentRate(record, "adsForecastGmv"))}</td><td>${ratePill(attainmentRate(record))}</td></tr>`).join("")}</tbody>
+          </table>` : `<div class="access-lock"><div><strong>当前范围暂无专场</strong><span>请调整开始时间或结束时间</span></div></div>`}
+        </div>
+      </section>`;
+    }
+
+    function filteredSpecialRecords() {
+      return records.filter(record => inDateRange(record.completedDate || record.liveTime.slice(0, 10), state.dataStart, state.dataEnd));
+    }
+
+    function adsOwnerFor(record) {
+      const adsTasks = dispatchTasks[record.id]?.ads || [];
+      return adsTasks.find(task => task.owner && task.owner !== "待分配")?.owner || dispatchAssignments[record.id]?.ads?.owner || "待分配";
+    }
+
+    function attainmentRate(record, actualKey = "actualGmv") {
+      const target = gmvAmount(record.expectedGmv || record.sales);
+      const actual = gmvAmount(record[actualKey]);
+      if (!target || !actual) return null;
+      return Math.round(actual / target * 100);
+    }
+
+    function averageRate(rates) {
+      const validRates = rates.filter(rate => Number.isFinite(rate));
+      if (!validRates.length) return null;
+      return Math.round(validRates.reduce((sum, rate) => sum + rate, 0) / validRates.length);
+    }
+
+    function gmvAmount(value) {
+      const text = String(value || "");
+      const match = text.match(/[\d.]+/);
+      if (!match) return null;
+      const base = Number(match[0]);
+      if (!Number.isFinite(base)) return null;
+      return text.includes("亿") ? base * 10000 : base;
+    }
+
+    function ratePill(rate) {
+      if (!Number.isFinite(rate)) return `<span class="rate-pill">待回填</span>`;
+      const cls = rate >= 100 ? "green" : rate >= 90 ? "blue" : rate >= 80 ? "orange" : "red";
+      return `<span class="rate-pill ${cls}">${rate}%</span>`;
+    }
+
+    function inDateRange(date, start, end) {
+      return date && date >= start && date <= end;
     }
 
     function filteredDataItems() {
@@ -2557,6 +2754,7 @@
       document.querySelectorAll("[data-data-module]").forEach(input => input.addEventListener("change", () => { state.dataModule = input.value; render(); }));
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
+      document.querySelectorAll("[data-data-role]").forEach(input => input.addEventListener("change", () => { state.dataRole = input.value; render(); }));
       document.querySelectorAll("[data-data-range]").forEach(btn => btn.addEventListener("click", () => setDataRange(btn.dataset.dataRange)));
       document.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
     }
@@ -2802,6 +3000,7 @@
           business,
           expectedGmv: sales,
           actualGmv: "待回填",
+          adsForecastGmv: "待预估",
           sales,
           product,
           mechanism: "按商务文档机制执行",
