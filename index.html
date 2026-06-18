@@ -1119,6 +1119,8 @@
       line-height: 1.35;
       font-size: 12px;
     }
+    .calendar-cell.has-many { min-height: 128px; }
+    .calendar-cell.is-expanded { border-color: #f0b26b; box-shadow: inset 0 0 0 1px #f0b26b; }
     .calendar-event.done { background: var(--green-soft); color: #14863d; }
     .calendar-event.delay { background: var(--red-soft); color: #c43737; }
     .calendar-event strong {
@@ -1130,6 +1132,16 @@
       font-weight: 700;
     }
     .calendar-event span { display: block; margin-top: 3px; opacity: .78; }
+    .calendar-more {
+      min-height: 28px;
+      border: 1px dashed #d9e1eb;
+      border-radius: 8px;
+      background: #fbfcfe;
+      color: #526074;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .calendar-more:hover { border-color: #f08200; color: #f08200; background: #fffaf3; }
 
     @media (max-width: 1180px) {
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1234,6 +1246,7 @@
       listSearch: "",
       listMonth: "2026-06",
       calendarOpen: true,
+      calendarExpandedDay: "",
       productPanelOpen: false,
       dataStart: "2026-06-01",
       dataEnd: "2026-06-30",
@@ -1448,6 +1461,46 @@
         nodesTotal: 4
       },
       {
+        id: "ZC-0620-2",
+        title: "苏夏 6/20 防晒气垫专场",
+        talent: "苏夏",
+        uid: "dy203611",
+        urgency: "A",
+        status: "已排期",
+        liveTime: "2026-06-20 14:00",
+        business: "朱琴",
+        expectedGmv: "¥120万",
+        actualGmv: "待回填",
+        adsForecastGmv: "¥116万",
+        sales: "¥120万",
+        product: "防晒气垫",
+        mechanism: "整点秒杀券，前 10 分钟加赠替换装",
+        source: "同日多场展示示例，模拟下午场排期。",
+        progress: 36,
+        nodesDone: 1,
+        nodesTotal: 4
+      },
+      {
+        id: "ZC-0620-3",
+        title: "南希 6/20 定妆喷雾专场",
+        talent: "南希",
+        uid: "dy776520",
+        urgency: "B",
+        status: "派工中",
+        liveTime: "2026-06-20 22:00",
+        business: "王龙",
+        expectedGmv: "¥68万",
+        actualGmv: "待回填",
+        adsForecastGmv: "¥72万",
+        sales: "¥68万",
+        product: "2.0定妆喷雾-紫瓶",
+        mechanism: "直播间满减券，组合装限时加赠小样",
+        source: "同日多场展示示例，模拟夜间场排期。",
+        progress: 42,
+        nodesDone: 2,
+        nodesTotal: 4
+      },
+      {
         id: "ZC-0624",
         title: "小鹿 6/24 夏季防晒专场",
         talent: "小鹿",
@@ -1640,10 +1693,21 @@
         const day = index - startOffset + 1;
         const inMonth = day >= 1 && day <= last.getDate();
         const dateText = inMonth ? `${month}-${String(day).padStart(2, "0")}` : "";
-        const dayRecords = inMonth ? monthRecords.filter(record => record.liveTime.slice(0, 10) === dateText) : [];
-        return `<div class="calendar-cell ${inMonth ? "" : "is-muted"}">
+        const dayRecords = inMonth
+          ? monthRecords.filter(record => record.liveTime.slice(0, 10) === dateText).sort((a, b) => a.liveTime.localeCompare(b.liveTime))
+          : [];
+        const expanded = state.calendarExpandedDay === dateText;
+        const visibleRecords = expanded ? dayRecords : dayRecords.slice(0, 2);
+        const hiddenCount = dayRecords.length - visibleRecords.length;
+        const moreButton = hiddenCount > 0
+          ? `<button class="calendar-more" data-calendar-day-toggle="${dateText}">还有 ${hiddenCount} 场</button>`
+          : expanded && dayRecords.length > 2
+            ? `<button class="calendar-more" data-calendar-day-toggle="${dateText}">收起</button>`
+            : "";
+        return `<div class="calendar-cell ${inMonth ? "" : "is-muted"} ${dayRecords.length > 2 ? "has-many" : ""} ${expanded ? "is-expanded" : ""}">
           <div class="calendar-day"><span>${inMonth ? day : ""}</span>${dayRecords.length ? badge(`${dayRecords.length}场`, "orange") : ""}</div>
-          ${dayRecords.map(record => calendarEvent(record)).join("")}
+          ${visibleRecords.map(record => calendarEvent(record)).join("")}
+          ${moreButton}
         </div>`;
       });
       return `<section class="panel month-calendar">
@@ -2731,10 +2795,16 @@
       document.querySelectorAll("[data-list-month]").forEach(input => input.addEventListener("change", () => {
         state.listMonth = input.value;
         state.listFilter = "all";
+        state.calendarExpandedDay = "";
         render();
       }));
       document.querySelectorAll("[data-calendar-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.calendarOpen = !state.calendarOpen;
+        if (!state.calendarOpen) state.calendarExpandedDay = "";
+        render();
+      }));
+      document.querySelectorAll("[data-calendar-day-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.calendarExpandedDay = state.calendarExpandedDay === btn.dataset.calendarDayToggle ? "" : btn.dataset.calendarDayToggle;
         render();
       }));
       document.querySelectorAll("[data-list-search]").forEach(input => input.addEventListener("input", () => {
