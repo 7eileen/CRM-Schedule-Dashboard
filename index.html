@@ -208,15 +208,26 @@
     .list-panel { overflow: visible; }
     .list-toolbar {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
       gap: 14px;
       margin-bottom: 18px;
     }
-    .list-toolbar .muted {
+    .list-controls {
+      display: grid;
+      grid-template-columns: 220px minmax(280px, 480px);
+      align-items: end;
+      gap: 12px;
       flex: 1;
       min-width: 0;
     }
+    .toolbar-field {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .toolbar-field .input { min-height: 44px; }
     .list-toolbar .seg-group {
       margin-left: auto;
       padding: 4px;
@@ -232,11 +243,11 @@
     }
     .list-toolbar .seg.active { background: #fff; color: var(--orange); box-shadow: none; }
     .list-search {
-      width: min(320px, 100%);
+      width: 100%;
       display: flex;
       align-items: center;
       gap: 8px;
-      min-height: 40px;
+      min-height: 44px;
       padding: 0 12px;
       border: 1px solid #d9e1eb;
       border-radius: 6px;
@@ -245,7 +256,7 @@
     }
     .list-search input {
       width: 100%;
-      height: 38px;
+      height: 42px;
       border: 0;
       outline: 0;
       background: transparent;
@@ -1030,28 +1041,7 @@
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-    .month-filter {
-      margin-bottom: 18px;
-      overflow: visible;
-    }
-    .month-filter-grid {
-      display: grid;
-      grid-template-columns: 220px minmax(260px, 1fr) auto;
-      gap: 12px;
-      align-items: end;
-    }
     .filter-field { display: grid; gap: 8px; color: var(--muted); font-size: 13px; }
-    .month-hint {
-      min-height: 40px;
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      border: 1px solid #e4eaf2;
-      border-radius: 8px;
-      background: #fbfcfe;
-      color: #526074;
-      line-height: 1.5;
-    }
     .month-calendar { margin-bottom: 18px; }
     .calendar-head-actions {
       display: inline-flex;
@@ -1173,7 +1163,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .data-block-grid, .chart, .project-grid, .month-filter-grid, .product-select-row { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -1185,6 +1175,7 @@
       .task-search, .task-filter-right > .select { width: 100%; min-width: 0; }
       .detail-field.long { grid-column: auto; }
       .list-toolbar { align-items: stretch; flex-direction: column; }
+      .list-toolbar .seg-group { margin-left: 0; }
       .list-search { width: 100%; }
       table { min-width: 760px; }
     }
@@ -1663,15 +1654,6 @@
         return statusMatched && (!keyword || searchText.includes(keyword));
       });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
-      <section class="panel month-filter">
-        <div class="panel-body">
-          <div class="month-filter-grid">
-            <label class="filter-field"><span>排期月份</span><input class="input" type="month" value="${month}" data-list-month></label>
-            <label class="list-search" style="width:100%"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
-            <div class="month-hint">当月已直播完的专场仍展示在当月排期中，可在日历里查看完整节奏。</div>
-          </div>
-        </div>
-      </section>
       <section class="stats list-stats">
         <div class="stat stat-orange"><div><strong>${monthRecords.length}</strong><span>${month} 专场</span></div></div>
         <div class="stat stat-green"><div><strong>${running}</strong><span>进行中</span></div></div>
@@ -1682,7 +1664,10 @@
       <section class="panel list-panel">
         <div class="panel-body">
           <div class="list-toolbar">
-            <span class="muted">卡片列表与上方日历同步展示 ${month} 的所有专场</span>
+            <div class="list-controls">
+              <label class="toolbar-field"><span>排期月份</span><input class="input" type="month" value="${month}" data-list-month></label>
+              <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
+            </div>
             <div class="seg-group">
               ${listFilterButton("all", "全部", monthRecords.length)}
               ${listFilterButton("running", "进行中", running)}
