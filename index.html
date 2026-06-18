@@ -364,6 +364,52 @@
     .detail-field textarea:disabled { color: #8a8f98; cursor: not-allowed; }
     .detail-field.long { grid-column: span 2; }
     .detail-field.full { grid-column: 1 / -1; }
+    .product-field {
+      display: grid;
+      gap: 10px;
+    }
+    .product-select-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .product-panel {
+      border: 1px solid #e4eaf2;
+      border-radius: 14px;
+      background: #fbfcfe;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .product-panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .product-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .product-chip {
+      min-height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid #dfe6ef;
+      background: #fff;
+      color: #4f5e72;
+      font-size: 13px;
+    }
+    .product-chip.active {
+      border-color: var(--orange);
+      background: var(--orange-soft);
+      color: var(--orange);
+      font-weight: 600;
+    }
     .module-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
     .module-tab {
       min-height: 104px;
@@ -1027,7 +1073,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .chart, .project-grid, .month-filter-grid { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .chart, .project-grid, .month-filter-grid, .product-select-row { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .task-review-line { grid-column: 1; }
@@ -1101,6 +1147,7 @@
       listFilter: "all",
       listSearch: "",
       listMonth: "2026-06",
+      productPanelOpen: false,
       dataStart: "2026-06-01",
       dataEnd: "2026-06-30",
       dataModule: "all",
@@ -1186,21 +1233,42 @@
       ops: { enabled: true, title: "运营支持", content: "需要确认直播设备、镜像、化妆、样品试用和福利品秒杀库存。" }
     };
 
+    const productOptions = [
+      "油皮气垫pro",
+      "干皮气垫pro",
+      "联名款油皮气垫",
+      "联名款干皮气垫",
+      "防晒气垫",
+      "经典款气垫（老）",
+      "联名款定妆喷雾-橙瓶",
+      "联名款定妆喷雾-紫瓶",
+      "2.0定妆喷雾-紫瓶",
+      "1.0常规款定妆喷雾-紫瓶",
+      "新年联名款定妆喷雾-红瓶（水粉）",
+      "新款御光防晒素颜霜",
+      "三色淡纹素颜霜",
+      "防晒素颜霜（化学款-老）",
+      "粉底液",
+      "粉底霜",
+      "联名粉底液",
+      "联名粉底霜"
+    ];
+
     const specialDetailGroups = [
       {
         title: "专场信息",
         fields: [
-          { label: "背景", value: "达人安然与商务敲定 6/20 胶原蛋白套盒专场，主打夏季修护与礼盒囤货场景。", wide: "full" },
-          { label: "紧急程度", value: "S" },
+          { label: "达人 UID", value: "dy987650" },
+          { label: "达人昵称", value: "安然" },
+          { label: "专场排期（时间）", value: "2026-06-20T20:00", type: "datetime-local" },
+          { label: "负责商务", value: "王龙" },
+          { label: "状态", value: "已排期", type: "select", options: ["已排期", "已延期", "已取消"] },
+          { label: "类型", value: "专场", type: "select", options: ["专场", "新闻号", "单品直播间"] },
+          { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions, wide: "full" },
           { label: "预估销售额", value: "¥180万" },
-          { label: "主推产品", value: "胶原蛋白套盒" },
-          { label: "主推机制", value: "买二送一，前 20 分钟加赠旅行装", wide: "long" },
-          { label: "次推产品", value: "玻尿酸精华套装" },
-          { label: "次推机制", value: "第二件半价，组合装限时券" },
           { label: "是否有试用", value: "有，达人及助播试用 20 份" },
           { label: "福袋需求", value: "有，开场福袋 1 轮，整点福袋 2 轮", wide: "long" },
           { label: "福利品（即秒杀品）", value: "9.9 元洁面小样 200 单" },
-          { label: "开播时间", value: "2026-06-20 20:00" },
           { label: "达人配合度", value: "高，可配合提前预热、直播口播和短视频确认", wide: "long" }
         ]
       },
@@ -1516,7 +1584,8 @@
     }
 
     function projectCard(record) {
-      const cls = record.status === "待复盘" ? "green" : record.status === "派工中" ? "blue" : "orange";
+      const displayStatus = record.scheduleStatus || record.status;
+      const cls = displayStatus === "待复盘" ? "green" : displayStatus === "派工中" ? "blue" : displayStatus === "已取消" || displayStatus === "已延期" ? "red" : "orange";
       return `<button class="project-card" data-open-project="${record.id}">
         <div class="project-card-head">
           <div class="project-main">
@@ -1526,7 +1595,7 @@
         </div>
         <div class="project-product-line"><span>主推产品</span><strong>${record.product}</strong></div>
         <div class="progress"><span style="width:${record.progress}%"></span></div>
-        <div class="project-card-foot"><span class="project-card-foot-left">${badge(record.status, cls)}</span><span class="muted">${record.sales}</span></div>
+        <div class="project-card-foot"><span class="project-card-foot-left">${badge(displayStatus, cls)}</span><span class="muted">${record.sales}</span></div>
         <div class="project-meta-line"><span class="project-meta-left"><span>达人 <strong>${record.talent}</strong></span></span><span class="project-date">${record.liveTime}</span></div>
       </button>`;
     }
@@ -1583,9 +1652,35 @@
 
     function detailField(groupIndex, fieldIndex, item, disabled = false) {
       const cls = item.wide ? ` ${item.wide}` : "";
+      const key = `${groupIndex}:${fieldIndex}`;
+      if (item.type === "select") {
+        return `<label class="detail-field${cls}">
+          <span>${item.label}</span>
+          <select class="select" data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.options.map(option => `<option ${option === item.value ? "selected" : ""}>${option}</option>`).join("")}</select>
+        </label>`;
+      }
+      if (item.type === "datetime-local") {
+        return `<label class="detail-field${cls}">
+          <span>${item.label}</span>
+          <input class="input" type="datetime-local" value="${item.value}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
+        </label>`;
+      }
+      if (item.type === "product") {
+        return `<div class="detail-field${cls} product-field">
+          <span>${item.label}</span>
+          <div class="product-select-row">
+            <select class="select" data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.options.map(option => `<option ${option === item.value ? "selected" : ""}>${option}</option>`).join("")}</select>
+            <button class="btn ghost" data-product-toggle>${state.productPanelOpen ? "收起商品栏" : "展开商品栏"}</button>
+          </div>
+          ${state.productPanelOpen ? `<div class="product-panel">
+            <div class="product-panel-head"><strong>标准主推产品</strong><span>点击商品可回填到下拉框</span></div>
+            <div class="product-options">${item.options.map(option => `<button class="product-chip ${option === item.value ? "active" : ""}" data-product-option="${option}" data-product-field="${key}">${option}</button>`).join("")}</div>
+          </div>` : ""}
+        </div>`;
+      }
       return `<label class="detail-field${cls}">
         <span>${item.label}</span>
-        <textarea data-special-detail="${groupIndex}:${fieldIndex}" ${disabled ? "disabled" : ""}>${item.value}</textarea>
+        <textarea data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.value}</textarea>
       </label>`;
     }
 
@@ -1607,7 +1702,7 @@
         <div class="panel">
           <div class="panel-head"><h2 class="panel-title">项目详情</h2><button class="btn ghost" data-drawer="record">原始记录</button></div>
           <div class="panel-body stack">
-            <div class="field-grid">${field("达人 UID", record.uid)}${field("紧急程度", record.urgency || "B")}${field("开播时间", record.liveTime)}${field("预估销售额", record.sales)}${field("主推产品", record.product)}${field("主推机制", record.mechanism)}${field("当前状态", record.status)}</div>
+            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("预估销售额", record.sales)}${field("主推产品", record.product)}</div>
             <div class="panel" style="box-shadow:none"><div class="panel-head"><h3 class="panel-title">需求识别概览</h3></div><div class="panel-body"><div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div></div></div>
           </div>
         </div>
@@ -1784,7 +1879,7 @@
         <div class="panel">
           <div class="panel-head"><div><h2 class="panel-title">${record.title}</h2></div><button class="btn ghost" data-drawer="record">查看原始记录</button></div>
           <div class="panel-body stack">
-            <div class="field-grid">${field("达人 UID", record.uid)}${field("紧急程度", record.urgency || "B")}${field("开播时间", record.liveTime)}${field("预估销售额", record.sales)}${field("主推产品", record.product)}${field("主推机制", record.mechanism)}${field("当前状态", record.status)}</div>
+            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("预估销售额", record.sales)}${field("主推产品", record.product)}</div>
             <div class="upload"><div><strong>专场记录表入口</strong><button class="btn primary" data-go="analysis">提交需求识别</button></div></div>
           </div>
         </div>
@@ -2396,9 +2491,23 @@
         supportNeeds[input.dataset.detailSupportToggle].enabled = input.checked;
         render();
       }));
-      document.querySelectorAll("[data-special-detail]").forEach(input => input.addEventListener("input", () => {
-        const [groupIndex, fieldIndex] = input.dataset.specialDetail.split(":").map(Number);
-        specialDetailGroups[groupIndex].fields[fieldIndex].value = input.value;
+      document.querySelectorAll("[data-special-detail]").forEach(input => {
+        const updateSpecialDetail = () => {
+          const [groupIndex, fieldIndex] = input.dataset.specialDetail.split(":").map(Number);
+          specialDetailGroups[groupIndex].fields[fieldIndex].value = input.value;
+        };
+        input.addEventListener("input", updateSpecialDetail);
+        input.addEventListener("change", updateSpecialDetail);
+      });
+      document.querySelectorAll("[data-product-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.productPanelOpen = !state.productPanelOpen;
+        render();
+      }));
+      document.querySelectorAll("[data-product-option]").forEach(btn => btn.addEventListener("click", () => {
+        const [groupIndex, fieldIndex] = btn.dataset.productField.split(":").map(Number);
+        specialDetailGroups[groupIndex].fields[fieldIndex].value = btn.dataset.productOption;
+        toast("已选择主推产品");
+        render();
       }));
       document.querySelectorAll("[data-drawer]").forEach(btn => btn.addEventListener("click", () => openRecordDrawer()));
       document.querySelectorAll("[data-task-user]").forEach(input => input.addEventListener("change", () => {
@@ -2672,20 +2781,30 @@
       if (name === "recognizeDoc") toast("AI 已识别字段，并生成四类需求池建议");
       if (name === "createProjectFromEntry") {
         const newId = `ZC-${Date.now()}`;
+        const talent = specialValue("达人昵称", "安然");
+        const uid = specialValue("达人 UID", "dy987650");
+        const liveAt = specialValue("专场排期（时间）", "2026-06-20T20:00").replace("T", " ");
+        const business = specialValue("负责商务", "商务");
+        const scheduleStatus = specialValue("状态", "已排期");
+        const type = specialValue("类型", "专场");
+        const product = specialValue("主推产品", "油皮气垫pro");
+        const sales = specialValue("预估销售额", "¥180万");
         records.unshift({
           id: newId,
-          title: "安然 6/20 胶原蛋白套盒专场",
-          talent: "安然",
-          uid: "dy987650",
+          title: `${talent} ${liveAt.slice(5, 10).replace("-", "/")} ${product}${type}`,
+          talent,
+          uid,
           urgency: entryUrgency(),
           status: "待识别",
-          liveTime: "2026-06-20 20:00",
-          business: "商务",
-          expectedGmv: "¥180万",
+          scheduleStatus,
+          type,
+          liveTime: liveAt,
+          business,
+          expectedGmv: sales,
           actualGmv: "待回填",
-          sales: "¥180万",
-          product: "胶原蛋白套盒",
-          mechanism: "买二送一，前 20 分钟加赠旅行装",
+          sales,
+          product,
+          mechanism: "按商务文档机制执行",
           source: "商务通过文档录入发布专场需求，待各支持组负责人派工。",
           progress: 25,
           nodesDone: 1,
@@ -2768,11 +2887,20 @@
       return `"${text.replaceAll('"', '""')}"`;
     }
 
-    function entryUrgency() {
+    function specialValue(label, fallback = "") {
       const infoGroup = specialDetailGroups.find(group => group.title === "专场信息");
-      const urgencyField = infoGroup ? infoGroup.fields.find(field => field.label === "紧急程度") : null;
-      const value = urgencyField ? urgencyField.value.trim().toUpperCase() : "";
-      return ["S", "A", "B", "C"].includes(value) ? value : "B";
+      const item = infoGroup ? infoGroup.fields.find(field => field.label === label) : null;
+      return item ? item.value : fallback;
+    }
+
+    function entryUrgency() {
+      const salesText = specialValue("预估销售额", "0");
+      const salesValue = Number((salesText.match(/[\d.]+/) || ["0"])[0]);
+      if (salesValue > 300) return "S+";
+      if (salesValue >= 151) return "S";
+      if (salesValue >= 100) return "A";
+      if (salesValue >= 51) return "B";
+      return "C";
     }
 
     function openNode(id) {
@@ -2803,7 +2931,7 @@
 
     function openRecordDrawer() {
       const record = selectedRecord();
-      openDrawer("专场记录表原文", `<div class="stack">${field("达人", record.talent)}${field("达人 UID", record.uid)}${field("紧急程度", record.urgency || "B")}${field("开播时间", record.liveTime)}${field("主推产品", record.product)}${field("主推机制", record.mechanism)}${field("记录来源", "商务填写专场记录表 / 飞书表格同步")}</div>`);
+      openDrawer("专场记录表原文", `<div class="stack">${field("达人", record.talent)}${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("主推产品", record.product)}${field("记录来源", "商务填写专场记录表 / 飞书表格同步")}</div>`);
     }
 
     function openLogDrawer() {
