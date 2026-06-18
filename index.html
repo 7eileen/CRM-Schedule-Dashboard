@@ -1173,6 +1173,14 @@
     };
 
     const owners = ["刘曼曼", "张一凡", "王可", "李晴", "陈响", "周宁", "林悦", "赵敏", "宋然", "陈舟", "何璐", "待分配"];
+    const seniorTaskViewers = ["六哥", "建新", "倩文"];
+    const taskScopeOptions = [
+      { id: "mine", label: "我的任务" },
+      { id: "contentLead", label: "内容组长" },
+      { id: "editLead", label: "剪辑组长" },
+      { id: "adsLead", label: "投放组长" },
+      ...seniorTaskViewers.map(name => ({ id: name, label: name }))
+    ];
     const moduleOrder = ["content", "edit", "ads", "ops"];
     const moduleMembers = {
       content: ["李晴", "王可", "张一凡", "待分配"],
@@ -1187,6 +1195,7 @@
       module: "content",
       dispatchOpen: "",
       taskUser: "刘曼曼",
+      taskScope: "mine",
       taskStatusFilter: "all",
       taskModuleFilter: "all",
       taskSearch: "",
@@ -1553,7 +1562,7 @@
       const keyword = state.listSearch.trim().toLowerCase();
       const filteredRecords = monthRecords.filter(record => {
         const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘") || (state.listFilter === "review" && record.status === "待复盘");
-        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, record.urgency].join(" ").toLowerCase();
+        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, talentGrade(record)].join(" ").toLowerCase();
         return statusMatched && (!keyword || searchText.includes(keyword));
       });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
@@ -1629,8 +1638,25 @@
       return `<button class="seg ${state.listFilter === key ? "active" : ""}" data-list-filter="${key}">${label} ${count}</button>`;
     }
 
+    function talentGrade(record) {
+      return talentGradeFromSales(record.expectedGmv || record.sales);
+    }
+
+    function talentGradeFromSales(salesText) {
+      const salesValue = gmvAmount(salesText) || 0;
+      if (salesValue > 300) return "S+";
+      if (salesValue >= 151) return "S";
+      if (salesValue >= 100) return "A";
+      if (salesValue >= 51) return "B";
+      return "C";
+    }
+
+    function gradeRank(level) {
+      return { "S+": 0, S: 1, A: 2, B: 3, C: 4 }[String(level || "C").toUpperCase()] ?? 5;
+    }
+
     function urgencyClass(level) {
-      const map = { S: "red", A: "orange", B: "blue", C: "green" };
+      const map = { "S+": "red", S: "red", A: "orange", B: "blue", C: "green" };
       return map[(level || "B").toUpperCase()] || "orange";
     }
 
@@ -1645,7 +1671,7 @@
       return `<button class="project-card" data-open-project="${record.id}">
         <div class="project-card-head">
           <div class="project-main">
-            <div class="project-title-line">${urgencyBadge(record.urgency)}<h2>${record.title}</h2></div>
+            <div class="project-title-line">${urgencyBadge(talentGrade(record))}<h2>${record.title}</h2></div>
           </div>
           <span class="project-percent">${record.progress}%</span>
         </div>
@@ -1772,7 +1798,7 @@
           <div class="row" style="justify-content:flex-start">
             <button class="btn ghost" data-view="list" onclick="goList()">‹</button>
             <div>
-              <div class="meta">${urgencyBadge(record.urgency)}${badge(record.status, cls)}</div>
+              <div class="meta">${urgencyBadge(talentGrade(record))}${badge(record.status, cls)}</div>
               <h1 style="font-size:24px;margin:8px 0 0">${record.title}</h1>
             </div>
           </div>
@@ -2168,18 +2194,18 @@
     }
 
     function pageMyTasks() {
-      const userItems = allDispatchTaskItems().filter(item => item.task.owner === state.taskUser);
-      const myItems = filteredMyTaskItems(userItems);
-      const done = userItems.filter(item => item.task.status === "已完成").length;
-      const delayed = userItems.filter(item => item.task.status === "延期中").length;
-      const reviewing = userItems.filter(item => item.task.status === "待审核").length;
-      const doing = userItems.filter(item => item.task.status !== "已完成").length;
-      const pending = userItems.filter(item => item.task.status === "待处理").length;
-      const running = userItems.filter(item => item.task.status === "进行中").length;
+      const scopeItems = scopedTaskItems();
+      const myItems = filteredMyTaskItems(scopeItems);
+      const done = scopeItems.filter(item => item.task.status === "已完成").length;
+      const delayed = scopeItems.filter(item => item.task.status === "延期中").length;
+      const reviewing = scopeItems.filter(item => item.task.status === "待审核").length;
+      const doing = scopeItems.filter(item => item.task.status !== "已完成").length;
+      const pending = scopeItems.filter(item => item.task.status === "待处理").length;
+      const running = scopeItems.filter(item => item.task.status === "进行中").length;
       return `${head("我的任务")}
       <div class="my-task-tools">
         <div class="seg-group">
-          ${taskStatusFilterButton("all", "全部", userItems.length)}
+          ${taskStatusFilterButton("all", "全部", scopeItems.length)}
           ${taskStatusFilterButton("pending", "待处理", pending)}
           ${taskStatusFilterButton("running", "进行中", running)}
           ${taskStatusFilterButton("reviewing", "待审核", reviewing)}
@@ -2188,25 +2214,46 @@
         </div>
         <div class="task-filter-right">
           <div class="member-switch">
-            <span>成员视角</span>
-            <select class="select" data-task-user>${owners.filter(owner => owner !== "待分配").map(owner => `<option ${owner === state.taskUser ? "selected" : ""}>${owner}</option>`).join("")}</select>
+            <span>查看范围</span>
+            <select class="select" data-task-scope>${taskScopeOptions.map(option => `<option value="${option.id}" ${state.taskScope === option.id ? "selected" : ""}>${option.label}</option>`).join("")}</select>
+          </div>
+          <div class="member-switch">
+            <span>${state.taskScope === "mine" ? "成员视角" : "查看对象"}</span>
+            ${state.taskScope === "mine" ? `<select class="select" data-task-user>${owners.filter(owner => owner !== "待分配").map(owner => `<option ${owner === state.taskUser ? "selected" : ""}>${owner}</option>`).join("")}</select>` : `<strong>${taskScopeTitle()}</strong>`}
           </div>
           <select class="select" data-task-module-filter><option value="all">全部支持</option>${moduleOrder.map(key => `<option value="${key}" ${state.taskModuleFilter === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select>
           <input class="input task-search" value="${state.taskSearch}" placeholder="搜索任务..." data-task-search>
         </div>
       </div>
       <section class="stats">
-        <div class="stat stat-orange"><div><strong>${userItems.length}</strong><span>我的任务</span></div></div>
+        <div class="stat stat-orange"><div><strong>${scopeItems.length}</strong><span>范围任务</span></div></div>
         <div class="stat stat-blue"><div><strong>${doing}</strong><span>待处理</span></div></div>
         <div class="stat stat-green"><div><strong>${done}</strong><span>已完成</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
       </section>
       <section class="panel">
-        <div class="panel-head"><div><h2 class="panel-title">${state.taskUser}的达人专场任务</h2></div>${badge(`${myItems.length} 条任务`, "orange")}</div>
+        <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2><div class="muted">已按达人等级和需求时间自动排序</div></div>${badge(`${myItems.length} 条任务`, "orange")}</div>
         <div class="panel-body">
           ${myItems.length ? `<div class="my-task-list">${myItems.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
         </div>
       </section>`;
+    }
+
+    function scopedTaskItems() {
+      const items = allDispatchTaskItems();
+      const scopeModule = { contentLead: "content", editLead: "edit", adsLead: "ads" }[state.taskScope];
+      if (scopeModule) return items.filter(item => item.moduleKey === scopeModule);
+      if (seniorTaskViewers.includes(state.taskScope)) return items;
+      return items.filter(item => item.task.owner === state.taskUser);
+    }
+
+    function taskScopeTitle() {
+      const option = taskScopeOptions.find(item => item.id === state.taskScope);
+      if (state.taskScope === "mine") return state.taskUser;
+      if (state.taskScope === "contentLead") return "内容组长";
+      if (state.taskScope === "editLead") return "剪辑组长";
+      if (state.taskScope === "adsLead") return "投放组长";
+      return option ? option.label : state.taskUser;
     }
 
     function taskStatusFilterButton(key, label, count) {
@@ -2225,9 +2272,21 @@
       return items.filter(item => {
         const statusMatched = state.taskStatusFilter === "all" || item.task.status === statusMap[state.taskStatusFilter];
         const moduleMatched = state.taskModuleFilter === "all" || item.moduleKey === state.taskModuleFilter;
-        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner].join(" ").toLowerCase();
+        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner, talentGrade(item.record)].join(" ").toLowerCase();
         return statusMatched && moduleMatched && (!keyword || searchText.includes(keyword));
-      });
+      }).sort(taskUrgencyCompare);
+    }
+
+    function taskUrgencyCompare(a, b) {
+      const gradeDelta = gradeRank(talentGrade(a.record)) - gradeRank(talentGrade(b.record));
+      if (gradeDelta) return gradeDelta;
+      const dateDelta = taskDemandDate(a).localeCompare(taskDemandDate(b));
+      if (dateDelta) return dateDelta;
+      return a.record.liveTime.localeCompare(b.record.liveTime);
+    }
+
+    function taskDemandDate(item) {
+      return item.task.delayDue || item.task.due || item.record.liveTime.slice(0, 10);
     }
 
     function myTaskCard(item) {
@@ -2243,7 +2302,7 @@
         <div class="my-task-head">
           <div>
             <h3>${record.title}</h3>
-            <div class="meta"><span>${record.talent}</span><span>${record.liveTime}</span><span>${record.product}</span>${badge(supportNeeds[moduleKey].title, module.cls)}</div>
+            <div class="meta">${urgencyBadge(talentGrade(record))}<span>${record.talent}</span><span>${record.liveTime}</span><span>${record.product}</span>${badge(supportNeeds[moduleKey].title, module.cls)}</div>
           </div>
           ${badge(task.status, statusCls)}
         </div>
@@ -2251,7 +2310,7 @@
           <div class="row">
             <div>
               <div class="task-name">${task.title}</div>
-              <div class="meta"><span>负责人：${module.owner}</span><span>完成时间：${formatDate(task.due)}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}${task.reviewedAt ? `<span>审核于：${formatDate(task.reviewedAt)}</span>` : ""}${task.rejectedAt ? `<span>驳回于：${formatDate(task.rejectedAt)}</span>` : ""}</div>
+              <div class="meta"><span>执行人：${task.owner}</span><span>组长：${module.owner}</span><span>需求时间：${formatDate(taskDemandDate(item))}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}${task.reviewedAt ? `<span>审核于：${formatDate(task.reviewedAt)}</span>` : ""}${task.rejectedAt ? `<span>驳回于：${formatDate(task.rejectedAt)}</span>` : ""}</div>
             </div>
           </div>
           <div class="task-note">${demandText(record, moduleKey)}</div>
@@ -2711,6 +2770,11 @@
         state.taskUser = input.value;
         render();
       }));
+      document.querySelectorAll("[data-task-scope]").forEach(input => input.addEventListener("change", () => {
+        state.taskScope = input.value;
+        state.taskModuleFilter = "all";
+        render();
+      }));
       document.querySelectorAll("[data-task-status-filter]").forEach(btn => btn.addEventListener("click", () => {
         state.taskStatusFilter = btn.dataset.taskStatusFilter;
         render();
@@ -3093,13 +3157,7 @@
     }
 
     function entryUrgency() {
-      const salesText = specialValue("预估销售额", "0");
-      const salesValue = Number((salesText.match(/[\d.]+/) || ["0"])[0]);
-      if (salesValue > 300) return "S+";
-      if (salesValue >= 151) return "S";
-      if (salesValue >= 100) return "A";
-      if (salesValue >= 51) return "B";
-      return "C";
+      return talentGradeFromSales(specialValue("预估销售额", "0"));
     }
 
     function openNode(id) {
