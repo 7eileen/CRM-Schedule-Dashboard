@@ -1055,6 +1055,20 @@
       flex-wrap: wrap;
       justify-content: flex-end;
     }
+    .calendar-month-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .calendar-month-picker .input {
+      width: 148px;
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: 14px;
+    }
     .calendar-toggle {
       min-height: 32px;
       padding: 0 12px;
@@ -1633,7 +1647,7 @@
         </div>`;
       });
       return `<section class="panel month-calendar">
-        <div class="panel-head"><h2 class="panel-title">${month} 专场日历</h2><div class="calendar-head-actions">${badge(`${monthRecords.length} 个专场`, "blue")}<button class="calendar-toggle" data-calendar-toggle>${state.calendarOpen ? "收起日历" : "展开日历"}</button></div></div>
+        <div class="panel-head"><h2 class="panel-title">专场日历</h2><div class="calendar-head-actions"><label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-list-month></label>${badge(`${monthRecords.length} 个专场`, "blue")}<button class="calendar-toggle" data-calendar-toggle>${state.calendarOpen ? "收起日历" : "展开日历"}</button></div></div>
         ${state.calendarOpen ? `<div class="panel-body">
           <div class="calendar-grid">
             ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
