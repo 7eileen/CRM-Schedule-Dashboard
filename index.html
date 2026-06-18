@@ -1105,7 +1105,13 @@
       align-content: start;
       gap: 8px;
     }
-    .calendar-cell.is-muted { background: #f8fafc; color: #b3bcc9; }
+    .calendar-cell.is-muted {
+      visibility: hidden;
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+      pointer-events: none;
+    }
     .calendar-day {
       display: flex;
       justify-content: space-between;
@@ -1170,6 +1176,7 @@
       .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .data-block-grid, .chart, .project-grid, .month-filter-grid, .product-select-row { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
+      .calendar-cell.is-muted { display: none; }
       .task-review-line { grid-column: 1; }
       .bar-row { grid-template-columns: 1fr; }
       .range-actions { justify-content: flex-start; }
