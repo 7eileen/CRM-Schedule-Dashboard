@@ -1048,6 +1048,23 @@
       line-height: 1.5;
     }
     .month-calendar { margin-bottom: 18px; }
+    .calendar-head-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .calendar-toggle {
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid #d9e1eb;
+      background: #fff;
+      color: #526074;
+      font-size: 14px;
+      font-weight: 500;
+    }
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1202,6 +1219,7 @@
       listFilter: "all",
       listSearch: "",
       listMonth: "2026-06",
+      calendarOpen: true,
       productPanelOpen: false,
       dataStart: "2026-06-01",
       dataEnd: "2026-06-30",
@@ -1615,13 +1633,13 @@
         </div>`;
       });
       return `<section class="panel month-calendar">
-        <div class="panel-head"><h2 class="panel-title">${month} 专场日历</h2>${badge(`${monthRecords.length} 个专场`, "blue")}</div>
-        <div class="panel-body">
+        <div class="panel-head"><h2 class="panel-title">${month} 专场日历</h2><div class="calendar-head-actions">${badge(`${monthRecords.length} 个专场`, "blue")}<button class="calendar-toggle" data-calendar-toggle>${state.calendarOpen ? "收起日历" : "展开日历"}</button></div></div>
+        ${state.calendarOpen ? `<div class="panel-body">
           <div class="calendar-grid">
             ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
             ${cells.join("")}
           </div>
-        </div>
+        </div>` : ""}
       </section>`;
     }
 
@@ -2699,6 +2717,10 @@
       document.querySelectorAll("[data-list-month]").forEach(input => input.addEventListener("change", () => {
         state.listMonth = input.value;
         state.listFilter = "all";
+        render();
+      }));
+      document.querySelectorAll("[data-calendar-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.calendarOpen = !state.calendarOpen;
         render();
       }));
       document.querySelectorAll("[data-list-search]").forEach(input => input.addEventListener("input", () => {
