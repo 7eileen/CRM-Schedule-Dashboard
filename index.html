@@ -378,6 +378,8 @@
     .detail-field span { color: var(--muted); font-size: 13px; font-weight: 400; }
     .detail-field textarea { min-height: 54px; background: #fff; }
     .detail-field textarea:disabled { color: #8a8f98; cursor: not-allowed; }
+    .time-range-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+    .time-range-separator { color: var(--muted); font-size: 13px; font-style: normal; }
     .detail-field.long { grid-column: span 2; }
     .detail-field.full { grid-column: 1 / -1; }
     .product-field {
@@ -1883,6 +1885,43 @@
       </label>`;
     }
 
+    function padTimePart(value) {
+      return String(value || "").padStart(2, "0");
+    }
+
+    function normalizedDateValue(value) {
+      const match = String(value || "").trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      return match ? `${match[1]}-${padTimePart(match[2])}-${padTimePart(match[3])}` : "";
+    }
+
+    function normalizedDateTimeValue(value) {
+      const match = String(value || "").trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
+      if (!match) return "";
+      return `${match[1]}-${padTimePart(match[2])}-${padTimePart(match[3])}T${padTimePart(match[4] || "00")}:${padTimePart(match[5] || "00")}`;
+    }
+
+    function normalizedTimeValue(value) {
+      const match = String(value || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+      return match ? `${padTimePart(match[1])}:${padTimePart(match[2])}` : "";
+    }
+
+    function timeRangeValue(value) {
+      const match = String(value || "").trim().match(/^(\d{1,2}:\d{2})\s*(?:-|~|—|至)\s*(\d{1,2}:\d{2})$/);
+      return match ? { start: normalizedTimeValue(match[1]), end: normalizedTimeValue(match[2]) } : null;
+    }
+
+    function detailTimeType(item) {
+      if (item.type === "datetime-local" || item.type === "date" || item.type === "time") return item.type;
+      const label = item.label || "";
+      const value = String(item.value || "").trim();
+      if (!/[日期时间]/.test(label)) return "";
+      if (timeRangeValue(value)) return "time-range";
+      if (normalizedDateTimeValue(value) && (label.includes("时间") || value.includes(":"))) return "datetime-local";
+      if (normalizedDateValue(value) && label.includes("日期")) return "date";
+      if (normalizedTimeValue(value)) return "time";
+      return "";
+    }
+
     function detailField(groupIndex, fieldIndex, item, disabled = false) {
       const cls = item.wide ? ` ${item.wide}` : "";
       const key = `${groupIndex}:${fieldIndex}`;
@@ -1895,7 +1934,37 @@
       if (item.type === "datetime-local") {
         return `<label class="detail-field${cls}">
           <span>${item.label}</span>
-          <input class="input" type="datetime-local" value="${item.value}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
+          <input class="input" type="datetime-local" value="${normalizedDateTimeValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
+        </label>`;
+      }
+      const timeType = detailTimeType(item);
+      if (timeType === "datetime-local") {
+        return `<label class="detail-field${cls}">
+          <span>${item.label}</span>
+          <input class="input" type="datetime-local" value="${normalizedDateTimeValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
+        </label>`;
+      }
+      if (timeType === "date") {
+        return `<label class="detail-field${cls}">
+          <span>${item.label}</span>
+          <input class="input" type="date" value="${normalizedDateValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
+        </label>`;
+      }
+      if (timeType === "time") {
+        return `<label class="detail-field${cls}">
+          <span>${item.label}</span>
+          <input class="input" type="time" value="${normalizedTimeValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
+        </label>`;
+      }
+      if (timeType === "time-range") {
+        const range = timeRangeValue(item.value);
+        return `<label class="detail-field${cls}">
+          <span>${item.label}</span>
+          <div class="time-range-row">
+            <input class="input" type="time" value="${range.start}" data-special-detail-range="${key}" data-range-part="start" ${disabled ? "disabled" : ""}>
+            <em class="time-range-separator">至</em>
+            <input class="input" type="time" value="${range.end}" data-special-detail-range="${key}" data-range-part="end" ${disabled ? "disabled" : ""}>
+          </div>
         </label>`;
       }
       if (item.type === "product") {
@@ -3035,10 +3104,21 @@
       document.querySelectorAll("[data-special-detail]").forEach(input => {
         const updateSpecialDetail = () => {
           const [groupIndex, fieldIndex] = input.dataset.specialDetail.split(":").map(Number);
-          specialDetailGroups[groupIndex].fields[fieldIndex].value = input.value;
+          specialDetailGroups[groupIndex].fields[fieldIndex].value = input.type === "datetime-local" ? input.value.replace("T", " ") : input.value;
         };
         input.addEventListener("input", updateSpecialDetail);
         input.addEventListener("change", updateSpecialDetail);
+      });
+      document.querySelectorAll("[data-special-detail-range]").forEach(input => {
+        const updateSpecialDetailRange = () => {
+          const [groupIndex, fieldIndex] = input.dataset.specialDetailRange.split(":").map(Number);
+          const row = input.closest(".time-range-row");
+          const start = row.querySelector('[data-range-part="start"]').value;
+          const end = row.querySelector('[data-range-part="end"]').value;
+          specialDetailGroups[groupIndex].fields[fieldIndex].value = start && end ? `${start}-${end}` : [start, end].filter(Boolean).join("-");
+        };
+        input.addEventListener("input", updateSpecialDetailRange);
+        input.addEventListener("change", updateSpecialDetailRange);
       });
       document.querySelectorAll("[data-product-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.productPanelOpen = !state.productPanelOpen;
