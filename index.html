@@ -2352,8 +2352,7 @@
       const doing = scopeItems.filter(item => item.task.status !== "已完成").length;
       const pending = scopeItems.filter(item => item.task.status === "待处理").length;
       const running = scopeItems.filter(item => item.task.status === "进行中").length;
-      return `${head("我的任务")}
-      <div class="my-task-tools">
+      return `<div class="my-task-tools">
         <div class="seg-group">
           ${taskStatusFilterButton("all", "全部", scopeItems.length)}
           ${taskStatusFilterButton("pending", "待处理", pending)}
