@@ -811,35 +811,27 @@
       font-size: 13px;
       white-space: nowrap;
     }
-    .data-feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(180px, 1fr));
-      gap: 14px;
+    .data-center-tabs {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      margin-bottom: 18px;
+      border-radius: 14px;
+      background: #eef3f8;
     }
-    .data-feature-card {
-      min-height: 112px;
-      padding: 18px 20px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #fff;
-      box-shadow: var(--shadow);
-      display: grid;
-      gap: 10px;
-      text-align: left;
-      color: inherit;
-      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
-    }
-    .data-feature-card:hover {
-      border-color: #ffc36f;
-      box-shadow: 0 8px 24px rgba(15, 35, 65, .08);
-      transform: translateY(-1px) scale(1.006);
-    }
-    .data-feature-card strong {
-      color: var(--text);
-      font-size: 18px;
+    .data-center-tab {
+      min-height: 38px;
+      padding: 0 18px;
+      border-radius: 11px;
+      color: #6a7585;
+      font-size: 15px;
       font-weight: 500;
     }
-    .data-feature-card span { color: var(--muted); line-height: 1.55; }
+    .data-center-tab.active {
+      background: #fff;
+      color: var(--orange);
+      box-shadow: 0 6px 18px rgba(15, 35, 65, .08);
+    }
     .rate-pill {
       min-width: 58px;
       min-height: 28px;
@@ -1209,7 +1201,6 @@
       .data-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .monthly-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .data-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
@@ -1225,7 +1216,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .data-feature-grid, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -1319,6 +1310,7 @@
       dataMember: "all",
       dataStatus: "all",
       dataRole: "admin",
+      dataCenterTab: "specialStats",
       monthlyMonth: "2026-06",
       monthlyBusiness: "all",
       monthlyStatus: "all",
@@ -1659,7 +1651,6 @@
       if (state.view === "entry") app.innerHTML = pageEntry();
       if (state.view === "dispatch") app.innerHTML = pageDispatch();
       if (state.view === "myTasks") app.innerHTML = pageMyTasks();
-      if (state.view === "monthlyStats") app.innerHTML = pageMonthlyStats();
       if (state.view === "dataCenter") app.innerHTML = pageDataCenter();
       if (state.view === "detail") app.innerHTML = pageDetail();
       bind();
@@ -1678,7 +1669,7 @@
 
     function renderNav() {
       $("#nav").innerHTML = tabs.map(tab => {
-        const active = state.view === tab.id || (tab.id === "list" && state.view === "detail") || (tab.id === "dataCenter" && state.view === "monthlyStats");
+        const active = state.view === tab.id || (tab.id === "list" && state.view === "detail");
         return `<button class="${active ? "active" : ""}" data-view="${tab.id}">${tab.name}</button>`;
       }).join("");
     }
@@ -2529,8 +2520,19 @@
       const rate = total ? Math.round(done / total * 100) : 0;
       const businessView = state.dataRole === "business";
       return `${head("数据中心")}
-      ${dataFeaturePanel()}
-      ${dataToolbar()}
+      ${dataCenterTabs()}
+      ${state.dataCenterTab === "specialStats" ? monthlySpecialStatsPanel() : dataBlockDashboard(items, total, done, delayed, pending, rate, businessView)}`;
+    }
+
+    function dataCenterTabs() {
+      return `<div class="data-center-tabs">
+        <button class="data-center-tab ${state.dataCenterTab === "specialStats" ? "active" : ""}" data-data-center-tab="specialStats">专场统计</button>
+        <button class="data-center-tab ${state.dataCenterTab === "dataBlocks" ? "active" : ""}" data-data-center-tab="dataBlocks">数据板块</button>
+      </div>`;
+    }
+
+    function dataBlockDashboard(items, total, done, delayed, pending, rate, businessView) {
+      return `${dataToolbar()}
       <section class="stats">
         <div class="stat stat-orange"><div><strong>${total}</strong><span>任务总数</span></div></div>
         <button class="stat stat-green is-clickable" data-action="openCompletedSpecials"><div><strong>${done}</strong><span>已完成</span></div></button>
@@ -2555,31 +2557,6 @@
       <section class="panel">
         <div class="panel-head"><h2 class="panel-title">任务明细</h2>${badge(`${items.length} 条`, "orange")}</div>
         <div class="panel-body table-wrap">${dataTaskTable(items)}</div>
-      </section>`;
-    }
-
-    function pageMonthlyStats() {
-      return `${head("月度专场统计", `<button class="btn ghost" data-go="dataCenter">返回数据中心</button>`)}
-      ${monthlySpecialStatsPanel()}`;
-    }
-
-    function dataFeaturePanel() {
-      const rows = monthlySpecialRows();
-      const stats = monthlySpecialStats(rows);
-      return `<section class="panel data-filter-panel">
-        <div class="panel-head">
-          <h2 class="panel-title">数据中心功能</h2>
-          <span class="data-note">按业务场景进入独立统计页面</span>
-        </div>
-        <div class="panel-body">
-          <div class="data-feature-grid">
-            <button class="data-feature-card" data-go="monthlyStats">
-              <strong>月度专场统计</strong>
-              <span>按月份统计专场总数、已完成、未完成、延期、取消和完成率，可导出业务月报。</span>
-              <span class="data-note">${state.monthlyMonth} · ${stats.total} 个专场</span>
-            </button>
-          </div>
-        </div>
       </section>`;
     }
 
@@ -3131,6 +3108,7 @@
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
       document.querySelectorAll("[data-data-role]").forEach(input => input.addEventListener("change", () => { state.dataRole = input.value; render(); }));
+      document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
       document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
       document.querySelectorAll("[data-monthly-business]").forEach(input => input.addEventListener("change", () => { state.monthlyBusiness = input.value; render(); }));
       document.querySelectorAll("[data-monthly-status]").forEach(input => input.addEventListener("change", () => { state.monthlyStatus = input.value; render(); }));
