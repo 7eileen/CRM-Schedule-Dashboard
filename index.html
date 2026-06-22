@@ -743,6 +743,36 @@
       gap: 12px;
       align-items: end;
     }
+    .monthly-special-panel { margin-bottom: 18px; }
+    .monthly-toolbar {
+      display: grid;
+      grid-template-columns: 160px minmax(120px, 1fr) minmax(120px, 1fr) minmax(130px, 1fr) minmax(190px, 1.5fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+    .monthly-summary {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .monthly-summary .stat { min-height: 92px; }
+    .monthly-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f1f4f8;
+      color: #60656d;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .monthly-status.done { color: var(--green); background: var(--green-soft); }
+    .monthly-status.pending { color: var(--orange); background: var(--orange-soft); }
+    .monthly-status.delayed { color: var(--red); background: var(--red-soft); }
+    .monthly-status.canceled { color: #60656d; background: #eef1f5; }
     .data-filter-panel { margin-bottom: 18px; }
     .filter-field {
       display: grid;
@@ -1148,6 +1178,8 @@
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .data-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+      .monthly-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+      .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
@@ -1163,7 +1195,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -1256,7 +1288,12 @@
       dataModule: "all",
       dataMember: "all",
       dataStatus: "all",
-      dataRole: "admin"
+      dataRole: "admin",
+      monthlyMonth: "2026-06",
+      monthlyBusiness: "all",
+      monthlyStatus: "all",
+      monthlyType: "all",
+      monthlyProduct: "all"
     };
 
     const dispatchAssignments = {
@@ -2461,6 +2498,7 @@
       const rate = total ? Math.round(done / total * 100) : 0;
       const businessView = state.dataRole === "business";
       return `${head("数据中心")}
+      ${monthlySpecialStatsPanel()}
       ${dataToolbar()}
       <section class="stats">
         <div class="stat stat-orange"><div><strong>${total}</strong><span>任务总数</span></div></div>
@@ -2503,6 +2541,121 @@
           </div>
         </div>
       </section>`;
+    }
+
+    function monthlySpecialStatsPanel() {
+      const rows = monthlySpecialRows();
+      const stats = monthlySpecialStats(rows);
+      const businessOptions = monthlyBusinessOptions();
+      const typeOptions = monthlyTypeOptions();
+      const productOptionsForFilter = monthlyProductOptions();
+      return `<section class="panel monthly-special-panel">
+        <div class="panel-head">
+          <div><h2 class="panel-title">月度专场统计</h2></div>
+          <div class="row">${badge("商务可查看", "green")}<span class="data-note">统计已完成和未完成专场</span></div>
+        </div>
+        <div class="panel-body">
+          <div class="monthly-toolbar">
+            <label class="filter-field"><span>统计月份</span><input class="input" type="month" value="${state.monthlyMonth}" data-monthly-month></label>
+            <label class="filter-field"><span>负责商务</span><select class="select" data-monthly-business><option value="all">全部</option>${businessOptions.map(value => `<option value="${value}" ${state.monthlyBusiness === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="filter-field"><span>状态</span><select class="select" data-monthly-status>${["all:全部", "done:已完成", "unfinished:未完成", "delayed:已延期", "canceled:已取消"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.monthlyStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
+            <label class="filter-field"><span>类型</span><select class="select" data-monthly-type><option value="all">全部</option>${typeOptions.map(value => `<option value="${value}" ${state.monthlyType === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="filter-field"><span>主推产品</span><select class="select" data-monthly-product><option value="all">全部</option>${productOptionsForFilter.map(value => `<option value="${value}" ${state.monthlyProduct === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <button class="btn primary" data-action="downloadMonthlyReport">导出月报</button>
+          </div>
+          <div class="monthly-summary">
+            <div class="stat stat-orange"><div><strong>${stats.total}</strong><span>本月专场总数</span></div></div>
+            <div class="stat stat-green"><div><strong>${stats.done}</strong><span>已完成</span></div></div>
+            <div class="stat stat-blue"><div><strong>${stats.unfinished}</strong><span>未完成</span></div></div>
+            <div class="stat stat-red"><div><strong>${stats.delayed}</strong><span>已延期</span></div></div>
+            <div class="stat"><div><strong>${stats.canceled}</strong><span>已取消</span></div></div>
+            <div class="stat stat-blue"><div><strong>${stats.rate}%</strong><span>完成率</span></div></div>
+          </div>
+          <div class="table-wrap">${monthlySpecialTable(rows)}</div>
+        </div>
+      </section>`;
+    }
+
+    function monthlySpecialRows() {
+      return records
+        .filter(record => record.liveTime && record.liveTime.slice(0, 7) === state.monthlyMonth)
+        .map(record => ({ record, status: monthlySpecialStatus(record), reason: monthlyUnfinishedReason(record) }))
+        .filter(item => {
+          const record = item.record;
+          const businessMatched = state.monthlyBusiness === "all" || (record.business || "待填写") === state.monthlyBusiness;
+          const statusMatched = state.monthlyStatus === "all"
+            || item.status.key === state.monthlyStatus
+            || (state.monthlyStatus === "unfinished" && item.status.countsAsUnfinished);
+          const typeMatched = state.monthlyType === "all" || (record.type || "专场") === state.monthlyType;
+          const productMatched = state.monthlyProduct === "all" || record.product === state.monthlyProduct;
+          return businessMatched && statusMatched && typeMatched && productMatched;
+        })
+        .sort((a, b) => a.record.liveTime.localeCompare(b.record.liveTime));
+    }
+
+    function monthlySpecialStats(rows) {
+      const total = rows.length;
+      const done = rows.filter(item => item.status.key === "done").length;
+      const delayed = rows.filter(item => item.status.key === "delayed").length;
+      const canceled = rows.filter(item => item.status.key === "canceled").length;
+      const unfinished = rows.filter(item => item.status.countsAsUnfinished).length;
+      const denominator = total - canceled;
+      return { total, done, unfinished, delayed, canceled, rate: denominator ? Math.round(done / denominator * 100) : 0 };
+    }
+
+    function monthlySpecialStatus(record) {
+      const rawStatus = record.scheduleStatus || record.status || "未完成";
+      if (rawStatus === "已取消") return { key: "canceled", label: "已取消", cls: "canceled", countsAsUnfinished: false };
+      if (rawStatus === "已延期" || rawStatus.includes("延期") || recordDelayedTask(record)) return { key: "delayed", label: "已延期", cls: "delayed", countsAsUnfinished: true };
+      if (record.completedDate || rawStatus === "待复盘" || rawStatus === "已完成" || Number.isFinite(attainmentRate(record))) {
+        return { key: "done", label: "已完成", cls: "done", countsAsUnfinished: false };
+      }
+      return { key: "unfinished", label: "未完成", cls: "pending", countsAsUnfinished: true };
+    }
+
+    function monthlyUnfinishedReason(record) {
+      const status = monthlySpecialStatus(record);
+      if (status.key === "done") return "已完成，等待或已进入复盘";
+      if (status.key === "canceled") return record.cancelReason || "已取消，取消原因待补充";
+      const delayedTask = recordDelayedTask(record);
+      if (status.key === "delayed") return delayedTask?.task.delayReason || "已延期，新的排期或延期原因待补充";
+      const rawStatus = record.scheduleStatus || record.status || "";
+      if (rawStatus === "待识别") return "需求待识别，尚未进入完整派工";
+      if (rawStatus === "派工中") return "支持任务派工中，实际销售额待回填";
+      if (rawStatus === "已排期") return "已排期，等待直播执行和数据回填";
+      if (!Number.isFinite(gmvAmount(record.actualGmv))) return "实际销售额待回填";
+      return "流程未闭环，原因待补充";
+    }
+
+    function monthlySpecialTable(rows) {
+      if (!rows.length) return `<div class="upload"><div><strong>当前筛选暂无专场</strong></div></div>`;
+      return `<table><colgroup><col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:13%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:8%"></colgroup>
+        <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>类型</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>未完成原因</th></tr></thead>
+        <tbody>${rows.map(item => {
+          const record = item.record;
+          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${record.type || "专场"}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${item.reason}</td></tr>`;
+        }).join("")}</tbody></table>`;
+    }
+
+    function recordDelayedTask(record) {
+      const recordTasks = dispatchTasks[record.id] || {};
+      for (const list of Object.values(recordTasks)) {
+        const task = list.find(item => item.status?.includes("延期") || item.delayReason);
+        if (task) return { record, task };
+      }
+      return null;
+    }
+
+    function monthlyBusinessOptions() {
+      return [...new Set(records.map(record => record.business || "待填写"))].sort((a, b) => a.localeCompare(b));
+    }
+
+    function monthlyTypeOptions() {
+      return [...new Set(records.map(record => record.type || "专场"))].sort((a, b) => a.localeCompare(b));
+    }
+
+    function monthlyProductOptions() {
+      return [...new Set(records.map(record => record.product).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     }
 
     function lockedDataPanel(title, message) {
@@ -2922,6 +3075,11 @@
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
       document.querySelectorAll("[data-data-role]").forEach(input => input.addEventListener("change", () => { state.dataRole = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-business]").forEach(input => input.addEventListener("change", () => { state.monthlyBusiness = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-status]").forEach(input => input.addEventListener("change", () => { state.monthlyStatus = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-type]").forEach(input => input.addEventListener("change", () => { state.monthlyType = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-product]").forEach(input => input.addEventListener("change", () => { state.monthlyProduct = input.value; render(); }));
       document.querySelectorAll("[data-data-range]").forEach(btn => btn.addEventListener("click", () => setDataRange(btn.dataset.dataRange)));
       document.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
     }
@@ -3193,6 +3351,10 @@
         downloadOrders();
         return;
       }
+      if (name === "downloadMonthlyReport") {
+        downloadMonthlyReport();
+        return;
+      }
       if (name === "openLog") {
         openLogDrawer();
         return;
@@ -3246,6 +3408,43 @@
       link.remove();
       URL.revokeObjectURL(url);
       toast("订单文件已生成");
+    }
+
+    function downloadMonthlyReport() {
+      const rows = monthlySpecialRows();
+      if (!rows.length) {
+        toast("当前筛选暂无可导出的月报");
+        return;
+      }
+      const headers = ["达人UID", "达人昵称", "专场时间", "负责商务", "状态", "类型", "主推产品", "目标销售额", "实际销售额", "达标率", "未完成原因"];
+      const csvRows = rows.map(item => {
+        const record = item.record;
+        const rate = attainmentRate(record);
+        return [
+          record.uid,
+          record.talent,
+          record.liveTime,
+          record.business || "待填写",
+          item.status.label,
+          record.type || "专场",
+          record.product,
+          record.expectedGmv || record.sales,
+          record.actualGmv || "待回填",
+          Number.isFinite(rate) ? `${rate}%` : "待回填",
+          item.reason
+        ];
+      });
+      const csv = [headers, ...csvRows].map(row => row.map(csvCell).join(",")).join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `月度专场统计_${state.monthlyMonth}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast("月报文件已生成");
     }
 
     function csvCell(value) {
