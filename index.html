@@ -1240,6 +1240,7 @@
       { id: "entry", name: "达人专场录入" },
       { id: "dispatch", name: "需求派工" },
       { id: "myTasks", name: "我的任务" },
+      { id: "monthlyStats", name: "月度统计" },
       { id: "dataCenter", name: "数据中心" }
     ];
 
@@ -1629,6 +1630,7 @@
       if (state.view === "entry") app.innerHTML = pageEntry();
       if (state.view === "dispatch") app.innerHTML = pageDispatch();
       if (state.view === "myTasks") app.innerHTML = pageMyTasks();
+      if (state.view === "monthlyStats") app.innerHTML = pageMonthlyStats();
       if (state.view === "dataCenter") app.innerHTML = pageDataCenter();
       if (state.view === "detail") app.innerHTML = pageDetail();
       bind();
@@ -2498,7 +2500,6 @@
       const rate = total ? Math.round(done / total * 100) : 0;
       const businessView = state.dataRole === "business";
       return `${head("数据中心")}
-      ${monthlySpecialStatsPanel()}
       ${dataToolbar()}
       <section class="stats">
         <div class="stat stat-orange"><div><strong>${total}</strong><span>任务总数</span></div></div>
@@ -2525,6 +2526,11 @@
         <div class="panel-head"><h2 class="panel-title">任务明细</h2>${badge(`${items.length} 条`, "orange")}</div>
         <div class="panel-body table-wrap">${dataTaskTable(items)}</div>
       </section>`;
+    }
+
+    function pageMonthlyStats() {
+      return `${head("月度统计")}
+      ${monthlySpecialStatsPanel()}`;
     }
 
     function dataToolbar() {
