@@ -2519,8 +2519,7 @@
       const pending = total - done;
       const rate = total ? Math.round(done / total * 100) : 0;
       const businessView = state.dataRole === "business";
-      return `${head("数据中心")}
-      ${dataCenterTabs()}
+      return `${dataCenterTabs()}
       ${state.dataCenterTab === "specialStats" ? monthlySpecialStatsPanel() : dataBlockDashboard(items, total, done, delayed, pending, rate, businessView)}`;
     }
 
