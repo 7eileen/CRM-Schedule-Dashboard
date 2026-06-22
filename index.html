@@ -2165,8 +2165,7 @@
       const enabled = supportNeeds[state.module] ? supportNeeds[state.module].enabled : true;
       const pending = records.filter(record => assignmentFor(record.id, state.module).status === "待派发").length;
       const reviewing = allDispatchTaskItems().filter(item => item.moduleKey === state.module && item.task.status === "待审核").length;
-      return `${head("需求派工")}
-      <section class="module-tabs">${moduleOrder.map(moduleTab).join("")}</section>
+      return `<section class="module-tabs">${moduleOrder.map(moduleTab).join("")}</section>
       <section class="panel">
         <div class="panel-head">
           <div><h2 class="panel-title">${supportNeeds[state.module].title}工作台</h2></div>
