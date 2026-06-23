@@ -545,6 +545,12 @@
     }
     .detail-readonly strong { font-weight: 600; }
     .detail-readonly em { color: var(--muted); font-size: 12px; font-style: normal; }
+    .detail-auto-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .detail-field textarea.shot-count-input { min-height: 64px; }
     .time-range-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
     .time-range-separator { color: var(--muted); font-size: 13px; font-style: normal; }
     .detail-field.long { grid-column: span 2; }
@@ -2548,16 +2554,31 @@
       return { count: "可全部承接（大场撞一起另协调）", level: "S级：150w+" };
     }
 
+    function shootCountAutoText() {
+      const rule = shootCountRule();
+      return `${rule.count}\n${rule.level}`;
+    }
+
+    function editableShootCountValue(item) {
+      const autoValue = shootCountAutoText();
+      if (!item.value || item.value === item.autoValue) {
+        item.autoValue = autoValue;
+        item.value = autoValue;
+      }
+      return item.value;
+    }
+
     function detailField(groupIndex, fieldIndex, item, disabled = false) {
       if (!shouldShowDetailField(groupIndex, item)) return "";
       const cls = item.wide ? ` ${item.wide}` : "";
       const key = `${groupIndex}:${fieldIndex}`;
       if (item.type === "computed-shot-count") {
-        const rule = shootCountRule();
-        return `<div class="detail-field${cls}">
+        const value = editableShootCountValue(item);
+        return `<label class="detail-field${cls}">
           ${detailFieldLabel(item)}
-          <div class="detail-readonly"><strong>${rule.count}</strong><em>${rule.level}</em></div>
-        </div>`;
+          <textarea class="shot-count-input" data-special-detail="${key}" ${disabled ? "disabled" : ""}>${escapeHtml(value)}</textarea>
+          <span class="detail-auto-note">系统按目标销售额自动计算，可手动编辑</span>
+        </label>`;
       }
       if (item.type === "select") {
         return `<label class="detail-field${cls}">
@@ -4500,8 +4521,9 @@
       specialDetailGroups.forEach((group, groupIndex) => {
         if (group.supportKey && !supportNeeds[group.supportKey].enabled) return;
         group.fields.forEach(field => {
-          if (!field.required || field.type === "computed-shot-count" || !shouldShowDetailField(groupIndex, field)) return;
-          if (!String(field.value ?? "").trim()) errors.push(field.label);
+          if (!field.required || !shouldShowDetailField(groupIndex, field)) return;
+          const value = field.type === "computed-shot-count" ? (field.value || shootCountAutoText()) : field.value;
+          if (!String(value ?? "").trim()) errors.push(field.label);
         });
       });
       const needShoot = specialGroupValue("剪辑支持", "是否需要拍剪");
