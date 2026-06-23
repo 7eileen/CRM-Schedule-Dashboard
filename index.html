@@ -1377,7 +1377,6 @@
       dataModule: "all",
       dataMember: "all",
       dataStatus: "all",
-      dataRole: "admin",
       dataCenterTab: "specialStats",
       monthlyMonth: "2026-06",
       monthlyBusiness: "all",
@@ -2678,9 +2677,8 @@
       const delayed = items.filter(item => item.task.status === "延期中").length;
       const pending = total - done;
       const rate = total ? Math.round(done / total * 100) : 0;
-      const businessView = state.dataRole === "business";
       return `${dataCenterTabs()}
-      ${state.dataCenterTab === "specialStats" ? monthlySpecialStatsPanel() : dataBlockDashboard(items, total, done, delayed, pending, rate, businessView)}`;
+      ${state.dataCenterTab === "specialStats" ? monthlySpecialStatsPanel() : dataBlockDashboard(items, total, done, delayed, pending, rate)}`;
     }
 
     function dataCenterTabs() {
@@ -2690,7 +2688,7 @@
       </div>`;
     }
 
-    function dataBlockDashboard(items, total, done, delayed, pending, rate, businessView) {
+    function dataBlockDashboard(items, total, done, delayed, pending, rate) {
       return `${dataToolbar()}
       <section class="stats">
         <div class="stat stat-orange"><div><strong>${total}</strong><span>任务总数</span></div></div>
@@ -2699,9 +2697,9 @@
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
       </section>
       <section class="data-block-stack">
-        ${businessView ? lockedDataPanel("数据板块1：成员承接与达标率", "该管理指标仅组长和管理层可查看。") : teamAchievementPanel()}
+        ${teamAchievementPanel()}
         ${specialAchievementPanel()}
-        ${businessView ? lockedDataPanel("数据板块3：投放预估达标率", "该投放内部指标仅投放组长和管理层可查看。") : adsForecastPanel()}
+        ${adsForecastPanel()}
       </section>
       <section class="analysis-grid">
         <div class="panel">
@@ -2728,7 +2726,6 @@
             <label class="filter-field"><span>支持类型</span><select class="select" data-data-module><option value="all">全部</option>${moduleOrder.map(key => `<option value="${key}" ${state.dataModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
             <label class="filter-field"><span>成员</span><select class="select" data-data-member><option value="all">全部</option>${ownersWithTasks(allDispatchTaskItems()).map(owner => `<option ${state.dataMember === owner ? "selected" : ""}>${owner}</option>`).join("")}</select></label>
             <label class="filter-field"><span>状态</span><select class="select" data-data-status>${["all:全部", "待处理:待处理", "进行中:进行中", "待审核:待审核", "延期中:延期中", "已完成:已完成"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.dataStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
-            <label class="filter-field"><span>查看身份</span><select class="select" data-data-role><option value="admin" ${state.dataRole === "admin" ? "selected" : ""}>管理/组长</option><option value="business" ${state.dataRole === "business" ? "selected" : ""}>商务</option></select></label>
             <div class="range-actions"><button class="btn ghost" data-data-range="week">周度承接</button><button class="btn ghost" data-data-range="month">月度承接</button><button class="btn ghost" data-data-range="all">全部</button></div>
           </div>
         </div>
@@ -3281,7 +3278,6 @@
       document.querySelectorAll("[data-data-module]").forEach(input => input.addEventListener("change", () => { state.dataModule = input.value; render(); }));
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
-      document.querySelectorAll("[data-data-role]").forEach(input => input.addEventListener("change", () => { state.dataRole = input.value; render(); }));
       document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
       document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
       document.querySelectorAll("[data-monthly-business]").forEach(input => input.addEventListener("change", () => { state.monthlyBusiness = input.value; render(); }));
