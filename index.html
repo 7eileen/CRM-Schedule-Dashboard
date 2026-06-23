@@ -215,7 +215,7 @@
     }
     .list-controls {
       display: grid;
-      grid-template-columns: minmax(320px, 440px) minmax(260px, 480px);
+      grid-template-columns: minmax(300px, 380px) minmax(260px, 1fr) minmax(120px, 150px);
       align-items: end;
       gap: 12px;
       flex: 1;
@@ -1778,6 +1778,7 @@
       taskSearch: "",
       listFilter: "all",
       listSearch: "",
+      listGrade: "all",
       listMonth: "2026-06",
       listStart: "2026-06-01",
       listEnd: "2026-06-30",
@@ -2194,15 +2195,20 @@
     function pageList() {
       const month = state.listMonth || "2026-06";
       const rangeRecords = records.filter(record => record.liveTime && inDateRange(record.liveTime.slice(0, 10), state.listStart, state.listEnd));
-      const running = rangeRecords.filter(item => item.status !== "待复盘").length;
-      const review = rangeRecords.filter(item => item.status === "待复盘").length;
+      const keyword = state.listSearch.trim().toLowerCase();
+      const gradeOptions = ["S+", "S", "A", "B", "C"];
+      const gradeAndSearchRecords = rangeRecords.filter(record => {
+        const gradeMatched = state.listGrade === "all" || talentGrade(record) === state.listGrade;
+        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, talentGrade(record)].join(" ").toLowerCase();
+        return gradeMatched && (!keyword || searchText.includes(keyword));
+      });
+      const running = gradeAndSearchRecords.filter(item => item.status !== "待复盘").length;
+      const review = gradeAndSearchRecords.filter(item => item.status === "待复盘").length;
       const delayed = rangeRecords.filter(item => (item.scheduleStatus || item.status || "").includes("延期") || recordDelayedTask(item)).length;
       const completedInRange = rangeRecords.filter(item => item.status === "待复盘" || item.progress >= 90).length;
-      const keyword = state.listSearch.trim().toLowerCase();
-      const filteredRecords = rangeRecords.filter(record => {
+      const filteredRecords = gradeAndSearchRecords.filter(record => {
         const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘") || (state.listFilter === "review" && record.status === "待复盘");
-        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, talentGrade(record)].join(" ").toLowerCase();
-        return statusMatched && (!keyword || searchText.includes(keyword));
+        return statusMatched;
       });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
       <section class="stats list-stats">
@@ -2218,9 +2224,10 @@
             <div class="list-controls">
               ${listRangePicker()}
               <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
+              <label class="toolbar-field"><span>等级</span><select class="select" data-list-grade><option value="all">全部等级</option>${gradeOptions.map(grade => `<option value="${grade}" ${state.listGrade === grade ? "selected" : ""}>${grade}</option>`).join("")}</select></label>
             </div>
             <div class="seg-group">
-              ${listFilterButton("all", "全部", rangeRecords.length)}
+              ${listFilterButton("all", "全部", gradeAndSearchRecords.length)}
               ${listFilterButton("running", "进行中", running)}
               ${listFilterButton("review", "待复盘", review)}
             </div>
@@ -3865,6 +3872,7 @@
           next.setSelectionRange(cursor, cursor);
         }
       }));
+      document.querySelectorAll("[data-list-grade]").forEach(input => input.addEventListener("change", () => { state.listGrade = input.value; render(); }));
       document.querySelectorAll("[data-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.module; state.dispatchOpen = ""; if (btn.dataset.go) state.view = btn.dataset.go; render(); }));
       document.querySelectorAll("[data-need]").forEach(btn => btn.addEventListener("click", () => openNeed(btn.dataset.need)));
       document.querySelectorAll("[data-task]").forEach(btn => btn.addEventListener("click", () => openTask(btn.dataset.task)));
