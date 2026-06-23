@@ -3999,12 +3999,12 @@
       return `<section class="panel">
         <div class="panel-head">
           ${dataMetricTitleButton("ads")}
-          <div class="row">${badge("商务不可查看", "red")}<span class="data-note">按投放预估销售额 / 目标销售额计算</span></div>
+          <div class="row">${badge("商务不可查看", "red")}<span class="data-note">按实际销售额 / 投放预估销售额计算</span></div>
         </div>
         <div class="panel-body table-wrap">
           ${rows.length ? `<table><colgroup><col style="width:26%"><col style="width:14%"><col style="width:14%"><col style="width:16%"><col style="width:15%"><col style="width:15%"></colgroup>
-            <thead><tr><th>专场</th><th>投放老师</th><th>目标销售额</th><th>投放预估销售额</th><th>预估达标率</th><th>实际达标率</th></tr></thead>
-            <tbody>${rows.map(record => `<tr><td><strong>${record.title}</strong></td><td>${adsOwnerFor(record)}</td><td>${record.expectedGmv || record.sales}</td><td>${record.adsForecastGmv || "待预估"}</td><td>${ratePill(attainmentRate(record, "adsForecastGmv"))}</td><td>${ratePill(attainmentRate(record))}</td></tr>`).join("")}</tbody>
+            <thead><tr><th>专场</th><th>投放老师</th><th>实际销售额</th><th>投放预估销售额</th><th>预估达标率</th><th>实际达标率</th></tr></thead>
+            <tbody>${rows.map(record => `<tr><td><strong>${record.title}</strong></td><td>${adsOwnerFor(record)}</td><td>${record.actualGmv || "待回填"}</td><td>${record.adsForecastGmv || "待预估"}</td><td>${ratePill(attainmentRate(record, "adsForecastGmv"))}</td><td>${ratePill(adsActualRate(record))}</td></tr>`).join("")}</tbody>
           </table>` : `<div class="access-lock"><div><strong>当前范围暂无专场</strong><span>请调整开始时间或结束时间</span></div></div>`}
         </div>
       </section>`;
@@ -4024,6 +4024,13 @@
       const actual = gmvAmount(record[actualKey]);
       if (!target || !actual) return null;
       return Math.round(actual / target * 100);
+    }
+
+    function adsActualRate(record) {
+      const forecast = gmvAmount(record.adsForecastGmv);
+      const actual = gmvAmount(record.actualGmv);
+      if (!forecast || !actual) return null;
+      return Math.round(actual / forecast * 100);
     }
 
     function averageRate(rates) {
