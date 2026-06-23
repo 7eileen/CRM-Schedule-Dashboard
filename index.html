@@ -125,6 +125,7 @@
     .btn.primary { color: white; background: var(--orange); box-shadow: none; }
     .btn.ghost { background: #fff; border: 1px solid #d9e1eb; }
     .btn.green { color: white; background: var(--green); }
+    .btn.danger { color: var(--red); background: var(--red-soft); border: 1px solid rgba(240, 68, 68, .24); }
 
     .process {
       display: grid;
@@ -693,7 +694,7 @@
     .task-list { display: grid; }
     .task-row {
       display: grid;
-      grid-template-columns: 34px minmax(220px, 1fr) 170px 160px 92px 72px;
+      grid-template-columns: 34px minmax(220px, 1fr) 170px 160px 92px 154px;
       gap: 12px;
       align-items: end;
       padding: 14px 16px;
@@ -719,6 +720,13 @@
       color: #ff8f0f;
       background: #fffaf3;
     }
+    .task-row-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .task-row-actions .btn { height: 40px; padding: 0 12px; font-size: 14px; }
     .task-actions {
       padding: 14px 16px;
       display: flex;
@@ -743,6 +751,11 @@
       grid-template-columns: minmax(190px, 1fr);
       border-color: rgba(42, 203, 98, .22);
       background: #f7fcf8;
+    }
+    .task-review-line.is-canceled {
+      grid-template-columns: minmax(190px, 1fr);
+      border-color: rgba(240, 68, 68, .22);
+      background: #fff7f8;
     }
     .review-copy { display: grid; gap: 4px; min-width: 0; }
     .review-copy strong { font-size: 14px; font-weight: 400; color: #00152e; }
@@ -1005,6 +1018,26 @@
       background: #fffaf3;
     }
     .delay-form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .cancel-form {
+      grid-template-columns: minmax(260px, 1fr) auto;
+      border-color: rgba(240, 68, 68, .26);
+      background: #fff7f8;
+    }
+    .cancel-panel {
+      margin-bottom: 18px;
+      border-color: rgba(240, 68, 68, .16);
+    }
+    .cancel-panel textarea { min-height: 86px; }
+    .cancel-note {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border: 1px solid rgba(240, 68, 68, .18);
+      border-radius: 12px;
+      background: #fff7f8;
+      color: #7d1e24;
+      line-height: 1.6;
+    }
     .data-toolbar {
       display: grid;
       grid-template-columns: minmax(300px, 1.4fr) repeat(3, minmax(140px, 1fr));
@@ -1684,11 +1717,12 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
       .task-review-line { grid-column: 1; }
+      .task-row-actions { justify-content: flex-start; }
       .bar-row { grid-template-columns: 1fr; }
       .my-task-tools { display: grid; }
       .task-filter-right { justify-content: flex-start; }
@@ -2205,15 +2239,15 @@
       const gradeOptions = ["S+", "S", "A", "B", "C"];
       const gradeAndSearchRecords = rangeRecords.filter(record => {
         const gradeMatched = state.listGrade === "all" || talentGrade(record) === state.listGrade;
-        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, talentGrade(record)].join(" ").toLowerCase();
+        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, record.scheduleStatus, talentGrade(record)].join(" ").toLowerCase();
         return gradeMatched && (!keyword || searchText.includes(keyword));
       });
-      const running = gradeAndSearchRecords.filter(item => item.status !== "待复盘").length;
+      const running = gradeAndSearchRecords.filter(item => item.status !== "待复盘" && (item.scheduleStatus || item.status) !== "已取消").length;
       const review = gradeAndSearchRecords.filter(item => item.status === "待复盘").length;
       const delayed = rangeRecords.filter(item => (item.scheduleStatus || item.status || "").includes("延期") || recordDelayedTask(item)).length;
       const completedInRange = rangeRecords.filter(item => item.status === "待复盘" || item.progress >= 90).length;
       const filteredRecords = gradeAndSearchRecords.filter(record => {
-        const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘") || (state.listFilter === "review" && record.status === "待复盘");
+        const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘" && (record.scheduleStatus || record.status) !== "已取消") || (state.listFilter === "review" && record.status === "待复盘");
         return statusMatched;
       });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
@@ -2370,11 +2404,12 @@
     }
 
     function calendarEvent(record) {
-      const done = record.status === "待复盘" || record.progress >= 90;
-      const delay = record.status.includes("延期");
+      const displayStatus = record.scheduleStatus || record.status;
+      const done = displayStatus === "待复盘" || record.progress >= 90;
+      const delay = displayStatus.includes("延期") || displayStatus.includes("取消");
       return `<button class="calendar-event ${done ? "done" : ""} ${delay ? "delay" : ""}" data-open-project="${record.id}">
         <strong>${record.talent} · ${record.product}</strong>
-        <span>${record.liveTime.slice(11, 16)} / ${record.status}</span>
+        <span>${record.liveTime.slice(11, 16)} / ${displayStatus}</span>
       </button>`;
     }
 
@@ -2644,6 +2679,7 @@
     function pageDetail() {
       const record = selectedRecord();
       return `${projectHeader(record)}
+      ${recordCancelPanel(record)}
       ${projectProgress(record)}
       <section class="panel" style="margin-bottom:18px">
         <div class="panel-head">
@@ -2667,17 +2703,46 @@
     }
 
     function projectHeader(record) {
-      const cls = record.status === "待复盘" ? "green" : record.status === "派工中" ? "blue" : "orange";
+      const displayStatus = record.scheduleStatus || record.status;
+      const cls = displayStatus === "待复盘" ? "green" : displayStatus === "派工中" ? "blue" : displayStatus === "已取消" || displayStatus === "已延期" ? "red" : "orange";
+      const canceled = displayStatus === "已取消";
       return `<section class="panel" style="margin-bottom:18px">
         <div class="panel-head" style="min-height:96px">
           <div class="row" style="justify-content:flex-start">
             <button class="btn ghost" data-view="list" onclick="goList()">‹</button>
             <div>
-              <div class="meta">${urgencyBadge(talentGrade(record))}${badge(record.status, cls)}</div>
+              <div class="meta">${urgencyBadge(talentGrade(record))}${badge(displayStatus, cls)}</div>
               <h1 style="font-size:24px;margin:8px 0 0">${record.title}</h1>
             </div>
           </div>
-          <button class="btn ghost" data-action="openLog" onclick="openLogDrawer()">项目事件日志</button>
+          <div class="actions">
+            <button class="btn ghost" data-action="openLog" onclick="openLogDrawer()">项目事件日志</button>
+            ${canceled ? badge("取消原因已留存", "red") : `<button class="btn danger" data-cancel-record="${record.id}">取消专场</button>`}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    function recordCancelPanel(record) {
+      const displayStatus = record.scheduleStatus || record.status;
+      const canceled = displayStatus === "已取消";
+      if (!record.cancelEditing && !canceled && !record.cancelReason) return "";
+      if (record.cancelEditing) {
+        return `<section class="panel cancel-panel">
+          <div class="panel-head"><div><h2 class="panel-title">取消专场</h2><div class="muted">取消原因将留存在专场记录和月度统计中</div></div>${badge("必填", "red")}</div>
+          <div class="panel-body stack">
+            <label class="task-field">
+              <span>取消原因</span>
+              <textarea class="input" placeholder="请填写取消原因，例如达人临时取消、档期冲突、商务策略调整等" data-cancel-record-reason="${record.id}">${escapeHtml(record.cancelDraft || record.cancelReason || "")}</textarea>
+            </label>
+            <div class="panel-actions"><button class="btn ghost" data-dismiss-cancel-record="${record.id}">取消</button><button class="btn danger" data-save-cancel-record="${record.id}">确认取消专场</button></div>
+          </div>
+        </section>`;
+      }
+      return `<section class="panel cancel-panel">
+        <div class="panel-head"><div><h2 class="panel-title">取消记录</h2></div>${badge("已取消", "red")}</div>
+        <div class="panel-body">
+          <div class="cancel-note"><strong>取消原因</strong><span>${escapeHtml(record.cancelReason || "取消原因待补充")}</span>${record.canceledAt ? `<span class="muted">取消时间：${formatDate(record.canceledAt)}</span>` : ""}</div>
         </div>
       </section>`;
     }
@@ -2742,7 +2807,7 @@
 
     function taskStatusClass(status) {
       if (status === "已完成") return "green";
-      if (status === "延期中") return "red";
+      if (status === "延期中" || status === "已取消") return "red";
       if (status === "待审核") return "purple";
       if (status === "进行中" || status === "执行中" || status === "已派发") return "blue";
       if (status === "待处理" || status === "待派发" || status === "待执行") return "orange";
@@ -3006,8 +3071,12 @@
           <span>状态</span>
           ${badge(status, statusCls === "gray" ? "" : statusCls)}
         </div>
-        <button class="btn ghost task-remove" data-remove-subtask="${key}">删除</button>
+        <div class="task-row-actions">
+          ${status === "已完成" ? "" : `<button class="btn danger" data-cancel-task="${key}">${status === "已取消" ? "编辑原因" : "取消"}</button>`}
+          <button class="btn ghost task-remove" data-remove-subtask="${key}">删除</button>
+        </div>
         ${taskReviewLine(key, moduleKey, task)}
+        ${taskCancelForm(key, task)}
       </div>`;
     }
 
@@ -3080,8 +3149,9 @@
       const myItems = filteredMyTaskItems(scopeItems);
       const done = scopeItems.filter(item => item.task.status === "已完成").length;
       const delayed = scopeItems.filter(item => item.task.status === "延期中").length;
+      const canceled = scopeItems.filter(item => item.task.status === "已取消").length;
       const reviewing = scopeItems.filter(item => item.task.status === "待审核").length;
-      const doing = scopeItems.filter(item => item.task.status !== "已完成").length;
+      const doing = scopeItems.filter(item => item.task.status !== "已完成" && item.task.status !== "已取消").length;
       const pending = scopeItems.filter(item => item.task.status === "待处理").length;
       const running = scopeItems.filter(item => item.task.status === "进行中").length;
       return `<div class="my-task-tools">
@@ -3092,6 +3162,7 @@
           ${taskStatusFilterButton("reviewing", "待审核", reviewing)}
           ${taskStatusFilterButton("done", "已完成", done)}
           ${taskStatusFilterButton("delayed", "延期中", delayed)}
+          ${taskStatusFilterButton("canceled", "已取消", canceled)}
         </div>
         <div class="task-filter-right">
           <div class="task-sort-filter">
@@ -3118,7 +3189,7 @@
         <div class="stat stat-orange"><div><strong>${scopeItems.length}</strong><span>范围任务</span></div></div>
         <div class="stat stat-blue"><div><strong>${doing}</strong><span>待处理</span></div></div>
         <div class="stat stat-green"><div><strong>${done}</strong><span>已完成</span></div></div>
-        <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
+        <div class="stat stat-red"><div><strong>${delayed + canceled}</strong><span>延期/取消</span></div></div>
       </section>
       <section class="panel">
         <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2><div class="muted">已按${taskSortTitle()}排序</div></div>${badge(`${myItems.length} 条任务`, "orange")}</div>
@@ -3161,7 +3232,8 @@
         running: "进行中",
         reviewing: "待审核",
         done: "已完成",
-        delayed: "延期中"
+        delayed: "延期中",
+        canceled: "已取消"
       };
       const keyword = state.taskSearch.trim().toLowerCase();
       return items.filter(item => {
@@ -3202,12 +3274,15 @@
       const { record, moduleKey, task, key } = item;
       const module = modules[moduleKey];
       const isContentTask = moduleKey === "content";
+      const isCanceled = task.status === "已取消";
       const statusCls = taskStatusClass(task.status);
       const actionContent = task.status === "已完成"
         ? `<span class="muted">${isContentTask ? "内容文档已提交" : "负责人已审核通过"}</span>`
+        : isCanceled
+          ? `<span class="muted">任务已取消，原因已留存</span>`
         : task.status === "待审核"
           ? `<span class="muted">等待${module.owner}审核</span>`
-          : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn primary" data-complete-task="${key}">${isContentTask ? "提交文档" : "提交完成"}</button>`;
+          : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn danger" data-cancel-task="${key}">取消任务</button><button class="btn primary" data-complete-task="${key}">${isContentTask ? "提交文档" : "提交完成"}</button>`;
       return `<article class="my-task-card">
         <div class="my-task-head">
           <div>
@@ -3225,8 +3300,9 @@
           </div>
           <div class="task-note">${demandText(record, moduleKey)}</div>
           ${taskReviewNotice(task, module, moduleKey)}
-          ${taskUpload(key, task, moduleKey)}
-          ${isContentTask ? contentDocForm(key, record, task, module) : ""}
+          ${taskCancelForm(key, task)}
+          ${isCanceled ? "" : taskUpload(key, task, moduleKey)}
+          ${!isCanceled && isContentTask ? contentDocForm(key, record, task, module) : ""}
           ${task.delayEditing ? delayForm(key, task) : ""}
           <div class="my-task-actions">
             ${actionContent}
@@ -3247,6 +3323,32 @@
       }
       if (task.status === "已完成" && task.reviewedAt) {
         return `<div class="task-review-result is-approved">${module.owner}已审核通过，本任务已闭环。</div>`;
+      }
+      return "";
+    }
+
+    function taskCancelForm(key, task) {
+      if (task.cancelEditing) {
+        return `<div class="task-review-line is-canceled">
+          <div class="review-copy">
+            <strong>取消任务</strong>
+            <span>取消原因必填，保存后会留存在任务状态和数据明细中。</span>
+          </div>
+          <label class="task-field">
+            <span>取消原因</span>
+            <input class="input" value="${escapeHtml(task.cancelDraft || task.cancelReason || "")}" placeholder="填写取消原因" data-cancel-task-reason="${key}">
+          </label>
+          <button class="btn ghost" data-dismiss-cancel-task="${key}">取消</button>
+          <button class="btn danger" data-save-cancel-task="${key}">保存取消</button>
+        </div>`;
+      }
+      if (task.status === "已取消") {
+        return `<div class="task-review-line is-canceled">
+          <div class="review-copy">
+            <strong>任务已取消</strong>
+            <span>取消原因：${escapeHtml(task.cancelReason || "原因待补充")}${task.canceledAt ? `；取消时间：${formatDate(task.canceledAt)}` : ""}</span>
+          </div>
+        </div>`;
       }
       return "";
     }
@@ -3419,7 +3521,7 @@
             </div>
             <label class="filter-field"><span>支持类型</span><select class="select" data-data-module><option value="all">全部</option>${moduleOrder.map(key => `<option value="${key}" ${state.dataModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
             <label class="filter-field"><span>成员</span><select class="select" data-data-member><option value="all">全部</option>${ownersWithTasks(allDispatchTaskItems()).map(owner => `<option ${state.dataMember === owner ? "selected" : ""}>${owner}</option>`).join("")}</select></label>
-            <label class="filter-field"><span>状态</span><select class="select" data-data-status>${["all:全部", "待处理:待处理", "进行中:进行中", "待审核:待审核", "延期中:延期中", "已完成:已完成"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.dataStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
+            <label class="filter-field"><span>状态</span><select class="select" data-data-status>${["all:全部", "待处理:待处理", "进行中:进行中", "待审核:待审核", "延期中:延期中", "已取消:已取消", "已完成:已完成"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.dataStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
           </div>
         </div>
       </section>`;
@@ -3515,7 +3617,7 @@
         <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>等级</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>负责人员</th><th>未完成原因</th></tr></thead>
         <tbody>${rows.map(item => {
           const record = item.record;
-          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${urgencyBadge(talentGrade(record))}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyResponsiblePeopleCell(record)}</td><td>${item.reason}</td></tr>`;
+          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${urgencyBadge(talentGrade(record))}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyResponsiblePeopleCell(record)}</td><td>${escapeHtml(item.reason)}</td></tr>`;
         }).join("")}</tbody></table>`;
     }
 
@@ -3722,7 +3824,7 @@
     }
 
     function taskDataDate(task) {
-      return task.completedAt || task.reviewedAt || task.submittedAt || task.delayDue || task.due || "2026-06-01";
+      return task.canceledAt || task.completedAt || task.reviewedAt || task.submittedAt || task.delayDue || task.due || "2026-06-01";
     }
 
     function ownersWithTasks(items) {
@@ -3778,7 +3880,8 @@
         <thead><tr><th>任务</th><th>达人专场</th><th>支持类型</th><th>成员</th><th>完成时间</th><th>状态</th></tr></thead>
         <tbody>${items.map(item => {
           const cls = taskStatusClass(item.task.status);
-          return `<tr><td><strong>${item.task.title}</strong></td><td>${item.record.title}</td><td>${supportNeeds[item.moduleKey].title}</td><td>${item.task.owner}</td><td>${formatDate(taskDataDate(item.task))}</td><td>${badge(item.task.status, cls)}</td></tr>`;
+          const cancelText = item.task.status === "已取消" ? `<div class="muted">原因：${escapeHtml(item.task.cancelReason || "原因待补充")}</div>` : "";
+          return `<tr><td><strong>${item.task.title}</strong></td><td>${item.record.title}</td><td>${supportNeeds[item.moduleKey].title}</td><td>${item.task.owner}</td><td>${formatDate(taskDataDate(item.task))}</td><td>${badge(item.task.status, cls)}${cancelText}</td></tr>`;
         }).join("")}</tbody></table>`;
     }
 
@@ -3926,6 +4029,10 @@
         assignmentFor(recordId, moduleKey).due = input.value;
       }));
       document.querySelectorAll("[data-publish-dispatch]").forEach(btn => btn.addEventListener("click", () => publishDispatch(btn.dataset.publishDispatch)));
+      document.querySelectorAll("[data-cancel-record]").forEach(btn => btn.addEventListener("click", () => startCancelRecord(btn.dataset.cancelRecord)));
+      document.querySelectorAll("[data-cancel-record-reason]").forEach(input => input.addEventListener("input", () => updateCancelRecordDraft(input.dataset.cancelRecordReason, input.value)));
+      document.querySelectorAll("[data-dismiss-cancel-record]").forEach(btn => btn.addEventListener("click", () => dismissCancelRecord(btn.dataset.dismissCancelRecord)));
+      document.querySelectorAll("[data-save-cancel-record]").forEach(btn => btn.addEventListener("click", () => saveCancelRecord(btn.dataset.saveCancelRecord)));
       document.querySelectorAll("[data-detail-support-toggle]").forEach(input => input.addEventListener("change", () => {
         supportNeeds[input.dataset.detailSupportToggle].enabled = input.checked;
         render();
@@ -4031,6 +4138,10 @@
       }));
       document.querySelectorAll("[data-cancel-delay]").forEach(btn => btn.addEventListener("click", () => cancelDelayTask(btn.dataset.cancelDelay)));
       document.querySelectorAll("[data-save-delay]").forEach(btn => btn.addEventListener("click", () => saveDelayTask(btn.dataset.saveDelay)));
+      document.querySelectorAll("[data-cancel-task]").forEach(btn => btn.addEventListener("click", () => startCancelTask(btn.dataset.cancelTask)));
+      document.querySelectorAll("[data-cancel-task-reason]").forEach(input => input.addEventListener("input", () => updateCancelTaskDraft(input.dataset.cancelTaskReason, input.value)));
+      document.querySelectorAll("[data-dismiss-cancel-task]").forEach(btn => btn.addEventListener("click", () => dismissCancelTask(btn.dataset.dismissCancelTask)));
+      document.querySelectorAll("[data-save-cancel-task]").forEach(btn => btn.addEventListener("click", () => saveCancelTask(btn.dataset.saveCancelTask)));
       document.querySelectorAll("[data-data-range-toggle]").forEach(btn => btn.addEventListener("click", () => { state.dataRangeOpen = !state.dataRangeOpen; render(); }));
       document.querySelectorAll("[data-data-range-option]").forEach(btn => btn.addEventListener("click", () => {
         const [start, end] = btn.dataset.dataRangeOption.split("|");
@@ -4153,10 +4264,97 @@
       }[char]));
     }
 
+    function startCancelRecord(id) {
+      const record = records.find(item => item.id === id);
+      if (!record) return;
+      record.cancelEditing = true;
+      record.cancelDraft = record.cancelReason || "";
+      state.selected = id;
+      state.view = "detail";
+      render();
+    }
+
+    function updateCancelRecordDraft(id, value) {
+      const record = records.find(item => item.id === id);
+      if (record) record.cancelDraft = value;
+    }
+
+    function dismissCancelRecord(id) {
+      const record = records.find(item => item.id === id);
+      if (!record) return;
+      delete record.cancelEditing;
+      delete record.cancelDraft;
+      render();
+    }
+
+    function saveCancelRecord(id) {
+      const record = records.find(item => item.id === id);
+      if (!record) return;
+      const reason = (record.cancelDraft || "").trim();
+      if (!reason) {
+        toast("请填写取消原因");
+        return;
+      }
+      record.status = "已取消";
+      record.scheduleStatus = "已取消";
+      record.cancelReason = reason;
+      record.canceledAt = actionDate;
+      delete record.cancelEditing;
+      delete record.cancelDraft;
+      toast("已取消专场并留存原因");
+      render();
+    }
+
+    function startCancelTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      task.cancelEditing = true;
+      task.cancelDraft = task.cancelReason || "";
+      render();
+    }
+
+    function updateCancelTaskDraft(key, value) {
+      const task = taskByKey(key);
+      if (task) task.cancelDraft = value;
+    }
+
+    function dismissCancelTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      delete task.cancelEditing;
+      delete task.cancelDraft;
+      render();
+    }
+
+    function saveCancelTask(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      const reason = (task.cancelDraft || "").trim();
+      if (!reason) {
+        toast("请填写取消原因");
+        return;
+      }
+      task.status = "已取消";
+      task.cancelReason = reason;
+      task.canceledAt = actionDate;
+      delete task.cancelEditing;
+      delete task.cancelDraft;
+      delete task.delayEditing;
+      delete task.delayBackup;
+      task.reviewComment = "";
+      syncAssignmentStatusFromTaskKey(key);
+      toast("已取消任务并留存原因");
+      render();
+    }
+
     function completeMyTask(key) {
       const task = taskByKey(key);
       const [, moduleKey] = key.split(":");
       if (!task) return;
+      if (task.status === "已取消") {
+        toast("已取消任务不能提交完成");
+        return;
+      }
       if (!task.files || !task.files.length) {
         toast(moduleKey === "content" ? "请先上传内容文档" : "请先上传完成文件");
         return;
@@ -4197,6 +4395,10 @@
     function approveTask(key) {
       const task = taskByKey(key);
       if (!task) return;
+      if (task.status === "已取消") {
+        toast("已取消任务不能审核通过");
+        return;
+      }
       task.status = "已完成";
       task.completedAt = actionDate;
       task.reviewedAt = actionDate;
@@ -4212,6 +4414,10 @@
     function rejectTask(key) {
       const task = taskByKey(key);
       if (!task) return;
+      if (task.status === "已取消") {
+        toast("已取消任务不能驳回");
+        return;
+      }
       const reason = (task.reviewComment || "").trim();
       if (!reason) {
         toast("请先填写驳回原因");
@@ -4242,6 +4448,10 @@
         assignment.status = "待派发";
         return;
       }
+      if (list.every(task => task.status === "已取消")) {
+        assignment.status = "已取消";
+        return;
+      }
       if (list.every(task => task.status === "已完成")) {
         assignment.status = "已完成";
         return;
@@ -4260,6 +4470,10 @@
     function startDelayTask(key) {
       const task = taskByKey(key);
       if (!task) return;
+      if (task.status === "已取消") {
+        toast("已取消任务不能延期");
+        return;
+      }
       if (!task.delayEditing) {
         task.delayBackup = {
           status: task.status,
@@ -4318,6 +4532,7 @@
       assignment.status = "已派发";
       assignment.owner = taskList[0]?.owner || assignment.owner;
       assignment.due = dispatchDue(recordId, moduleKey);
+      syncAssignmentStatus(recordId, moduleKey);
       const record = records.find(item => item.id === recordId);
       if (record && record.status === "待识别") record.status = "派工中";
       toast(`已发布${supportNeeds[moduleKey].title} ${taskList.length} 条任务`);
