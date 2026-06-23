@@ -1261,6 +1261,29 @@
       margin-bottom: 0;
       width: fit-content;
     }
+    .metric-title-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0;
+      background: transparent;
+      color: #00152e;
+      font-size: 17px;
+      font-weight: 400;
+      line-height: 1.35;
+    }
+    .metric-title-switch:hover { color: var(--orange); }
+    .metric-title-switch i {
+      width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--orange-soft);
+      color: var(--orange);
+      font-style: normal;
+      font-size: 13px;
+    }
     .rate-pill {
       min-width: 58px;
       min-height: 28px;
@@ -3391,14 +3414,23 @@
     }
 
     function dataMetricTabs() {
-      const tabs = [
+      const tabs = dataMetricDefinitions();
+      return `<div class="data-center-tabs data-metric-tabs">
+        ${tabs.map(tab => `<button class="data-center-tab ${state.dataMetricTab === tab.id ? "active" : ""}" data-data-metric-tab="${tab.id}">${tab.label}</button>`).join("")}
+      </div>`;
+    }
+
+    function dataMetricDefinitions() {
+      return [
         { id: "special", label: "专场达标率" },
         { id: "ads", label: "投放预估达标率" },
         { id: "member", label: "成员承接达标率" }
       ];
-      return `<div class="data-center-tabs data-metric-tabs">
-        ${tabs.map(tab => `<button class="data-center-tab ${state.dataMetricTab === tab.id ? "active" : ""}" data-data-metric-tab="${tab.id}">${tab.label}</button>`).join("")}
-      </div>`;
+    }
+
+    function dataMetricTitleButton(id) {
+      const tab = dataMetricDefinitions().find(item => item.id === id);
+      return `<button class="panel-title metric-title-switch" data-data-metric-cycle="${id}">${tab.label}<i>⌄</i></button>`;
     }
 
     function dataMetricPanel() {
@@ -3641,7 +3673,7 @@
       const range = { start: state.dataStart, end: state.dataEnd };
       return `<section class="panel">
         <div class="panel-head">
-          <h2 class="panel-title">成员承接达标率</h2>
+          ${dataMetricTitleButton("member")}
           <div class="row">${badge("商务不可查看", "red")}<span class="data-note">按实际销售额 / 目标销售额计算</span><span class="data-note">${formatDate(range.start)} - ${formatDate(range.end)}</span></div>
         </div>
         <div class="panel-body">
@@ -3690,7 +3722,7 @@
       const rows = filteredSpecialRecords();
       return `<section class="panel">
         <div class="panel-head">
-          <h2 class="panel-title">专场达标率</h2>
+          ${dataMetricTitleButton("special")}
           <div class="row">${badge("商务可查看", "green")}<span class="data-note">${formatDate(state.dataStart)} - ${formatDate(state.dataEnd)}</span></div>
         </div>
         <div class="panel-body table-wrap">
@@ -3706,7 +3738,7 @@
       const rows = filteredSpecialRecords();
       return `<section class="panel">
         <div class="panel-head">
-          <h2 class="panel-title">投放预估达标率</h2>
+          ${dataMetricTitleButton("ads")}
           <div class="row">${badge("商务不可查看", "red")}<span class="data-note">按投放预估销售额 / 目标销售额计算</span></div>
         </div>
         <div class="panel-body table-wrap">
@@ -4093,6 +4125,13 @@
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
       document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
       document.querySelectorAll("[data-data-metric-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataMetricTab = btn.dataset.dataMetricTab; render(); }));
+      document.querySelectorAll("[data-data-metric-cycle]").forEach(btn => btn.addEventListener("click", () => {
+        const tabs = dataMetricDefinitions();
+        const currentIndex = tabs.findIndex(tab => tab.id === state.dataMetricTab);
+        const next = tabs[(currentIndex + 1) % tabs.length];
+        state.dataMetricTab = next.id;
+        render();
+      }));
       document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
       document.querySelectorAll("[data-monthly-business]").forEach(input => input.addEventListener("change", () => { state.monthlyBusiness = input.value; render(); }));
       document.querySelectorAll("[data-monthly-status]").forEach(input => input.addEventListener("change", () => { state.monthlyStatus = input.value; render(); }));
