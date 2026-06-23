@@ -1257,6 +1257,11 @@
       color: var(--orange);
       box-shadow: 0 6px 18px rgba(15, 35, 65, .08);
     }
+    .metric-title-picker {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
     .metric-title-switch {
       display: inline-flex;
       align-items: center;
@@ -1269,6 +1274,7 @@
       line-height: 1.35;
     }
     .metric-title-switch:hover { color: var(--orange); }
+    .metric-title-switch.active { color: var(--orange); }
     .metric-title-switch i {
       width: 22px;
       height: 22px;
@@ -1279,6 +1285,35 @@
       color: var(--orange);
       font-style: normal;
       font-size: 13px;
+    }
+    .metric-title-switch.active i { transform: rotate(180deg); }
+    .metric-title-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      z-index: 35;
+      min-width: 190px;
+      display: grid;
+      gap: 4px;
+      padding: 6px;
+      border: 1px solid #e4eaf2;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 14px 34px rgba(15, 35, 65, .14);
+    }
+    .metric-title-option {
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      background: #fff;
+      color: #526074;
+      text-align: left;
+      font-size: 14px;
+    }
+    .metric-title-option:hover,
+    .metric-title-option.active {
+      background: #fff5ec;
+      color: var(--orange);
     }
     .rate-pill {
       min-width: 58px;
@@ -1907,6 +1942,7 @@
       dataStatus: "all",
       dataCenterTab: "specialStats",
       dataMetricTab: "special",
+      dataMetricMenuOpen: false,
       monthlyMonth: "2026-06",
       monthlyBusiness: "all",
       monthlyStatus: "all",
@@ -3418,7 +3454,11 @@
 
     function dataMetricTitleButton(id) {
       const tab = dataMetricDefinitions().find(item => item.id === id);
-      return `<button class="panel-title metric-title-switch" data-data-metric-cycle="${id}">${tab.label}<i>⌄</i></button>`;
+      const options = dataMetricDefinitions();
+      return `<div class="metric-title-picker">
+        <button class="panel-title metric-title-switch ${state.dataMetricMenuOpen ? "active" : ""}" data-data-metric-toggle>${tab.label}<i>⌄</i></button>
+        ${state.dataMetricMenuOpen ? `<div class="metric-title-menu">${options.map(option => `<button class="metric-title-option ${state.dataMetricTab === option.id ? "active" : ""}" data-data-metric-option="${option.id}">${option.label}</button>`).join("")}</div>` : ""}
+      </div>`;
     }
 
     function dataMetricPanel() {
@@ -4112,11 +4152,13 @@
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
       document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
-      document.querySelectorAll("[data-data-metric-cycle]").forEach(btn => btn.addEventListener("click", () => {
-        const tabs = dataMetricDefinitions();
-        const currentIndex = tabs.findIndex(tab => tab.id === state.dataMetricTab);
-        const next = tabs[(currentIndex + 1) % tabs.length];
-        state.dataMetricTab = next.id;
+      document.querySelectorAll("[data-data-metric-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.dataMetricMenuOpen = !state.dataMetricMenuOpen;
+        render();
+      }));
+      document.querySelectorAll("[data-data-metric-option]").forEach(btn => btn.addEventListener("click", () => {
+        state.dataMetricTab = btn.dataset.dataMetricOption;
+        state.dataMetricMenuOpen = false;
         render();
       }));
       document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
