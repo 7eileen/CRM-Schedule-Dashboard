@@ -1946,7 +1946,7 @@
       monthlyMonth: "2026-06",
       monthlyBusiness: "all",
       monthlyStatus: "all",
-      monthlyType: "all",
+      monthlyGrade: "all",
       monthlyProduct: "all"
     };
 
@@ -3538,7 +3538,7 @@
       const rows = monthlySpecialRows();
       const stats = monthlySpecialStats(rows);
       const businessOptions = monthlyBusinessOptions();
-      const typeOptions = monthlyTypeOptions();
+      const gradeOptions = monthlyGradeOptions();
       const productOptionsForFilter = monthlyProductOptions();
       return `<section class="panel monthly-special-panel">
         <div class="panel-head">
@@ -3550,7 +3550,7 @@
             <label class="filter-field"><span>统计月份</span><input class="input" type="month" value="${state.monthlyMonth}" data-monthly-month></label>
             <label class="filter-field"><span>负责商务</span><select class="select" data-monthly-business><option value="all">全部</option>${businessOptions.map(value => `<option value="${value}" ${state.monthlyBusiness === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
             <label class="filter-field"><span>状态</span><select class="select" data-monthly-status>${["all:全部", "done:已完成", "unfinished:未完成", "delayed:已延期", "canceled:已取消"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.monthlyStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
-            <label class="filter-field"><span>类型</span><select class="select" data-monthly-type><option value="all">全部</option>${typeOptions.map(value => `<option value="${value}" ${state.monthlyType === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="filter-field"><span>等级</span><select class="select" data-monthly-grade><option value="all">全部</option>${gradeOptions.map(value => `<option value="${value}" ${state.monthlyGrade === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
             <label class="filter-field"><span>主推产品</span><select class="select" data-monthly-product><option value="all">全部</option>${productOptionsForFilter.map(value => `<option value="${value}" ${state.monthlyProduct === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
             <button class="btn primary" data-action="downloadMonthlyReport">导出月报</button>
           </div>
@@ -3577,9 +3577,9 @@
           const statusMatched = state.monthlyStatus === "all"
             || item.status.key === state.monthlyStatus
             || (state.monthlyStatus === "unfinished" && item.status.countsAsUnfinished);
-          const typeMatched = state.monthlyType === "all" || (record.type || "专场") === state.monthlyType;
+          const gradeMatched = state.monthlyGrade === "all" || talentGrade(record) === state.monthlyGrade;
           const productMatched = state.monthlyProduct === "all" || record.product === state.monthlyProduct;
-          return businessMatched && statusMatched && typeMatched && productMatched;
+          return businessMatched && statusMatched && gradeMatched && productMatched;
         })
         .sort((a, b) => a.record.liveTime.localeCompare(b.record.liveTime));
     }
@@ -3621,10 +3621,10 @@
     function monthlySpecialTable(rows) {
       if (!rows.length) return `<div class="upload"><div><strong>当前筛选暂无专场</strong></div></div>`;
       return `<table><colgroup><col style="width:7%"><col style="width:7%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:16%"><col style="width:8%"></colgroup>
-        <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>类型</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>负责人员</th><th>未完成原因</th></tr></thead>
+        <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>等级</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>负责人员</th><th>未完成原因</th></tr></thead>
         <tbody>${rows.map(item => {
           const record = item.record;
-          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${record.type || "专场"}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyResponsiblePeopleCell(record)}</td><td>${item.reason}</td></tr>`;
+          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${urgencyBadge(talentGrade(record))}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyResponsiblePeopleCell(record)}</td><td>${item.reason}</td></tr>`;
         }).join("")}</tbody></table>`;
     }
 
@@ -3682,8 +3682,8 @@
       return [...new Set(records.map(record => record.business || "待填写"))].sort((a, b) => a.localeCompare(b));
     }
 
-    function monthlyTypeOptions() {
-      return [...new Set(records.map(record => record.type || "专场"))].sort((a, b) => a.localeCompare(b));
+    function monthlyGradeOptions() {
+      return ["S+", "S", "A", "B", "C"];
     }
 
     function monthlyProductOptions() {
@@ -4164,7 +4164,7 @@
       document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
       document.querySelectorAll("[data-monthly-business]").forEach(input => input.addEventListener("change", () => { state.monthlyBusiness = input.value; render(); }));
       document.querySelectorAll("[data-monthly-status]").forEach(input => input.addEventListener("change", () => { state.monthlyStatus = input.value; render(); }));
-      document.querySelectorAll("[data-monthly-type]").forEach(input => input.addEventListener("change", () => { state.monthlyType = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-grade]").forEach(input => input.addEventListener("change", () => { state.monthlyGrade = input.value; render(); }));
       document.querySelectorAll("[data-monthly-product]").forEach(input => input.addEventListener("change", () => { state.monthlyProduct = input.value; render(); }));
       document.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
     }
@@ -4576,7 +4576,7 @@
         toast("当前筛选暂无可导出的月报");
         return;
       }
-      const headers = ["达人UID", "达人昵称", "专场时间", "负责商务", "状态", "类型", "主推产品", "目标销售额", "实际销售额", "达标率", "负责人员", "未完成原因"];
+      const headers = ["达人UID", "达人昵称", "专场时间", "负责商务", "状态", "等级", "主推产品", "目标销售额", "实际销售额", "达标率", "负责人员", "未完成原因"];
       const csvRows = rows.map(item => {
         const record = item.record;
         const rate = attainmentRate(record);
@@ -4586,7 +4586,7 @@
           record.liveTime,
           record.business || "待填写",
           item.status.label,
-          record.type || "专场",
+          talentGrade(record),
           record.product,
           record.expectedGmv || record.sales,
           record.actualGmv || "待回填",
