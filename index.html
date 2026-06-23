@@ -2784,7 +2784,7 @@
 
     function dataBlockDashboard(items, total, done, delayed, pending, rate) {
       return `<section class="stats">
-        <div class="stat stat-orange"><div><strong>${total}</strong><span>任务总数</span></div></div>
+        <button class="stat stat-orange is-clickable" data-action="openTaskDetails"><div><strong>${total}</strong><span>任务总数</span></div></button>
         <button class="stat stat-green is-clickable" data-action="openCompletedSpecials"><div><strong>${done}</strong><span>已完成</span></div></button>
         <div class="stat stat-blue"><div><strong>${rate}%</strong><span>完成率</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
@@ -2804,10 +2804,6 @@
           <div class="panel-head"><h2 class="panel-title">成员任务完成情况</h2>${badge(`${ownersWithTasks(items).length} 人`, "blue")}</div>
           <div class="panel-body">${memberCompletionBars(items)}</div>
         </div>
-      </section>
-      <section class="panel">
-        <div class="panel-head"><h2 class="panel-title">任务明细</h2>${badge(`${items.length} 条`, "orange")}</div>
-        <div class="panel-body table-wrap">${dataTaskTable(items)}</div>
       </section>`;
     }
 
@@ -3678,6 +3674,10 @@
       }
       if (name === "runAnalysis") toast("已重新识别字段，并刷新四类需求判断");
       if (name === "archive") toast("复盘报告已生成");
+      if (name === "openTaskDetails") {
+        openTaskDetailsDrawer();
+        return;
+      }
       if (name === "openCompletedSpecials") {
         openCompletedSpecialsDrawer();
         return;
@@ -3712,6 +3712,16 @@
         toast("已为组员安排任务");
       }
       render();
+    }
+
+    function openTaskDetailsDrawer() {
+      const items = filteredDataItems();
+      openDrawer(
+        "任务明细",
+        `<div class="stack"><div class="meta">${badge(`${items.length} 条任务`, "orange")}<span>${formatDate(state.dataStart)} - ${formatDate(state.dataEnd)}</span></div><div class="table-wrap">${dataTaskTable(items)}</div></div>`,
+        `<button class="btn primary" data-close>关闭</button>`,
+        true
+      );
     }
 
     function openCompletedSpecialsDrawer() {
