@@ -2738,13 +2738,6 @@
       return `${projectHeader(record)}
       ${recordCancelPanel(record)}
       ${projectDetailPanel(record)}
-      ${projectProgress(record)}
-      <section class="panel" style="margin-bottom:18px">
-        <div class="panel-head">
-          <div><h2 class="panel-title">抄送人</h2></div>
-          <button class="btn ghost" data-drawer="copy">编辑</button>
-        </div>
-      </section>
       <section class="detail-main">
         <div class="panel">
           <div class="panel-head"><div><h2 class="panel-title">任务记录</h2></div>${badge(`${projectTaskRecords(record).length} 条任务`, "orange")}</div>
