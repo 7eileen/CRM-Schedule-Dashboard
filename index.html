@@ -1520,6 +1520,22 @@
     }
     .drawer.wide { width: min(1120px, 96vw); }
     .drawer.show { transform: translateX(0); }
+    .drawer.center {
+      width: min(1120px, calc(100vw - 56px));
+      height: min(72vh, 680px);
+      top: 50%;
+      left: 50%;
+      right: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.22);
+      transform: translate(-50%, -46%) scale(.98);
+    }
+    .drawer.center.show { transform: translate(-50%, -50%) scale(1); }
+    .drawer.center .drawer-body {
+      min-height: 0;
+      padding: 18px 24px;
+    }
     .drawer-head, .drawer-foot { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
     .drawer-foot { border-top: 1px solid var(--line); border-bottom: 0; justify-content: flex-end; }
     .drawer h2 { margin: 0; font-size: 20px; }
@@ -1686,6 +1702,10 @@
       .my-task-tools { display: grid; }
       .task-filter-right { justify-content: flex-start; }
       .task-search, .task-filter-right > .select { width: 100%; min-width: 0; }
+      .drawer.center {
+        width: calc(100vw - 24px);
+        height: calc(100vh - 48px);
+      }
       .detail-field.long { grid-column: auto; }
       .list-toolbar { align-items: stretch; flex-direction: column; }
       .list-toolbar .seg-group { margin-left: 0; }
@@ -4236,6 +4256,7 @@
         "任务明细",
         `<div class="stack"><div class="meta">${badge(`${items.length} 条任务`, "orange")}<span>${formatDate(state.dataStart)} - ${formatDate(state.dataEnd)}</span></div><div class="table-wrap">${dataTaskTable(items)}</div></div>`,
         `<button class="btn primary" data-close>关闭</button>`,
+        true,
         true
       );
     }
@@ -4372,11 +4393,12 @@
       render();
     }
 
-    function openDrawer(title, body, foot = `<button class="btn primary" data-close>关闭</button>`, wide = false) {
+    function openDrawer(title, body, foot = `<button class="btn primary" data-close>关闭</button>`, wide = false, center = false) {
       $("#drawerTitle").textContent = title;
       $("#drawerBody").innerHTML = body;
       $("#drawerFoot").innerHTML = foot;
       $("#drawer").classList.toggle("wide", wide);
+      $("#drawer").classList.toggle("center", center);
       $("#drawer").classList.add("show");
       $("#mask").classList.add("show");
       bindDrawer();
@@ -4385,6 +4407,7 @@
     function closeDrawer() {
       $("#drawer").classList.remove("show");
       $("#drawer").classList.remove("wide");
+      $("#drawer").classList.remove("center");
       $("#mask").classList.remove("show");
     }
 
