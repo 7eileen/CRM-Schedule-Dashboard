@@ -931,6 +931,39 @@
       cursor: pointer;
       white-space: nowrap;
     }
+    .content-doc-flow {
+      display: grid;
+      gap: 10px;
+    }
+    .content-doc-note {
+      display: grid;
+      gap: 8px;
+    }
+    .content-doc-note span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .content-doc-note textarea {
+      min-height: 72px;
+      background: #fff;
+    }
+    .doc-permission-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border: 1px solid rgba(42, 203, 98, .18);
+      border-radius: 10px;
+      background: #f7fcf8;
+      color: #2f6944;
+      line-height: 1.5;
+    }
+    .doc-permission-note strong {
+      color: #1b9d4b;
+      font-weight: 400;
+      white-space: nowrap;
+    }
     .task-review-result {
       padding: 12px 14px;
       border: 1px solid #e4eaf2;
@@ -3091,6 +3124,14 @@
           <button class="btn primary" data-review-approve="${key}">审核通过</button>
         </div>`;
       }
+      if (moduleKey === "content" && task.status === "已完成" && task.reviewResult === "无需审核") {
+        return `<div class="task-review-line is-done">
+          <div class="review-copy">
+            <strong>内容文档已提交，无需审核</strong>
+            <span>${task.owner} 于 ${formatDate(task.submittedAt || task.completedAt)} 提交${task.docNote ? `，备注：${escapeHtml(task.docNote)}` : ""}</span>
+          </div>
+        </div>`;
+      }
       if (task.status === "已完成" && task.reviewedAt) {
         return `<div class="task-review-line is-done">
           <div class="review-copy">
@@ -3260,12 +3301,13 @@
     function myTaskCard(item) {
       const { record, moduleKey, task, key } = item;
       const module = modules[moduleKey];
+      const isContentTask = moduleKey === "content";
       const statusCls = taskStatusClass(task.status);
       const actionContent = task.status === "已完成"
-        ? `<span class="muted">负责人已审核通过</span>`
+        ? `<span class="muted">${isContentTask ? "内容文档已提交" : "负责人已审核通过"}</span>`
         : task.status === "待审核"
           ? `<span class="muted">等待${module.owner}审核</span>`
-          : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn primary" data-complete-task="${key}">提交完成</button>`;
+          : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn primary" data-complete-task="${key}">${isContentTask ? "提交文档" : "提交完成"}</button>`;
       return `<article class="my-task-card">
         <div class="my-task-head">
           <div>
@@ -3282,8 +3324,9 @@
             </div>
           </div>
           <div class="task-note">${demandText(record, moduleKey)}</div>
-          ${taskReviewNotice(task, module)}
-          ${taskUpload(key, task)}
+          ${taskReviewNotice(task, module, moduleKey)}
+          ${taskUpload(key, task, moduleKey)}
+          ${isContentTask ? contentDocForm(key, record, task, module) : ""}
           ${task.delayEditing ? delayForm(key, task) : ""}
           <div class="my-task-actions">
             ${actionContent}
@@ -3292,12 +3335,15 @@
       </article>`;
     }
 
-    function taskReviewNotice(task, module) {
+    function taskReviewNotice(task, module, moduleKey) {
       if (task.status === "待审核") {
         return `<div class="task-review-result is-reviewing">已提交给${module.owner}审核，负责人通过后任务才会进入已完成。</div>`;
       }
       if (task.rejectReason) {
         return `<div class="task-review-result is-rejected">驳回原因：${task.rejectReason}</div>`;
+      }
+      if (moduleKey === "content" && task.status === "已完成" && task.reviewResult === "无需审核") {
+        return `<div class="task-review-result is-approved">内容文档和备注已提交，无需审核；文档仅按权限范围查看。</div>`;
       }
       if (task.status === "已完成" && task.reviewedAt) {
         return `<div class="task-review-result is-approved">${module.owner}已审核通过，本任务已闭环。</div>`;
@@ -3305,17 +3351,32 @@
       return "";
     }
 
-    function taskUpload(key, task) {
+    function taskUpload(key, task, moduleKey) {
       const files = task.files || [];
+      const isContentTask = moduleKey === "content";
       return `<div class="task-upload">
         <div class="task-upload-main">
-          <span class="task-upload-title">完成文件</span>
+          <span class="task-upload-title">${isContentTask ? "内容文档" : "完成文件"}</span>
           <span class="task-files">${files.length ? files.map((name, index) => `<span class="file-chip"><span class="file-chip-name">${name}</span><button class="file-remove" data-remove-task-file="${key}:${index}" aria-label="删除${name}">x</button></span>`).join("") : `<span class="muted">未上传文件</span>`}</span>
         </div>
         <label class="task-upload-btn">
-          上传完成文件
+          ${isContentTask ? "上传内容文档" : "上传完成文件"}
           <input type="file" multiple data-task-upload="${key}">
         </label>
+      </div>`;
+    }
+
+    function contentDocForm(key, record, task, module) {
+      const isDone = task.status === "已完成";
+      return `<div class="content-doc-flow">
+        <label class="content-doc-note">
+          <span>编导备注信息</span>
+          <textarea data-task-doc-note="${key}" placeholder="填写文档链接、脚本说明或交付备注" ${isDone ? "disabled" : ""}>${escapeHtml(task.docNote || "")}</textarea>
+        </label>
+        <div class="doc-permission-note">
+          <strong>文档权限</strong>
+          <span>仅${escapeHtml(task.owner)} / ${escapeHtml(record.business || "负责商务")} / ${escapeHtml(module.owner)}可查看，其他商务不可查看。</span>
+        </div>
       </div>`;
     }
 
@@ -4032,6 +4093,10 @@
       document.querySelectorAll("[data-complete-task]").forEach(btn => btn.addEventListener("click", () => completeMyTask(btn.dataset.completeTask)));
       document.querySelectorAll("[data-task-upload]").forEach(input => input.addEventListener("change", () => uploadTaskFiles(input.dataset.taskUpload, input.files)));
       document.querySelectorAll("[data-remove-task-file]").forEach(btn => btn.addEventListener("click", () => removeTaskFile(btn.dataset.removeTaskFile)));
+      document.querySelectorAll("[data-task-doc-note]").forEach(input => input.addEventListener("input", () => {
+        const task = taskByKey(input.dataset.taskDocNote);
+        if (task) task.docNote = input.value;
+      }));
       document.querySelectorAll("[data-review-comment]").forEach(input => input.addEventListener("input", () => {
         const task = taskByKey(input.dataset.reviewComment);
         if (task) task.reviewComment = input.value;
@@ -4103,10 +4168,11 @@
     function uploadTaskFiles(key, fileList) {
       const task = taskByKey(key);
       if (!task) return;
+      const [, moduleKey] = key.split(":");
       const names = Array.from(fileList || []).map(file => file.name).filter(Boolean);
       if (!names.length) return;
       task.files = [...(task.files || []), ...names];
-      toast("完成文件已上传");
+      toast(moduleKey === "content" ? "内容文档已上传" : "完成文件已上传");
       render();
     }
 
@@ -4165,9 +4231,29 @@
 
     function completeMyTask(key) {
       const task = taskByKey(key);
+      const [, moduleKey] = key.split(":");
       if (!task) return;
       if (!task.files || !task.files.length) {
-        toast("请先上传完成文件");
+        toast(moduleKey === "content" ? "请先上传内容文档" : "请先上传完成文件");
+        return;
+      }
+      if (moduleKey === "content") {
+        if (!(task.docNote || "").trim()) {
+          toast("请先填写编导备注信息");
+          return;
+        }
+        task.status = "已完成";
+        task.submittedAt = actionDate;
+        task.completedAt = actionDate;
+        task.reviewResult = "无需审核";
+        delete task.reviewedAt;
+        delete task.rejectedAt;
+        delete task.rejectReason;
+        delete task.delayEditing;
+        task.reviewComment = "";
+        syncAssignmentStatusFromTaskKey(key);
+        toast("内容文档已提交并完成");
+        render();
         return;
       }
       task.status = "待审核";
@@ -4177,6 +4263,7 @@
       delete task.reviewResult;
       delete task.rejectedAt;
       delete task.rejectReason;
+      delete task.delayEditing;
       task.reviewComment = "";
       syncAssignmentStatusFromTaskKey(key);
       toast("已提交负责人审核");
