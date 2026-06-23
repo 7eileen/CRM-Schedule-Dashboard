@@ -1037,6 +1037,61 @@
     .bar-fill.blue { background: var(--blue); }
     .bar-fill.purple { background: var(--purple); }
     .bar-fill.red { background: var(--red); }
+    .support-pie-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .support-pie-card {
+      min-height: 154px;
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfcfe;
+      --pie-color: var(--orange);
+    }
+    .support-pie-card.green { --pie-color: var(--green); }
+    .support-pie-card.blue { --pie-color: var(--blue); }
+    .support-pie-card.purple { --pie-color: var(--purple); }
+    .support-pie-card.red { --pie-color: var(--red); }
+    .support-pie-chart {
+      width: 82px;
+      height: 82px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--pie-color) var(--done-pct), #edf3f8 0);
+    }
+    .support-pie-chart::before {
+      content: "";
+      position: absolute;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(15, 35, 65, .06);
+    }
+    .support-pie-chart strong {
+      position: relative;
+      z-index: 1;
+      color: #00152e;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .support-pie-info { display: grid; gap: 8px; min-width: 0; }
+    .support-pie-info strong { font-size: 15px; font-weight: 500; color: #00152e; }
+    .support-pie-info span { color: var(--muted); font-size: 13px; }
+    .support-pie-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     .support-switch {
       position: relative;
       display: inline-flex;
@@ -1371,7 +1426,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -3133,11 +3188,18 @@
     }
 
     function moduleCompletionBars(items) {
-      return `<div class="bar-list">${moduleOrder.map(key => {
+      return `<div class="support-pie-grid">${moduleOrder.map(key => {
         const list = items.filter(item => item.moduleKey === key);
         const done = list.filter(item => item.task.status === "已完成").length;
         const pct = list.length ? Math.round(done / list.length * 100) : 0;
-        return barRow(supportNeeds[key].title, pct, `${done}/${list.length}`, modules[key].cls);
+        const pending = list.length - done;
+        return `<div class="support-pie-card ${modules[key].cls}">
+          <div class="support-pie-chart" style="--done-pct:${pct}%"><strong>${pct}%</strong></div>
+          <div class="support-pie-info">
+            <strong>${supportNeeds[key].title}</strong>
+            <div class="support-pie-meta">${badge(`${done}/${list.length} 已完成`, done === list.length && list.length ? "green" : modules[key].cls)}${pending ? `<span>${pending} 条未完成</span>` : `<span>全部完成</span>`}</div>
+          </div>
+        </div>`;
       }).join("")}</div>`;
     }
 
