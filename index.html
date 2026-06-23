@@ -1334,13 +1334,12 @@
     };
 
     const owners = ["刘曼曼", "张一凡", "王可", "李晴", "陈响", "周宁", "林悦", "赵敏", "宋然", "陈舟", "何璐", "待分配"];
-    const seniorTaskViewers = ["六哥", "建新", "倩文"];
     const taskScopeOptions = [
       { id: "mine", label: "我的任务" },
       { id: "contentLead", label: "内容组长" },
       { id: "editLead", label: "剪辑组长" },
       { id: "adsLead", label: "投放组长" },
-      ...seniorTaskViewers.map(name => ({ id: name, label: name }))
+      { id: "manager", label: "管理者" }
     ];
     const taskSortOptions = [
       { id: "urgency", label: "紧急程度优先" },
@@ -1503,7 +1502,7 @@
           { label: "状态", value: "已排期", type: "select", options: ["已排期", "已延期", "已取消"] },
           { label: "类型", value: "专场", type: "select", options: ["专场", "新闻号", "单品直播间"] },
           { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions, wide: "full" },
-          { label: "预估销售额", value: "¥180万" },
+          { label: "目标销售额", value: "¥180万" },
           { label: "是否有试用", value: "有，达人及助播试用 20 份" },
           { label: "福袋需求", value: "有，开场福袋 1 轮，整点福袋 2 轮", wide: "long" },
           { label: "福利品（即秒杀品）", value: "9.9 元洁面小样 200 单" },
@@ -2071,7 +2070,7 @@
         <div class="panel">
           <div class="panel-head"><h2 class="panel-title">项目详情</h2><button class="btn ghost" data-drawer="record">原始记录</button></div>
           <div class="panel-body stack">
-            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("预估销售额", record.sales)}${field("主推产品", record.product)}</div>
+            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
             <div class="panel" style="box-shadow:none"><div class="panel-head"><h3 class="panel-title">需求识别概览</h3></div><div class="panel-body"><div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div></div></div>
           </div>
         </div>
@@ -2248,7 +2247,7 @@
         <div class="panel">
           <div class="panel-head"><div><h2 class="panel-title">${record.title}</h2></div><button class="btn ghost" data-drawer="record">查看原始记录</button></div>
           <div class="panel-body stack">
-            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("预估销售额", record.sales)}${field("主推产品", record.product)}</div>
+            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
             <div class="upload"><div><strong>专场记录表入口</strong><button class="btn primary" data-go="analysis">提交需求识别</button></div></div>
           </div>
         </div>
@@ -2536,7 +2535,7 @@
       const items = allDispatchTaskItems();
       const scopeModule = { contentLead: "content", editLead: "edit", adsLead: "ads" }[state.taskScope];
       if (scopeModule) return items.filter(item => item.moduleKey === scopeModule);
-      if (seniorTaskViewers.includes(state.taskScope)) return items;
+      if (state.taskScope === "manager") return items;
       return items.filter(item => item.task.owner === state.taskUser);
     }
 
@@ -2546,6 +2545,7 @@
       if (state.taskScope === "contentLead") return "内容组长";
       if (state.taskScope === "editLead") return "剪辑组长";
       if (state.taskScope === "adsLead") return "投放组长";
+      if (state.taskScope === "manager") return "管理者";
       return option ? option.label : state.taskUser;
     }
 
@@ -3090,7 +3090,7 @@
       const done = tasks.filter(item => item.done).length;
       return `${head("数据复盘", `<button class="btn primary" data-action="archive">生成复盘报告</button>`)}
       <section class="stats">
-        <div class="stat stat-orange"><div><strong>¥407万</strong><span>累计预估销售额</span></div></div>
+        <div class="stat stat-orange"><div><strong>¥407万</strong><span>累计目标销售额</span></div></div>
         <div class="stat stat-green"><div><strong>${Math.round(done / tasks.length * 100)}%</strong><span>任务完成率</span></div></div>
         <div class="stat stat-blue"><div><strong>${needs.length}</strong><span>识别需求总数</span></div></div>
         <div class="stat stat-red"><div><strong>${tasks.filter(t => t.status.includes("延期")).length}</strong><span>延期任务</span></div></div>
@@ -3116,8 +3116,8 @@
       <section class="panel" style="margin-top:18px">
         <div class="panel-head"><h2 class="panel-title">专场复盘汇总</h2><span class="badge green">全量记录</span></div>
         <div class="panel-body table-wrap">
-          <table><thead><tr><th>专场</th><th>状态</th><th>开播时间</th><th>预估销售额</th><th>进度</th></tr></thead><tbody>
-            ${records.map(record => `<tr><td><strong>${record.title}</strong></td><td>${badge(record.status, record.status === "待复盘" ? "green" : "orange")}</td><td>${record.liveTime}</td><td>${record.sales}</td><td><div class="progress"><span style="width:${record.progress}%"></span></div></td></tr>`).join("")}
+          <table><thead><tr><th>专场</th><th>状态</th><th>开播时间</th><th>目标销售额</th><th>进度</th></tr></thead><tbody>
+            ${records.map(record => `<tr><td><strong>${record.title}</strong></td><td>${badge(record.status, record.status === "待复盘" ? "green" : "orange")}</td><td>${record.liveTime}</td><td>${record.expectedGmv || record.sales}</td><td><div class="progress"><span style="width:${record.progress}%"></span></div></td></tr>`).join("")}
           </tbody></table>
         </div>
       </section>`;
@@ -3519,7 +3519,7 @@
         const scheduleStatus = specialValue("状态", "已排期");
         const type = specialValue("类型", "专场");
         const product = specialValue("主推产品", "油皮气垫pro");
-        const sales = specialValue("预估销售额", "¥180万");
+        const sales = specialValue("目标销售额", specialValue("预估销售额", "¥180万"));
         records.unshift({
           id: newId,
           title: `${talent} ${liveAt.slice(5, 10).replace("-", "/")} ${product}${type}`,
@@ -3667,7 +3667,7 @@
     }
 
     function entryUrgency() {
-      return talentGradeFromSales(specialValue("预估销售额", "0"));
+      return talentGradeFromSales(specialValue("目标销售额", specialValue("预估销售额", "0")));
     }
 
     function openNode(id) {
