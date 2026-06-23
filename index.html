@@ -1883,6 +1883,7 @@
       listRangePreset: "month",
       entryDocs: [],
       calendarOpen: true,
+      specialProgressOpen: true,
       calendarExpandedDay: "",
       productPanelOpen: false,
       dataStart: "2026-06-01",
@@ -2735,13 +2736,17 @@
 
     function pageDetail() {
       const record = selectedRecord();
+      const progressRows = projectTaskRecords(record);
       return `${projectHeader(record)}
       ${recordCancelPanel(record)}
       ${projectDetailPanel(record)}
       <section class="detail-main">
         <div class="panel">
-          <div class="panel-head"><div><h2 class="panel-title">专场进程</h2></div>${badge(`${projectTaskRecords(record).length} 条任务`, "orange")}</div>
-          <div class="panel-body node-record-stack">${nodeTimeline(record)}<div class="table-wrap">${nodeTable(record)}</div></div>
+          <div class="panel-head">
+            <div><h2 class="panel-title">专场进程</h2></div>
+            <div class="row">${badge(`${progressRows.length} 条任务`, "orange")}<button class="btn ghost" data-special-progress-toggle>${state.specialProgressOpen ? "收起进程" : "展开进程"}</button></div>
+          </div>
+          ${state.specialProgressOpen ? `<div class="panel-body node-record-stack">${nodeTimeline(record)}<div class="table-wrap">${nodeTable(record)}</div></div>` : ""}
         </div>
       </section>`;
     }
@@ -4133,6 +4138,10 @@
       }));
       document.querySelectorAll("[data-calendar-day-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.calendarExpandedDay = state.calendarExpandedDay === btn.dataset.calendarDayToggle ? "" : btn.dataset.calendarDayToggle;
+        render();
+      }));
+      document.querySelectorAll("[data-special-progress-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.specialProgressOpen = !state.specialProgressOpen;
         render();
       }));
       document.querySelectorAll("[data-list-search]").forEach(input => input.addEventListener("input", () => {
