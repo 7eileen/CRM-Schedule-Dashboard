@@ -1044,6 +1044,31 @@
     }
     .data-range-field { position: relative; }
     .data-range-picker { position: relative; }
+    .data-range-combo {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto minmax(260px, 1fr);
+      align-items: center;
+      gap: 12px;
+    }
+    .data-range-kind {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #00152e;
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .data-range-kind i {
+      color: var(--muted);
+      font-style: normal;
+      transform: translateY(-1px);
+    }
     .data-range-trigger {
       min-height: 42px;
       width: 100%;
@@ -1070,6 +1095,32 @@
       white-space: nowrap;
     }
     .data-range-trigger i { color: var(--muted); font-style: normal; }
+    .data-range-box {
+      justify-content: flex-start;
+      gap: 18px;
+      border-radius: 8px;
+      color: #00152e;
+    }
+    .data-range-box .range-clock {
+      width: 18px;
+      color: #98a4b3;
+      font-size: 17px;
+      line-height: 1;
+      text-align: center;
+    }
+    .data-range-box strong {
+      min-width: 116px;
+      color: #6b7280;
+      font-size: 15px;
+      font-weight: 500;
+      text-align: center;
+    }
+    .data-range-box em {
+      color: #00152e;
+      font-size: 15px;
+      font-style: normal;
+      font-weight: 700;
+    }
     .data-range-panel {
       position: absolute;
       top: calc(100% + 10px);
@@ -1702,6 +1753,9 @@
       .my-task-tools { display: grid; }
       .task-filter-right { justify-content: flex-start; }
       .task-search, .task-filter-right > .select { width: 100%; min-width: 0; }
+      .data-range-combo { grid-template-columns: 1fr; }
+      .data-range-box { gap: 12px; }
+      .data-range-box strong { min-width: 0; }
       .drawer.center {
         width: calc(100vw - 24px);
         height: calc(100vh - 48px);
@@ -3288,14 +3342,19 @@
         <div class="panel-body">
           <div class="data-toolbar">
             <div class="filter-field data-range-field">
-              <span>时间日期</span>
               <div class="data-range-picker">
-                <button class="data-range-trigger ${state.dataRangeOpen ? "active" : ""}" data-data-range-toggle>
-                  <span>${dataRangeModeTitle()}</span>
-                  <strong>${formatDate(state.dataStart)} - ${formatDate(state.dataEnd)}</strong>
-                  <i>⌄</i>
-                </button>
-                ${state.dataRangeOpen ? dataRangePanel() : ""}
+                <div class="data-range-combo">
+                  <button class="data-range-kind" data-data-range-toggle>
+                    <span>上传时间</span><i>⌄</i>
+                  </button>
+                  <button class="data-range-trigger data-range-box ${state.dataRangeOpen ? "active" : ""}" data-data-range-toggle aria-label="${dataRangeModeTitle()} ${formatDate(state.dataStart)} 至 ${formatDate(state.dataEnd)}">
+                    <span class="range-clock">◷</span>
+                    <strong>${formatDate(state.dataStart)}</strong>
+                    <em>-</em>
+                    <strong>${formatDate(state.dataEnd)}</strong>
+                  </button>
+                  ${state.dataRangeOpen ? dataRangePanel() : ""}
+                </div>
               </div>
             </div>
             <label class="filter-field"><span>支持类型</span><select class="select" data-data-module><option value="all">全部</option>${moduleOrder.map(key => `<option value="${key}" ${state.dataModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
