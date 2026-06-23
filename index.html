@@ -1257,10 +1257,6 @@
       color: var(--orange);
       box-shadow: 0 6px 18px rgba(15, 35, 65, .08);
     }
-    .data-metric-tabs {
-      margin-bottom: 0;
-      width: fit-content;
-    }
     .metric-title-switch {
       display: inline-flex;
       align-items: center;
@@ -3408,16 +3404,8 @@
       </section>
       ${dataToolbar()}
       <section class="data-block-stack">
-        ${dataMetricTabs()}
         ${dataMetricPanel()}
       </section>`;
-    }
-
-    function dataMetricTabs() {
-      const tabs = dataMetricDefinitions();
-      return `<div class="data-center-tabs data-metric-tabs">
-        ${tabs.map(tab => `<button class="data-center-tab ${state.dataMetricTab === tab.id ? "active" : ""}" data-data-metric-tab="${tab.id}">${tab.label}</button>`).join("")}
-      </div>`;
     }
 
     function dataMetricDefinitions() {
@@ -4124,7 +4112,6 @@
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
       document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
-      document.querySelectorAll("[data-data-metric-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataMetricTab = btn.dataset.dataMetricTab; render(); }));
       document.querySelectorAll("[data-data-metric-cycle]").forEach(btn => btn.addEventListener("click", () => {
         const tabs = dataMetricDefinitions();
         const currentIndex = tabs.findIndex(tab => tab.id === state.dataMetricTab);
