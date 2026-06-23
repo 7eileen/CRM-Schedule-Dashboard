@@ -837,44 +837,6 @@
       border-top: 1px solid #e8eef5;
       background: #fff;
     }
-    .recovery-list { display: grid; gap: 12px; }
-    .recovery-card {
-      display: grid;
-      gap: 12px;
-      padding: 14px;
-      border: 1px solid #e8eef5;
-      border-radius: 12px;
-      background: #fbfcfe;
-    }
-    .recovery-card-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-    }
-    .recovery-card h3 { margin: 0; font-size: 16px; font-weight: 500; }
-    .recovery-card .meta { margin-top: 6px; }
-    .recovery-body {
-      display: grid;
-      grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.4fr);
-      gap: 12px;
-      align-items: start;
-    }
-    .recovery-files {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      min-width: 0;
-    }
-    .recovery-actions {
-      display: flex;
-      align-items: flex-end;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .recovery-actions .input { min-width: 260px; }
     .task-review-line {
       grid-column: 2 / -1;
       display: grid;
@@ -1856,15 +1818,13 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .cancel-form, .recovery-body, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
       .task-review-line { grid-column: 1; }
       .task-row-actions { justify-content: flex-start; }
       .module-task-note { grid-column: 1; }
-      .recovery-card-head, .recovery-actions { justify-content: flex-start; flex-direction: column; }
-      .recovery-actions .input { width: 100%; min-width: 0; }
       .bar-row { grid-template-columns: 1fr; }
       .my-task-tools { display: grid; }
       .task-filter-right { justify-content: flex-start; }
@@ -3185,14 +3145,11 @@
       const module = modules[state.module];
       const enabled = supportNeeds[state.module] ? supportNeeds[state.module].enabled : true;
       const pending = records.filter(record => assignmentFor(record.id, state.module).status === "待派发").length;
-      const recovery = dispatchRecoveryItems(state.module);
-      const reviewing = recovery.filter(item => taskRecoveryStatus(item).key === "reviewing").length;
       return `<section class="module-tabs">${moduleOrder.map(moduleTab).join("")}</section>
-      ${enabled ? dispatchRecoveryPanel(state.module, recovery) : ""}
       <section class="panel">
         <div class="panel-head">
           <div><h2 class="panel-title">${supportNeeds[state.module].title}工作台</h2></div>
-          ${reviewing ? badge(`${reviewing} 个待回收审核`, "purple") : badge(`${pending} 个待派发`, pending ? "orange" : "green")}
+          ${badge(`${pending} 个待派发`, pending ? "orange" : "green")}
         </div>
         <div class="panel-body">
           ${enabled ? `<div class="dispatch-list">${records.map(record => dispatchCard(record, state.module)).join("")}</div>` : emptyDispatch(module)}
@@ -3228,48 +3185,6 @@
       const status = taskRecoveryStatus(item);
       const rank = { reviewing: "0", uploaded: "1", done: "2" }[status?.key] || "9";
       return `${rank}-${taskDataDate(item.task)}-${item.record.liveTime}`;
-    }
-
-    function dispatchRecoveryPanel(moduleKey, items = dispatchRecoveryItems(moduleKey)) {
-      const reviewing = items.filter(item => taskRecoveryStatus(item).key === "reviewing").length;
-      const uploaded = items.filter(item => taskRecoveryStatus(item).key === "uploaded").length;
-      const done = items.filter(item => taskRecoveryStatus(item).key === "done").length;
-      return `<section class="panel" style="margin-bottom:18px">
-        <div class="panel-head">
-          <div><h2 class="panel-title">任务回收</h2><div class="muted">成员上传或提交后，负责人可在这里集中查看文档、备注和审核状态</div></div>
-          <div class="row">${reviewing ? badge(`${reviewing} 待审核`, "purple") : ""}${uploaded ? badge(`${uploaded} 已上传待提交`, "blue") : ""}${badge(`${done} 已回收`, done ? "green" : "")}</div>
-        </div>
-        <div class="panel-body">
-          ${items.length ? `<div class="recovery-list">${items.map(recoveryCard).join("")}</div>` : `<div class="upload"><div><strong>暂无回收任务</strong><span class="muted">成员上传文件或提交完成后，会自动进入这里。</span></div></div>`}
-        </div>
-      </section>`;
-    }
-
-    function recoveryCard(item) {
-      const { record, moduleKey, task, key } = item;
-      const module = modules[moduleKey];
-      const status = taskRecoveryStatus(item);
-      const files = task.files || [];
-      const submittedAt = task.submittedAt || task.completedAt || task.reviewedAt || task.canceledAt || "";
-      return `<article class="recovery-card">
-        <div class="recovery-card-head">
-          <div>
-            <h3>${task.title}</h3>
-            <div class="meta"><span>${record.title}</span><span>执行人：${escapeHtml(task.owner || "待分配")}</span><span>负责人：${escapeHtml(module.owner)}</span><span>提交时间：${formatDate(submittedAt || taskDataDate(task))}</span></div>
-          </div>
-          ${badge(status.label, status.cls)}
-        </div>
-        <div class="recovery-body">
-          <div class="recovery-files">
-            <strong>回收文件</strong>
-            ${files.length ? files.map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("") : `<span class="muted">暂无上传文件</span>`}
-          </div>
-          <div class="task-note">${task.docNote ? `备注：${escapeHtml(task.docNote)}` : demandText(record, moduleKey)}</div>
-        </div>
-        <div class="recovery-actions">
-          ${status.key === "reviewing" ? `<input class="input" value="${task.reviewComment || ""}" placeholder="驳回原因（驳回时必填）" data-review-comment="${key}"><button class="btn ghost" data-review-reject="${key}">驳回修改</button><button class="btn primary" data-review-approve="${key}">审核通过</button>` : `<button class="btn ghost" data-focus-dispatch-task="${key}">查看派工</button>`}
-        </div>
-      </article>`;
     }
 
     function assignmentFor(recordId, moduleKey) {
