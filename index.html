@@ -3289,16 +3289,16 @@
         <div class="stat stat-blue"><div><strong>${rate}%</strong><span>完成率</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
       </section>
-      ${dataToolbar()}
-      <section class="data-block-stack">
-        ${dataMetricTabs()}
-        ${dataMetricPanel()}
-      </section>
       <section class="analysis-grid support-analysis-grid">
         <div class="panel">
           <div class="panel-head"><h2 class="panel-title">支持类型完成情况</h2>${badge(`${pending} 待处理`, pending ? "orange" : "green")}</div>
           <div class="panel-body">${moduleCompletionBars(items)}</div>
         </div>
+      </section>
+      ${dataToolbar()}
+      <section class="data-block-stack">
+        ${dataMetricTabs()}
+        ${dataMetricPanel()}
       </section>`;
     }
 
