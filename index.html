@@ -215,7 +215,7 @@
     }
     .list-controls {
       display: grid;
-      grid-template-columns: 220px minmax(280px, 480px);
+      grid-template-columns: minmax(320px, 440px) minmax(260px, 480px);
       align-items: end;
       gap: 12px;
       flex: 1;
@@ -263,6 +263,151 @@
       color: var(--text);
       font-size: 15px;
     }
+    .list-date-field { position: relative; min-width: 0; }
+    .list-range-picker { position: relative; }
+    .list-range-trigger {
+      width: 100%;
+      min-height: 44px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      border: 1px solid #d9e1eb;
+      border-radius: 6px;
+      background: #fff;
+      color: #00152e;
+      text-align: left;
+    }
+    .list-range-trigger.active {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255, 122, 0, .12);
+    }
+    .list-range-trigger strong {
+      min-width: 0;
+      color: #00152e;
+      font-size: 15px;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .list-range-trigger b,
+    .list-range-trigger i,
+    .list-range-trigger em {
+      color: var(--muted);
+      font-style: normal;
+      font-weight: 500;
+    }
+    .list-range-panel {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      z-index: 35;
+      width: min(680px, calc(100vw - 80px));
+      display: grid;
+      grid-template-columns: 126px minmax(0, 1fr);
+      border: 1px solid #d9e1eb;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 18px 38px rgba(15, 35, 65, .14);
+      overflow: visible;
+    }
+    .list-range-panel:before {
+      content: "";
+      position: absolute;
+      top: -6px;
+      left: 34px;
+      width: 10px;
+      height: 10px;
+      border-left: 1px solid #d9e1eb;
+      border-top: 1px solid #d9e1eb;
+      background: #fff;
+      transform: rotate(45deg);
+    }
+    .list-range-shortcuts {
+      display: grid;
+      align-content: start;
+      gap: 4px;
+      padding: 12px;
+      border-right: 1px solid #e8eef5;
+      background: #fbfcfe;
+    }
+    .list-range-shortcut {
+      min-height: 38px;
+      padding: 0 10px;
+      border-radius: 9px;
+      color: #00152e;
+      font-size: 14px;
+      text-align: left;
+    }
+    .list-range-shortcut.active {
+      background: #fff5ec;
+      color: var(--orange);
+      font-weight: 600;
+    }
+    .list-range-main {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+    }
+    .list-range-fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+    .list-range-box {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      border: 1px solid #d9e1eb;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+    }
+    .list-range-box strong { color: #00152e; font-weight: 500; white-space: nowrap; }
+    .list-range-fields i { color: var(--muted); font-style: normal; }
+    .list-range-calendars {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .list-mini-calendar {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid #e8eef5;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .list-mini-title {
+      color: #00152e;
+      font-size: 15px;
+      font-weight: 500;
+      text-align: center;
+    }
+    .list-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+      text-align: center;
+      color: #00152e;
+      font-size: 12px;
+    }
+    .list-mini-grid span {
+      min-height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+    }
+    .list-mini-grid .weekday,
+    .list-mini-grid .muted { color: #a6afbd; }
+    .list-mini-grid .in-range { background: #fff2e4; color: var(--orange); }
+    .list-mini-grid .is-edge { background: var(--orange); color: #fff; font-weight: 700; }
     .project-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(280px, 1fr));
@@ -1446,6 +1591,13 @@
       .list-toolbar { align-items: stretch; flex-direction: column; }
       .list-toolbar .seg-group { margin-left: 0; }
       .list-search { width: 100%; }
+      .list-range-panel { width: calc(100vw - 48px); grid-template-columns: 1fr; }
+      .list-range-shortcuts {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-right: 0;
+        border-bottom: 1px solid #e8eef5;
+      }
+      .list-range-calendars { grid-template-columns: 1fr; }
       table { min-width: 760px; }
     }
 
@@ -1523,6 +1675,10 @@
       listFilter: "all",
       listSearch: "",
       listMonth: "2026-06",
+      listStart: "2026-06-01",
+      listEnd: "2026-06-30",
+      listRangeOpen: false,
+      listRangePreset: "month",
       calendarOpen: true,
       calendarExpandedDay: "",
       productPanelOpen: false,
@@ -1924,34 +2080,34 @@
 
     function pageList() {
       const month = state.listMonth || "2026-06";
-      const monthRecords = records.filter(record => record.liveTime && record.liveTime.slice(0, 7) === month);
-      const running = monthRecords.filter(item => item.status !== "待复盘").length;
-      const review = monthRecords.filter(item => item.status === "待复盘").length;
-      const delayed = tasks.filter(item => item.status.includes("延期")).length;
-      const completedInMonth = monthRecords.filter(item => item.status === "待复盘" || item.progress >= 90).length;
+      const rangeRecords = records.filter(record => record.liveTime && inDateRange(record.liveTime.slice(0, 10), state.listStart, state.listEnd));
+      const running = rangeRecords.filter(item => item.status !== "待复盘").length;
+      const review = rangeRecords.filter(item => item.status === "待复盘").length;
+      const delayed = rangeRecords.filter(item => (item.scheduleStatus || item.status || "").includes("延期") || recordDelayedTask(item)).length;
+      const completedInRange = rangeRecords.filter(item => item.status === "待复盘" || item.progress >= 90).length;
       const keyword = state.listSearch.trim().toLowerCase();
-      const filteredRecords = monthRecords.filter(record => {
+      const filteredRecords = rangeRecords.filter(record => {
         const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘") || (state.listFilter === "review" && record.status === "待复盘");
         const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, talentGrade(record)].join(" ").toLowerCase();
         return statusMatched && (!keyword || searchText.includes(keyword));
       });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
       <section class="stats list-stats">
-        <div class="stat stat-orange"><div><strong>${monthRecords.length}</strong><span>${month} 专场</span></div></div>
+        <div class="stat stat-orange"><div><strong>${rangeRecords.length}</strong><span>${listRangeTitle()}专场</span></div></div>
         <div class="stat stat-green"><div><strong>${running}</strong><span>进行中</span></div></div>
-        <div class="stat stat-blue"><div><strong>${completedInMonth}</strong><span>当月已直播</span></div></div>
+        <div class="stat stat-blue"><div><strong>${completedInRange}</strong><span>已直播</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期申请</span></div></div>
       </section>
-      ${monthCalendar(month, monthRecords)}
+      ${monthCalendar(month, rangeRecords)}
       <section class="panel list-panel">
         <div class="panel-body">
           <div class="list-toolbar">
             <div class="list-controls">
-              <label class="toolbar-field"><span>排期月份</span><input class="input" type="month" value="${month}" data-list-month></label>
+              ${listRangePicker()}
               <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
             </div>
             <div class="seg-group">
-              ${listFilterButton("all", "全部", monthRecords.length)}
+              ${listFilterButton("all", "全部", rangeRecords.length)}
               ${listFilterButton("running", "进行中", running)}
               ${listFilterButton("review", "待复盘", review)}
             </div>
@@ -1998,6 +2154,93 @@
           </div>
         </div>` : ""}
       </section>`;
+    }
+
+    function listRangeTitle() {
+      const option = listRangeOptions().find(item => item.start === state.listStart && item.end === state.listEnd);
+      return option ? option.label : "自定义";
+    }
+
+    function listRangePicker() {
+      return `<div class="toolbar-field list-date-field">
+        <span>排期时间</span>
+        <div class="list-range-picker">
+          <button class="list-range-trigger ${state.listRangeOpen ? "active" : ""}" data-list-range-toggle>
+            <em>◷</em>
+            <strong>${formatDate(state.listStart)}</strong>
+            <b>-</b>
+            <strong>${formatDate(state.listEnd)}</strong>
+            <i>⌄</i>
+          </button>
+          ${state.listRangeOpen ? listRangePanel() : ""}
+        </div>
+      </div>`;
+    }
+
+    function listRangePanel() {
+      const options = listRangeOptions();
+      const baseMonth = state.listStart ? state.listStart.slice(0, 7) : state.listMonth;
+      return `<div class="list-range-panel">
+        <div class="list-range-shortcuts">
+          ${options.map(option => `<button class="list-range-shortcut ${state.listRangePreset === option.key ? "active" : ""}" data-list-range-option="${option.key}">${option.label}</button>`).join("")}
+        </div>
+        <div class="list-range-main">
+          <div class="list-range-fields">
+            <div class="list-range-box"><span>开始日期</span><strong>${formatDate(state.listStart)}</strong></div>
+            <i>›</i>
+            <div class="list-range-box"><span>结束日期</span><strong>${formatDate(state.listEnd)}</strong></div>
+          </div>
+          <div class="list-range-calendars">
+            ${listMiniCalendar(baseMonth)}
+            ${listMiniCalendar(shiftMonth(baseMonth, 1))}
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function listRangeOptions() {
+      return [
+        { key: "week", label: "本周", start: "2026-06-22", end: "2026-06-28" },
+        { key: "month", label: "本月", start: "2026-06-01", end: "2026-06-30" },
+        { key: "lastMonth", label: "上月", start: "2026-05-01", end: "2026-05-31" }
+      ];
+    }
+
+    function listMiniCalendar(month) {
+      const [year, rawMonth] = month.split("-").map(Number);
+      const first = new Date(year, rawMonth - 1, 1);
+      const startOffset = first.getDay();
+      const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+      const cells = Array.from({ length: 42 }, (_, index) => {
+        const date = new Date(year, rawMonth - 1, index - startOffset + 1);
+        const key = dateKey(date);
+        const inMonth = date.getMonth() === rawMonth - 1;
+        const inRange = inDateRange(key, state.listStart, state.listEnd);
+        const isEdge = key === state.listStart || key === state.listEnd;
+        const cls = `${inMonth ? "" : "muted"} ${inRange ? "in-range" : ""} ${isEdge ? "is-edge" : ""}`;
+        return `<span class="${cls.trim()}">${date.getDate()}</span>`;
+      }).join("");
+      return `<div class="list-mini-calendar">
+        <div class="list-mini-title">${year} 年 ${rawMonth} 月</div>
+        <div class="list-mini-grid">${weekdays.map(day => `<span class="weekday">${day}</span>`).join("")}${cells}</div>
+      </div>`;
+    }
+
+    function monthRange(month) {
+      const [year, rawMonth] = month.split("-").map(Number);
+      return { start: `${month}-01`, end: dateKey(new Date(year, rawMonth, 0)) };
+    }
+
+    function shiftMonth(month, offset) {
+      const [year, rawMonth] = month.split("-").map(Number);
+      return dateKey(new Date(year, rawMonth - 1 + offset, 1)).slice(0, 7);
+    }
+
+    function dateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
     function calendarEvent(record) {
@@ -3315,6 +3558,28 @@
       document.querySelectorAll("[data-list-filter]").forEach(btn => btn.addEventListener("click", () => { state.listFilter = btn.dataset.listFilter; render(); }));
       document.querySelectorAll("[data-list-month]").forEach(input => input.addEventListener("change", () => {
         state.listMonth = input.value;
+        const range = monthRange(input.value);
+        state.listStart = range.start;
+        state.listEnd = range.end;
+        const option = listRangeOptions().find(item => item.start === range.start && item.end === range.end);
+        state.listRangePreset = option ? option.key : "custom";
+        state.listRangeOpen = false;
+        state.listFilter = "all";
+        state.calendarExpandedDay = "";
+        render();
+      }));
+      document.querySelectorAll("[data-list-range-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.listRangeOpen = !state.listRangeOpen;
+        render();
+      }));
+      document.querySelectorAll("[data-list-range-option]").forEach(btn => btn.addEventListener("click", () => {
+        const option = listRangeOptions().find(item => item.key === btn.dataset.listRangeOption);
+        if (!option) return;
+        state.listStart = option.start;
+        state.listEnd = option.end;
+        state.listRangePreset = option.key;
+        state.listMonth = option.start.slice(0, 7);
+        state.listRangeOpen = false;
         state.listFilter = "all";
         state.calendarExpandedDay = "";
         render();
