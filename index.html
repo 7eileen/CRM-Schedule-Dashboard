@@ -1063,155 +1063,7 @@
     }
     .data-range-field { position: relative; }
     .data-range-picker { position: relative; }
-    .data-range-combo {
-      position: relative;
-      display: grid;
-      grid-template-columns: auto minmax(260px, 1fr);
-      align-items: center;
-      gap: 12px;
-    }
-    .data-range-kind {
-      min-height: 42px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: #00152e;
-      font-size: 15px;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .data-range-kind i {
-      color: var(--muted);
-      font-style: normal;
-      transform: translateY(-1px);
-    }
-    .data-range-trigger {
-      min-height: 42px;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 0 14px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #fff;
-      color: #00152e;
-      text-align: left;
-    }
-    .data-range-trigger.active {
-      border-color: var(--orange);
-      box-shadow: 0 0 0 3px rgba(255, 122, 0, .12);
-    }
-    .data-range-trigger span { color: #00152e; font-weight: 500; }
-    .data-range-trigger strong {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 400;
-      white-space: nowrap;
-    }
-    .data-range-trigger i { color: var(--muted); font-style: normal; }
-    .data-range-box {
-      justify-content: flex-start;
-      gap: 18px;
-      border-radius: 8px;
-      color: #00152e;
-    }
-    .data-range-box .range-clock {
-      width: 18px;
-      color: #98a4b3;
-      font-size: 17px;
-      line-height: 1;
-      text-align: center;
-    }
-    .data-range-box strong {
-      min-width: 116px;
-      color: #6b7280;
-      font-size: 15px;
-      font-weight: 500;
-      text-align: center;
-    }
-    .data-range-box em {
-      color: #00152e;
-      font-size: 15px;
-      font-style: normal;
-      font-weight: 700;
-    }
-    .data-range-panel {
-      position: absolute;
-      top: calc(100% + 10px);
-      left: 0;
-      z-index: 25;
-      width: 430px;
-      max-width: calc(100vw - 48px);
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: 0 18px 38px rgba(15, 35, 65, .14);
-    }
-    .data-range-panel::before {
-      content: "";
-      position: absolute;
-      top: -6px;
-      left: 30px;
-      width: 10px;
-      height: 10px;
-      border-left: 1px solid var(--border);
-      border-top: 1px solid var(--border);
-      background: #fff;
-      transform: rotate(45deg);
-    }
-    .data-range-tabs {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-      padding: 4px;
-      border-radius: 12px;
-      background: #f1f4f8;
-    }
-    .data-range-tab {
-      min-height: 36px;
-      border-radius: 9px;
-      color: var(--muted);
-      font-weight: 500;
-    }
-    .data-range-tab.active {
-      background: #fff;
-      color: var(--orange);
-      box-shadow: 0 6px 18px rgba(15, 35, 65, .08);
-    }
-    .data-range-list {
-      display: grid;
-      gap: 6px;
-      margin-top: 10px;
-      max-height: 280px;
-      overflow: auto;
-    }
-    .data-range-option {
-      min-height: 44px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 12px;
-      padding: 0 10px;
-      border-radius: 10px;
-      color: #00152e;
-      text-align: left;
-    }
-    .data-range-option em {
-      color: var(--muted);
-      font-size: 12px;
-      font-style: normal;
-      white-space: nowrap;
-    }
-    .data-range-option.active {
-      background: #fff5ec;
-      color: var(--orange);
-    }
+    .data-range-calendar-panel { width: min(760px, calc(100vw - 80px)); }
     .analysis-grid {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1830,9 +1682,6 @@
       .my-task-tools { display: grid; }
       .task-filter-right { justify-content: flex-start; }
       .task-search, .task-filter-right > .select { width: 100%; min-width: 0; }
-      .data-range-combo { grid-template-columns: 1fr; }
-      .data-range-box { gap: 12px; }
-      .data-range-box strong { min-width: 0; }
       .drawer.center {
         width: calc(100vw - 24px);
         height: calc(100vh - 48px);
@@ -1936,7 +1785,6 @@
       dataStart: "2026-06-01",
       dataEnd: "2026-06-30",
       dataRangeOpen: false,
-      dataRangeMode: "month",
       dataModule: "all",
       dataMember: "all",
       dataStatus: "all",
@@ -3467,42 +3315,55 @@
       return specialAchievementPanel();
     }
 
-    function dataRangeModeTitle() {
-      return state.dataRangeMode === "week" ? "周度承接" : "月度承接";
-    }
-
     function dataRangeOptions() {
-      if (state.dataRangeMode === "week") {
-        return [
-          { label: "本周", start: "2026-06-22", end: "2026-06-28" },
-          { label: "上周", start: "2026-06-15", end: "2026-06-21" },
-          { label: "06/08 - 06/14", start: "2026-06-08", end: "2026-06-14" },
-          { label: "06/02 - 06/08", start: "2026-06-02", end: "2026-06-08" }
-        ];
-      }
       return [
-        { label: "2026年06月", start: "2026-06-01", end: "2026-06-30" },
-        { label: "2026年05月", start: "2026-05-01", end: "2026-05-31" },
-        { label: "全部", start: "2026-05-01", end: "2026-06-30" }
+        { key: "week", label: "本周", start: "2026-06-22", end: "2026-06-28" },
+        { key: "month", label: "本月", start: "2026-06-01", end: "2026-06-30" },
+        { key: "lastMonth", label: "上月", start: "2026-05-01", end: "2026-05-31" }
       ];
     }
 
     function dataRangePanel() {
       const options = dataRangeOptions();
-      return `<div class="data-range-panel">
-        <div class="data-range-tabs">
-          <button class="data-range-tab ${state.dataRangeMode === "week" ? "active" : ""}" data-data-range-mode="week">周度承接</button>
-          <button class="data-range-tab ${state.dataRangeMode === "month" ? "active" : ""}" data-data-range-mode="month">月度承接</button>
-        </div>
-        <div class="data-range-list">
+      const baseMonth = state.dataStart ? state.dataStart.slice(0, 7) : "2026-06";
+      return `<div class="list-range-panel data-range-calendar-panel">
+        <div class="list-range-shortcuts">
           ${options.map(option => {
             const active = state.dataStart === option.start && state.dataEnd === option.end;
-            return `<button class="data-range-option ${active ? "active" : ""}" data-data-range-option="${option.start}|${option.end}">
-              <span>${option.label}</span>
-              <em>${formatDate(option.start)} - ${formatDate(option.end)}</em>
-            </button>`;
+            return `<button class="list-range-shortcut ${active ? "active" : ""}" data-data-range-option="${option.start}|${option.end}">${option.label}</button>`;
           }).join("")}
         </div>
+        <div class="list-range-main">
+          <div class="list-range-fields">
+            <div class="list-range-box"><span>开始日期</span><strong>${formatDate(state.dataStart)}</strong></div>
+            <i>›</i>
+            <div class="list-range-box"><span>结束日期</span><strong>${formatDate(state.dataEnd)}</strong></div>
+          </div>
+          <div class="list-range-calendars">
+            ${dataMiniCalendar(baseMonth)}
+            ${dataMiniCalendar(shiftMonth(baseMonth, 1))}
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function dataMiniCalendar(month) {
+      const [year, rawMonth] = month.split("-").map(Number);
+      const first = new Date(year, rawMonth - 1, 1);
+      const startOffset = first.getDay();
+      const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+      const cells = Array.from({ length: 42 }, (_, index) => {
+        const date = new Date(year, rawMonth - 1, index - startOffset + 1);
+        const key = dateKey(date);
+        const inMonth = date.getMonth() === rawMonth - 1;
+        const inRange = inDateRange(key, state.dataStart, state.dataEnd);
+        const isEdge = key === state.dataStart || key === state.dataEnd;
+        const cls = `${inMonth ? "" : "muted"} ${inRange ? "in-range" : ""} ${isEdge ? "is-edge" : ""}`;
+        return `<span class="${cls.trim()}">${date.getDate()}</span>`;
+      }).join("");
+      return `<div class="list-mini-calendar">
+        <div class="list-mini-title">${year} 年 ${rawMonth} 月</div>
+        <div class="list-mini-grid">${weekdays.map(day => `<span class="weekday">${day}</span>`).join("")}${cells}</div>
       </div>`;
     }
 
@@ -3511,19 +3372,16 @@
         <div class="panel-body">
           <div class="data-toolbar">
             <div class="filter-field data-range-field">
-              <div class="data-range-picker">
-                <div class="data-range-combo">
-                  <button class="data-range-kind" data-data-range-toggle>
-                    <span>专场时间</span><i>⌄</i>
-                  </button>
-                  <button class="data-range-trigger data-range-box ${state.dataRangeOpen ? "active" : ""}" data-data-range-toggle aria-label="${dataRangeModeTitle()} ${formatDate(state.dataStart)} 至 ${formatDate(state.dataEnd)}">
-                    <span class="range-clock">◷</span>
-                    <strong>${formatDate(state.dataStart)}</strong>
-                    <em>-</em>
-                    <strong>${formatDate(state.dataEnd)}</strong>
-                  </button>
-                  ${state.dataRangeOpen ? dataRangePanel() : ""}
-                </div>
+              <span>专场时间</span>
+              <div class="list-range-picker data-range-picker">
+                <button class="list-range-trigger ${state.dataRangeOpen ? "active" : ""}" data-data-range-toggle>
+                  <em>◷</em>
+                  <strong>${formatDate(state.dataStart)}</strong>
+                  <b>-</b>
+                  <strong>${formatDate(state.dataEnd)}</strong>
+                  <i>⌄</i>
+                </button>
+                ${state.dataRangeOpen ? dataRangePanel() : ""}
               </div>
             </div>
             <label class="filter-field"><span>支持类型</span><select class="select" data-data-module><option value="all">全部</option>${moduleOrder.map(key => `<option value="${key}" ${state.dataModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
@@ -4140,7 +3998,6 @@
       document.querySelectorAll("[data-cancel-delay]").forEach(btn => btn.addEventListener("click", () => cancelDelayTask(btn.dataset.cancelDelay)));
       document.querySelectorAll("[data-save-delay]").forEach(btn => btn.addEventListener("click", () => saveDelayTask(btn.dataset.saveDelay)));
       document.querySelectorAll("[data-data-range-toggle]").forEach(btn => btn.addEventListener("click", () => { state.dataRangeOpen = !state.dataRangeOpen; render(); }));
-      document.querySelectorAll("[data-data-range-mode]").forEach(btn => btn.addEventListener("click", () => { state.dataRangeMode = btn.dataset.dataRangeMode; state.dataRangeOpen = true; render(); }));
       document.querySelectorAll("[data-data-range-option]").forEach(btn => btn.addEventListener("click", () => {
         const [start, end] = btn.dataset.dataRangeOption.split("|");
         state.dataStart = start;
