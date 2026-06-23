@@ -1879,13 +1879,13 @@
     ];
 
     const modules = {
-      content: { name: "内容需求", owner: "李晴", cls: "blue", scope: "脚本、预热内容、话题点、出镜人员" },
+      content: { name: "内容需求", owner: "毛毛", cls: "blue", scope: "脚本、预热内容、话题点、出镜人员" },
       edit: { name: "剪辑需求", owner: "陈响", cls: "purple", scope: "素材收集、剪辑排期、视频版本、审核修改" },
-      ads: { name: "投放需求", owner: "赵敏", cls: "orange", scope: "达人画像、千川合作码、人群包、预算费比" },
+      ads: { name: "投放需求", owner: "吕歆", cls: "orange", scope: "达人画像、千川合作码、人群包、预算费比" },
       ops: { name: "运营需求", owner: "刘曼曼", cls: "green", scope: "设备、镜像、化妆、样品、福利品、开播检查" }
     };
 
-    const owners = ["刘曼曼", "张一凡", "王可", "李晴", "陈响", "周宁", "林悦", "赵敏", "宋然", "陈舟", "何璐", "待分配"];
+    const owners = ["毛毛", "小颖", "叶子", "海洋", "颜颜", "陈响", "周宁", "林悦", "吕歆", "自投", "凡振", "刘曼曼", "张一凡", "何璐", "待分配"];
     const taskScopeOptions = [
       { id: "mine", label: "我的任务" },
       { id: "contentLead", label: "内容组长" },
@@ -1900,10 +1900,25 @@
     ];
     const moduleOrder = ["content", "edit", "ads", "ops"];
     const moduleMembers = {
-      content: ["李晴", "王可", "张一凡", "待分配"],
+      content: ["毛毛", "小颖", "叶子", "海洋", "颜颜", "待分配"],
       edit: ["陈响", "周宁", "林悦", "待分配"],
-      ads: ["赵敏", "宋然", "陈舟", "待分配"],
+      ads: ["吕歆", "自投", "凡振", "待分配"],
       ops: ["刘曼曼", "张一凡", "何璐", "待分配"]
+    };
+    const recordMemberOverrides = {
+      "ZC-0620": { content: ["毛毛", "小颖"], ads: ["吕歆"] },
+      "ZC-0620-2": { content: ["毛毛"], ads: ["吕歆"] },
+      "ZC-0620-3": { content: ["叶子"], ads: ["自投"] },
+      "ZC-0624": { ads: ["凡振"] },
+      "ZC-0601": { ads: ["凡振"] },
+      "ZC-0603-2": { content: ["海洋"], ads: ["吕歆"] },
+      "ZC-0604-1": { content: ["颜颜"], ads: ["吕歆"] },
+      "ZC-0604-2": { ads: ["凡振"] },
+      "ZC-0604-3": { ads: ["凡振"] },
+      "ZC-0605-1": { content: ["叶子"] },
+      "ZC-0605-2": { content: ["叶子"], ads: ["吕歆"] },
+      "ZC-0606-1": { content: ["海洋"] },
+      "ZC-0608-1": { ads: ["吕歆"] }
     };
     const actionDate = "2026-06-12";
     const state = {
@@ -1949,21 +1964,21 @@
 
     const dispatchAssignments = {
       "ZC-0620": {
-        content: { owner: "王可", due: "2026-06-15", status: "待派发" },
+        content: { owner: "毛毛", due: "2026-06-15", status: "待派发" },
         edit: { owner: "陈响", due: "2026-06-16", status: "待派发" },
-        ads: { owner: "赵敏", due: "2026-06-16", status: "待派发" },
+        ads: { owner: "吕歆", due: "2026-06-16", status: "待派发" },
         ops: { owner: "刘曼曼", due: "2026-06-14", status: "已派发" }
       },
       "ZC-0624": {
-        content: { owner: "李晴", due: "2026-06-20", status: "已派发" },
+        content: { owner: "毛毛", due: "2026-06-20", status: "已派发" },
         edit: { owner: "周宁", due: "2026-06-21", status: "待派发" },
-        ads: { owner: "赵敏", due: "2026-06-21", status: "待派发" },
+        ads: { owner: "凡振", due: "2026-06-21", status: "待派发" },
         ops: { owner: "何璐", due: "2026-06-20", status: "已派发" }
       },
       "ZC-0601": {
-        content: { owner: "李晴", due: "2026-05-29", status: "已完成" },
+        content: { owner: "毛毛", due: "2026-05-29", status: "已完成" },
         edit: { owner: "陈响", due: "2026-05-30", status: "已完成" },
-        ads: { owner: "宋然", due: "2026-05-30", status: "已完成" },
+        ads: { owner: "凡振", due: "2026-05-30", status: "已完成" },
         ops: { owner: "张一凡", due: "2026-05-31", status: "已完成" }
       }
     };
@@ -1978,16 +1993,16 @@
     const dispatchTasks = {
       "ZC-0620": {
         content: [
-          { title: "预热视频脚本确认", owner: "王可", due: "2026-06-15", status: "待处理" },
-          { title: "千川视频脚本", owner: "李晴", due: "2026-06-16", status: "进行中" }
+          { title: "预热视频脚本确认", owner: "毛毛", due: "2026-06-15", status: "待处理" },
+          { title: "千川视频脚本", owner: "小颖", due: "2026-06-16", status: "进行中" }
         ],
         edit: [
           { title: "剪辑千川视频 3 条", owner: "陈响", due: "2026-06-16", status: "待处理" },
           { title: "主页视频审核版", owner: "周宁", due: "2026-06-17", status: "待处理" }
         ],
         ads: [
-          { title: "千川合作码核验", owner: "赵敏", due: "2026-06-16", status: "待处理" },
-          { title: "达人画像与人群包", owner: "宋然", due: "2026-06-17", status: "待处理" }
+          { title: "千川合作码核验", owner: "吕歆", due: "2026-06-16", status: "待处理" },
+          { title: "达人画像与人群包", owner: "吕歆", due: "2026-06-17", status: "待处理" }
         ],
         ops: [
           { title: "直播设备与镜像确认", owner: "刘曼曼", due: "2026-06-14", status: "进行中" },
@@ -1996,13 +2011,13 @@
       },
       "ZC-0624": {
         content: [
-          { title: "防晒专场预热脚本", owner: "李晴", due: "2026-06-20", status: "待处理" }
+          { title: "防晒专场预热脚本", owner: "毛毛", due: "2026-06-20", status: "待处理" }
         ],
         edit: [
           { title: "主页视频剪辑", owner: "周宁", due: "2026-06-21", status: "待处理" }
         ],
         ads: [
-          { title: "人群包复用校验", owner: "赵敏", due: "2026-06-21", status: "待处理" }
+          { title: "人群包复用校验", owner: "凡振", due: "2026-06-21", status: "待处理" }
         ],
         ops: [
           { title: "开播设备与样品检查", owner: "刘曼曼", due: "2026-06-20", status: "待处理" }
@@ -2010,13 +2025,13 @@
       },
       "ZC-0601": {
         content: [
-          { title: "复盘素材补充", owner: "李晴", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
+          { title: "复盘素材补充", owner: "毛毛", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
         ],
         edit: [
           { title: "直播切片剪辑复盘", owner: "陈响", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
         ],
         ads: [
-          { title: "投放消耗与达标复盘", owner: "宋然", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
+          { title: "投放消耗与达标复盘", owner: "凡振", due: "2026-06-03", status: "已完成", completedAt: "2026-06-03" }
         ],
         ops: [
           { title: "直播间执行记录回填", owner: "刘曼曼", due: "2026-06-02", status: "已完成", completedAt: "2026-06-02" }
@@ -2424,6 +2439,8 @@
       }
     ];
 
+    applySeedMemberOverrides();
+
     const projectNodes = [
       { id: "record", name: "专场记录表填写", owner: "商务", status: "已完成", date: "06/10", type: "record", note: "商务填写专场记录表" },
       { id: "analysis", name: "需求识别与确认", owner: "刘曼曼", status: "进行中", date: "06/11", type: "analysis", note: "识别内容、剪辑、投放、运营需求" },
@@ -2435,7 +2452,7 @@
       { time: "2026-06-10 10:15:33", user: "商务", action: "创建了专场记录表", color: "green" },
       { time: "2026-06-10 10:21:08", user: "AI", action: "识别出 7 条需求，包含内容、剪辑、投放、运营", color: "orange" },
       { time: "2026-06-10 10:26:42", user: "刘曼曼", action: "确认了需求识别结果，并进入派工", color: "green" },
-      { time: "2026-06-10 11:05:17", user: "赵敏", action: "标记千川合作码需二次核验", color: "orange" },
+      { time: "2026-06-10 11:05:17", user: "吕歆", action: "标记千川合作码需二次核验", color: "orange" },
       { time: "2026-06-10 14:32:21", user: "张一凡", action: "提交样品签收延期原因：商家补寄样品", color: "orange" }
     ];
 
@@ -2450,10 +2467,10 @@
     ];
 
     const tasks = [
-      { id: "T-C1", need: "N-C2", module: "content", title: "确认达人内容偏好与禁忌", owner: "李晴", due: "06/13", status: "已完成", done: true },
-      { id: "T-C2", need: "N-C1", module: "content", title: "输出预热视频脚本", owner: "王可", due: "06/15", status: "进行中", done: false },
+      { id: "T-C1", need: "N-C2", module: "content", title: "确认达人内容偏好与禁忌", owner: "毛毛", due: "06/13", status: "已完成", done: true },
+      { id: "T-C2", need: "N-C1", module: "content", title: "输出预热视频脚本", owner: "小颖", due: "06/15", status: "进行中", done: false },
       { id: "T-E1", need: "N-E1", module: "edit", title: "收集产品素材和达人历史高转化片段", owner: "陈响", due: "06/14", status: "待执行", done: false },
-      { id: "T-A1", need: "N-A1", module: "ads", title: "建立达人画像与人群包", owner: "赵敏", due: "06/16", status: "待执行", done: false },
+      { id: "T-A1", need: "N-A1", module: "ads", title: "建立达人画像与人群包", owner: "吕歆", due: "06/16", status: "待执行", done: false },
       { id: "T-O1", need: "N-O1", module: "ops", title: "确认直播设备与镜像设置", owner: "刘曼曼", due: "06/14", status: "已完成", done: true },
       { id: "T-O2", need: "N-O2", module: "ops", title: "确认样品试用名单与签收时间", owner: "张一凡", due: "06/15", status: "延期申请", done: false }
     ];
@@ -3358,12 +3375,42 @@
       if (!dispatchAssignments[recordId]) dispatchAssignments[recordId] = {};
       if (!dispatchAssignments[recordId][moduleKey]) {
         dispatchAssignments[recordId][moduleKey] = {
-          owner: moduleMembers[moduleKey][0],
+          owner: defaultOwnerFor(recordId, moduleKey),
           due: defaultDue(records.find(record => record.id === recordId)),
           status: "待派发"
         };
       }
       return dispatchAssignments[recordId][moduleKey];
+    }
+
+    function defaultOwnerFor(recordId, moduleKey) {
+      const override = recordMemberOverrides[recordId]?.[moduleKey];
+      if (override) return override[0] || "待分配";
+      return moduleMembers[moduleKey][0] || "待分配";
+    }
+
+    function applySeedMemberOverrides() {
+      Object.entries(recordMemberOverrides).forEach(([recordId, moduleMap]) => {
+        Object.entries(moduleMap).forEach(([moduleKey, memberList]) => {
+          const owner = memberList[0] || "待分配";
+          if (!dispatchAssignments[recordId]) dispatchAssignments[recordId] = {};
+          if (!dispatchAssignments[recordId][moduleKey]) {
+            dispatchAssignments[recordId][moduleKey] = {
+              owner,
+              due: defaultDue(records.find(record => record.id === recordId)),
+              status: "待派发"
+            };
+          } else {
+            dispatchAssignments[recordId][moduleKey].owner = owner;
+          }
+          const taskList = dispatchTasks[recordId]?.[moduleKey];
+          if (taskList && taskList.length) {
+            taskList.forEach((task, index) => {
+              task.owner = memberList[index] || owner;
+            });
+          }
+        });
+      });
     }
 
     function defaultDue(record) {
