@@ -980,6 +980,60 @@
     .monthly-status.pending { color: var(--orange); background: var(--orange-soft); }
     .monthly-status.delayed { color: var(--red); background: var(--red-soft); }
     .monthly-status.canceled { color: #60656d; background: #eef1f5; }
+    .monthly-task-list {
+      min-width: 260px;
+      display: grid;
+      gap: 8px;
+    }
+    .monthly-task-row {
+      display: grid;
+      grid-template-columns: 66px minmax(150px, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid #e8eef5;
+      border-radius: 10px;
+      background: #fbfcfe;
+    }
+    .monthly-task-module {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .monthly-task-main {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+    .monthly-task-main strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #00152e;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .monthly-task-main em {
+      color: var(--muted);
+      font-size: 12px;
+      font-style: normal;
+    }
+    .monthly-task-state {
+      min-height: 22px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #eef1f5;
+      color: #60656d;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .monthly-task-state.green { color: var(--green); background: var(--green-soft); }
+    .monthly-task-state.orange { color: var(--orange); background: var(--orange-soft); }
+    .monthly-task-state.blue { color: var(--blue); background: var(--blue-soft); }
+    .monthly-task-state.red { color: var(--red); background: var(--red-soft); }
+    .monthly-task-state.purple { color: var(--purple); background: var(--purple-soft); }
     .data-filter-panel { margin-bottom: 18px; }
     .filter-field {
       display: grid;
@@ -3318,12 +3372,52 @@
 
     function monthlySpecialTable(rows) {
       if (!rows.length) return `<div class="upload"><div><strong>当前筛选暂无专场</strong></div></div>`;
-      return `<table><colgroup><col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:13%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:8%"></colgroup>
-        <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>类型</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>未完成原因</th></tr></thead>
+      return `<table><colgroup><col style="width:7%"><col style="width:7%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:16%"><col style="width:8%"></colgroup>
+        <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>类型</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>子任务负责人</th><th>未完成原因</th></tr></thead>
         <tbody>${rows.map(item => {
           const record = item.record;
-          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${record.type || "专场"}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${item.reason}</td></tr>`;
+          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${record.type || "专场"}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyTaskBreakdownCell(record)}</td><td>${item.reason}</td></tr>`;
         }).join("")}</tbody></table>`;
+    }
+
+    function monthlyTaskBreakdown(record) {
+      const recordTasks = dispatchTasks[record.id] || {};
+      const rows = [];
+      moduleOrder.forEach(moduleKey => {
+        const assignment = assignmentFor(record.id, moduleKey);
+        const taskList = recordTasks[moduleKey] && recordTasks[moduleKey].length
+          ? recordTasks[moduleKey]
+          : [{ title: taskTemplates[moduleKey][0], owner: assignment.owner, due: assignment.due, status: assignment.status }];
+        taskList.forEach(task => {
+          rows.push({
+            module: supportNeeds[moduleKey].title,
+            title: task.title || taskTemplates[moduleKey][0],
+            owner: task.owner || assignment.owner || "待分配",
+            status: task.status || assignment.status || "待处理"
+          });
+        });
+      });
+      return rows;
+    }
+
+    function monthlyTaskBreakdownCell(record) {
+      const rows = monthlyTaskBreakdown(record);
+      if (!rows.length) return `<span class="muted">暂无子任务</span>`;
+      return `<div class="monthly-task-list">${rows.map(row => {
+        const cls = taskStatusClass(row.status);
+        return `<div class="monthly-task-row">
+          <span class="monthly-task-module">${escapeHtml(row.module)}</span>
+          <span class="monthly-task-main"><strong title="${escapeHtml(row.title)}">${escapeHtml(row.title)}</strong><em>${escapeHtml(row.owner)}</em></span>
+          <span class="monthly-task-state ${cls}">${escapeHtml(row.status)}</span>
+        </div>`;
+      }).join("")}</div>`;
+    }
+
+    function monthlyTaskBreakdownText(record) {
+      const rows = monthlyTaskBreakdown(record);
+      return rows.length
+        ? rows.map(row => `${row.module}-${row.title}-${row.owner}-${row.status}`).join("；")
+        : "暂无子任务";
     }
 
     function recordDelayedTask(record) {
@@ -3528,13 +3622,7 @@
     }
 
     function completedSpecialTaskOwners(record) {
-      const recordTasks = dispatchTasks[record.id] || {};
-      return moduleOrder.map(moduleKey => {
-        const list = recordTasks[moduleKey] || [];
-        if (!list.length) return "";
-        const owners = list.map(task => `${task.title}-${task.owner || "待分配"}`).join("；");
-        return `${supportNeeds[moduleKey].title}：${owners}`;
-      }).filter(Boolean).join("；");
+      return monthlyTaskBreakdownText(record);
     }
 
     function completedSpecialTable(rows) {
@@ -4189,7 +4277,7 @@
         toast("当前筛选暂无可导出的月报");
         return;
       }
-      const headers = ["达人UID", "达人昵称", "专场时间", "负责商务", "状态", "类型", "主推产品", "目标销售额", "实际销售额", "达标率", "未完成原因"];
+      const headers = ["达人UID", "达人昵称", "专场时间", "负责商务", "状态", "类型", "主推产品", "目标销售额", "实际销售额", "达标率", "子任务负责人", "未完成原因"];
       const csvRows = rows.map(item => {
         const record = item.record;
         const rate = attainmentRate(record);
@@ -4204,6 +4292,7 @@
           record.expectedGmv || record.sales,
           record.actualGmv || "待回填",
           Number.isFinite(rate) ? `${rate}%` : "待回填",
+          monthlyTaskBreakdownText(record),
           item.reason
         ];
       });
