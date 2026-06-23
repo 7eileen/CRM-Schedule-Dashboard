@@ -2680,6 +2680,7 @@
       const record = selectedRecord();
       return `${projectHeader(record)}
       ${recordCancelPanel(record)}
+      ${projectDetailPanel(record)}
       ${projectProgress(record)}
       <section class="panel" style="margin-bottom:18px">
         <div class="panel-head">
@@ -2692,11 +2693,17 @@
           <div class="panel-head"><div><h2 class="panel-title">任务记录</h2></div>${badge(`${projectTaskRecords(record).length} 条任务`, "orange")}</div>
           <div class="panel-body node-record-stack">${nodeTimeline(record)}<div class="table-wrap">${nodeTable(record)}</div></div>
         </div>
-        <div class="panel">
-          <div class="panel-head"><h2 class="panel-title">项目详情</h2><button class="btn ghost" data-drawer="record">原始记录</button></div>
-          <div class="panel-body stack">
-            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
-            <div class="panel" style="box-shadow:none"><div class="panel-head"><h3 class="panel-title">需求识别概览</h3></div><div class="panel-body"><div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div></div></div>
+      </section>`;
+    }
+
+    function projectDetailPanel(record) {
+      return `<section class="panel" style="margin-bottom:18px">
+        <div class="panel-head"><h2 class="panel-title">项目详情</h2><button class="btn ghost" data-drawer="record">原始记录</button></div>
+        <div class="panel-body stack">
+          <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
+          <div class="stack">
+            <h3 class="panel-title" style="font-size:16px">需求识别梗概</h3>
+            <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div>
           </div>
         </div>
       </section>`;
