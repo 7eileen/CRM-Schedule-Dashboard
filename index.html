@@ -523,6 +523,28 @@
     .detail-field span { color: var(--muted); font-size: 13px; font-weight: 400; }
     .detail-field textarea { min-height: 54px; background: #fff; }
     .detail-field textarea:disabled { color: #8a8f98; cursor: not-allowed; }
+    .detail-field-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .detail-field-label .required {
+      color: var(--red);
+      font-style: normal;
+      font-weight: 700;
+    }
+    .detail-readonly {
+      min-height: 40px;
+      display: grid;
+      gap: 4px;
+      padding: 9px 12px;
+      border: 1px solid #d9e1eb;
+      border-radius: 6px;
+      background: #f8fafc;
+      color: #00152e;
+    }
+    .detail-readonly strong { font-weight: 600; }
+    .detail-readonly em { color: var(--muted); font-size: 12px; font-style: normal; }
     .time-range-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
     .time-range-separator { color: var(--muted); font-size: 13px; font-style: normal; }
     .detail-field.long { grid-column: span 2; }
@@ -2029,9 +2051,12 @@
         supportKey: "edit",
         switchLabel: "需要剪辑支持",
         fields: [
-          { label: "拍剪需求", value: "需要拍摄产品展示、达人试用反馈和机制讲解素材", wide: "long" },
-          { label: "拍剪条数", value: "主页 2 条 / 千川 3 条" },
-          { label: "二创剪辑", value: "需要二创剪辑 2 条，用于投放素材补充", wide: "long" }
+          { label: "是否需要拍剪", value: "是", type: "select", options: ["是", "否"], required: true },
+          { label: "拍剪需求", value: "精修拍剪：精细化美颜+视频包装", type: "select", options: ["精修拍剪：精细化美颜+视频包装", "常规拍剪：基础美颜+视频包装"], required: true, showWhen: { label: "是否需要拍剪", value: "是" }, wide: "long" },
+          { label: "是否有达人美颜参数习惯？", value: "否", type: "select", options: ["是", "否"], required: true, showWhen: { label: "是否需要拍剪", value: "是" } },
+          { label: "美颜参数说明", value: "无", required: true, showWhen: { label: "是否需要拍剪", value: "是" }, wide: "long" },
+          { label: "拍剪条数", value: "", type: "computed-shot-count", required: true, showWhen: { label: "是否需要拍剪", value: "是" } },
+          { label: "是否需要二创剪辑", value: "是", type: "select", options: ["是", "否"], required: true }
         ]
       },
       {
@@ -2581,44 +2606,78 @@
       return "";
     }
 
+    function detailFieldLabel(item) {
+      return `<span class="detail-field-label">${item.label}${item.required ? `<i class="required">*</i>` : ""}</span>`;
+    }
+
+    function detailGroupField(groupIndex, label) {
+      const group = specialDetailGroups[groupIndex];
+      return group ? group.fields.find(field => field.label === label) : null;
+    }
+
+    function shouldShowDetailField(groupIndex, item) {
+      if (!item.showWhen) return true;
+      const target = detailGroupField(groupIndex, item.showWhen.label);
+      if (!target) return true;
+      const expected = Array.isArray(item.showWhen.value) ? item.showWhen.value : [item.showWhen.value];
+      return expected.includes(target.value);
+    }
+
+    function shootCountRule() {
+      const amount = gmvAmount(specialValue("目标销售额", specialValue("预估销售额", "0")));
+      if (!Number.isFinite(amount)) return { count: "待填写目标销售额", level: "系统将根据 GMV 自动计算" };
+      if (amount < 50) return { count: "1条", level: "C级：小于50w" };
+      if (amount < 100) return { count: "2-3条", level: "B级：50w-90w" };
+      if (amount <= 150) return { count: "4-5条", level: "A级：100w-150w" };
+      return { count: "可全部承接（大场撞一起另协调）", level: "S级：150w+" };
+    }
+
     function detailField(groupIndex, fieldIndex, item, disabled = false) {
+      if (!shouldShowDetailField(groupIndex, item)) return "";
       const cls = item.wide ? ` ${item.wide}` : "";
       const key = `${groupIndex}:${fieldIndex}`;
+      if (item.type === "computed-shot-count") {
+        const rule = shootCountRule();
+        return `<div class="detail-field${cls}">
+          ${detailFieldLabel(item)}
+          <div class="detail-readonly"><strong>${rule.count}</strong><em>${rule.level}</em></div>
+        </div>`;
+      }
       if (item.type === "select") {
         return `<label class="detail-field${cls}">
-          <span>${item.label}</span>
+          ${detailFieldLabel(item)}
           <select class="select" data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.options.map(option => `<option ${option === item.value ? "selected" : ""}>${option}</option>`).join("")}</select>
         </label>`;
       }
       if (item.type === "datetime-local") {
         return `<label class="detail-field${cls}">
-          <span>${item.label}</span>
+          ${detailFieldLabel(item)}
           <input class="input" type="datetime-local" value="${normalizedDateTimeValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
         </label>`;
       }
       const timeType = detailTimeType(item);
       if (timeType === "datetime-local") {
         return `<label class="detail-field${cls}">
-          <span>${item.label}</span>
+          ${detailFieldLabel(item)}
           <input class="input" type="datetime-local" value="${normalizedDateTimeValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
         </label>`;
       }
       if (timeType === "date") {
         return `<label class="detail-field${cls}">
-          <span>${item.label}</span>
+          ${detailFieldLabel(item)}
           <input class="input" type="date" value="${normalizedDateValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
         </label>`;
       }
       if (timeType === "time") {
         return `<label class="detail-field${cls}">
-          <span>${item.label}</span>
+          ${detailFieldLabel(item)}
           <input class="input" type="time" value="${normalizedTimeValue(item.value)}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
         </label>`;
       }
       if (timeType === "time-range") {
         const range = timeRangeValue(item.value);
         return `<label class="detail-field${cls}">
-          <span>${item.label}</span>
+          ${detailFieldLabel(item)}
           <div class="time-range-row">
             <input class="input" type="time" value="${range.start}" data-special-detail-range="${key}" data-range-part="start" ${disabled ? "disabled" : ""}>
             <em class="time-range-separator">至</em>
@@ -2628,7 +2687,7 @@
       }
       if (item.type === "product") {
         return `<div class="detail-field${cls} product-field">
-          <span>${item.label}</span>
+          ${detailFieldLabel(item)}
           <div class="product-select-row">
             <select class="select" data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.options.map(option => `<option ${option === item.value ? "selected" : ""}>${option}</option>`).join("")}</select>
             <button class="btn ghost" data-product-toggle>${state.productPanelOpen ? "收起商品栏" : "展开商品栏"}</button>
@@ -2640,7 +2699,7 @@
         </div>`;
       }
       return `<label class="detail-field${cls}">
-        <span>${item.label}</span>
+        ${detailFieldLabel(item)}
         <textarea data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.value}</textarea>
       </label>`;
     }
@@ -3890,9 +3949,18 @@
         render();
       }));
       document.querySelectorAll("[data-special-detail]").forEach(input => {
-        const updateSpecialDetail = () => {
+        const updateSpecialDetail = event => {
           const [groupIndex, fieldIndex] = input.dataset.specialDetail.split(":").map(Number);
-          specialDetailGroups[groupIndex].fields[fieldIndex].value = input.type === "datetime-local" ? input.value.replace("T", " ") : input.value;
+          const field = specialDetailGroups[groupIndex].fields[fieldIndex];
+          field.value = input.type === "datetime-local" ? input.value.replace("T", " ") : input.value;
+          if (field.label === "是否有达人美颜参数习惯？") {
+            const params = detailGroupField(groupIndex, "美颜参数说明");
+            if (params && field.value === "否") params.value = "无";
+            if (params && field.value === "是" && params.value === "无") params.value = "";
+          }
+          if (["是否需要拍剪", "是否有达人美颜参数习惯？"].includes(field.label) || (field.label === "目标销售额" && event.type === "change")) {
+            render();
+          }
         };
         input.addEventListener("input", updateSpecialDetail);
         input.addEventListener("change", updateSpecialDetail);
@@ -4251,6 +4319,11 @@
         toast(`已识别 ${state.entryDocs.length} 个文档，并生成四类需求池建议`);
       }
       if (name === "createProjectFromEntry") {
+        const requiredErrors = entryRequiredErrors();
+        if (requiredErrors.length) {
+          toast(`请完善：${requiredErrors[0]}`);
+          return;
+        }
         const newId = `ZC-${Date.now()}`;
         const talent = specialValue("达人昵称", "安然");
         const uid = specialValue("达人 UID", "dy987650");
@@ -4420,6 +4493,30 @@
       const infoGroup = specialDetailGroups.find(group => group.title === "专场信息");
       const item = infoGroup ? infoGroup.fields.find(field => field.label === label) : null;
       return item ? item.value : fallback;
+    }
+
+    function specialGroupValue(groupTitle, label, fallback = "") {
+      const group = specialDetailGroups.find(item => item.title === groupTitle);
+      const field = group ? group.fields.find(item => item.label === label) : null;
+      return field ? field.value : fallback;
+    }
+
+    function entryRequiredErrors() {
+      const errors = [];
+      specialDetailGroups.forEach((group, groupIndex) => {
+        if (group.supportKey && !supportNeeds[group.supportKey].enabled) return;
+        group.fields.forEach(field => {
+          if (!field.required || field.type === "computed-shot-count" || !shouldShowDetailField(groupIndex, field)) return;
+          if (!String(field.value ?? "").trim()) errors.push(field.label);
+        });
+      });
+      const needShoot = specialGroupValue("剪辑支持", "是否需要拍剪");
+      const beautyHabit = specialGroupValue("剪辑支持", "是否有达人美颜参数习惯？");
+      const beautyParams = specialGroupValue("剪辑支持", "美颜参数说明");
+      if (supportNeeds.edit.enabled && needShoot === "是" && beautyHabit === "是" && (!String(beautyParams || "").trim() || beautyParams === "无")) {
+        errors.push("美颜参数说明");
+      }
+      return errors;
     }
 
     function entryUrgency() {
