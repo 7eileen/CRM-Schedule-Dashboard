@@ -949,6 +949,7 @@
       gap: 18px;
       margin-bottom: 18px;
     }
+    .support-analysis-grid { grid-template-columns: 1fr; }
     .data-block-stack { display: grid; gap: 18px; margin-bottom: 18px; }
     .data-block-grid {
       display: grid;
@@ -2850,14 +2851,10 @@
         ${specialAchievementPanel()}
         ${adsForecastPanel()}
       </section>
-      <section class="analysis-grid">
+      <section class="analysis-grid support-analysis-grid">
         <div class="panel">
           <div class="panel-head"><h2 class="panel-title">支持类型完成情况</h2>${badge(`${pending} 待处理`, pending ? "orange" : "green")}</div>
           <div class="panel-body">${moduleCompletionBars(items)}</div>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><h2 class="panel-title">成员任务完成情况</h2>${badge(`${ownersWithTasks(items).length} 人`, "blue")}</div>
-          <div class="panel-body">${memberCompletionBars(items)}</div>
         </div>
       </section>`;
     }
@@ -3201,21 +3198,6 @@
           </div>
         </div>`;
       }).join("")}</div>`;
-    }
-
-    function memberCompletionBars(items) {
-      const owners = ownersWithTasks(items);
-      if (!owners.length) return `<div class="upload"><div><strong>暂无数据</strong></div></div>`;
-      return `<div class="bar-list">${owners.map(owner => {
-        const list = items.filter(item => item.task.owner === owner);
-        const done = list.filter(item => item.task.status === "已完成").length;
-        const pct = list.length ? Math.round(done / list.length * 100) : 0;
-        return barRow(owner, pct, `${done}/${list.length}`, "blue");
-      }).join("")}</div>`;
-    }
-
-    function barRow(label, pct, value, cls = "") {
-      return `<div class="bar-row"><strong>${label}</strong><div class="bar-track"><span class="bar-fill ${cls}" style="width:${pct}%"></span></div><span>${value}</span></div>`;
     }
 
     function completedSpecialRows() {
