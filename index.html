@@ -1238,6 +1238,10 @@
       color: var(--orange);
       box-shadow: 0 6px 18px rgba(15, 35, 65, .08);
     }
+    .data-metric-tabs {
+      margin-bottom: 0;
+      width: fit-content;
+    }
     .rate-pill {
       min-width: 58px;
       min-height: 28px;
@@ -1864,6 +1868,7 @@
       dataMember: "all",
       dataStatus: "all",
       dataCenterTab: "specialStats",
+      dataMetricTab: "special",
       monthlyMonth: "2026-06",
       monthlyBusiness: "all",
       monthlyStatus: "all",
@@ -3286,9 +3291,8 @@
       </section>
       ${dataToolbar()}
       <section class="data-block-stack">
-        ${teamAchievementPanel()}
-        ${specialAchievementPanel()}
-        ${adsForecastPanel()}
+        ${dataMetricTabs()}
+        ${dataMetricPanel()}
       </section>
       <section class="analysis-grid support-analysis-grid">
         <div class="panel">
@@ -3296,6 +3300,23 @@
           <div class="panel-body">${moduleCompletionBars(items)}</div>
         </div>
       </section>`;
+    }
+
+    function dataMetricTabs() {
+      const tabs = [
+        { id: "special", label: "专场达标率" },
+        { id: "ads", label: "投放预估达标率" },
+        { id: "member", label: "成员承接达标率" }
+      ];
+      return `<div class="data-center-tabs data-metric-tabs">
+        ${tabs.map(tab => `<button class="data-center-tab ${state.dataMetricTab === tab.id ? "active" : ""}" data-data-metric-tab="${tab.id}">${tab.label}</button>`).join("")}
+      </div>`;
+    }
+
+    function dataMetricPanel() {
+      if (state.dataMetricTab === "ads") return adsForecastPanel();
+      if (state.dataMetricTab === "member") return teamAchievementPanel();
+      return specialAchievementPanel();
     }
 
     function dataRangeModeTitle() {
@@ -3969,6 +3990,7 @@
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
       document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
+      document.querySelectorAll("[data-data-metric-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataMetricTab = btn.dataset.dataMetricTab; render(); }));
       document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
       document.querySelectorAll("[data-monthly-business]").forEach(input => input.addEventListener("change", () => { state.monthlyBusiness = input.value; render(); }));
       document.querySelectorAll("[data-monthly-status]").forEach(input => input.addEventListener("change", () => { state.monthlyStatus = input.value; render(); }));
