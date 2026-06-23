@@ -2783,13 +2783,13 @@
     }
 
     function dataBlockDashboard(items, total, done, delayed, pending, rate) {
-      return `${dataToolbar()}
-      <section class="stats">
+      return `<section class="stats">
         <div class="stat stat-orange"><div><strong>${total}</strong><span>任务总数</span></div></div>
         <button class="stat stat-green is-clickable" data-action="openCompletedSpecials"><div><strong>${done}</strong><span>已完成</span></div></button>
         <div class="stat stat-blue"><div><strong>${rate}%</strong><span>完成率</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期中</span></div></div>
       </section>
+      ${dataToolbar()}
       <section class="data-block-stack">
         ${teamAchievementPanel()}
         ${specialAchievementPanel()}
