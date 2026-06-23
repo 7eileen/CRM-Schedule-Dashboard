@@ -1036,20 +1036,11 @@
     .monthly-status.delayed { color: var(--red); background: var(--red-soft); }
     .monthly-status.canceled { color: #60656d; background: #eef1f5; }
     .monthly-owner-list {
-      min-width: 190px;
-      display: grid;
-      gap: 6px;
-    }
-    .monthly-owner-row {
+      min-width: 150px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      line-height: 1.45;
-    }
-    .monthly-owner-module {
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .monthly-owner-name {
       display: inline-flex;
@@ -3598,30 +3589,23 @@
     }
 
     function monthlyResponsiblePeople(record) {
-      const groups = new Map();
+      const owners = new Set();
       monthlyTaskBreakdown(record).forEach(row => {
-        if (!groups.has(row.module)) groups.set(row.module, new Set());
-        groups.get(row.module).add(row.owner || "待分配");
+        if (row.owner) owners.add(row.owner);
       });
-      return [...groups.entries()].map(([module, owners]) => ({
-        module,
-        owners: [...owners].filter(Boolean).join(" / ") || "待分配"
-      }));
+      return [...owners].filter(Boolean);
     }
 
     function monthlyResponsiblePeopleCell(record) {
-      const rows = monthlyResponsiblePeople(record);
-      if (!rows.length) return `<span class="muted">暂无负责人员</span>`;
-      return `<div class="monthly-owner-list">${rows.map(row => `<div class="monthly-owner-row">
-        <span class="monthly-owner-module">${escapeHtml(row.module)}</span>
-        <span class="monthly-owner-name">${escapeHtml(row.owners)}</span>
-      </div>`).join("")}</div>`;
+      const names = monthlyResponsiblePeople(record);
+      if (!names.length) return `<span class="muted">暂无负责人员</span>`;
+      return `<div class="monthly-owner-list">${names.map(name => `<span class="monthly-owner-name">${escapeHtml(name)}</span>`).join("")}</div>`;
     }
 
     function monthlyResponsiblePeopleText(record) {
-      const rows = monthlyResponsiblePeople(record);
-      return rows.length
-        ? rows.map(row => `${row.module}：${row.owners}`).join("；")
+      const names = monthlyResponsiblePeople(record);
+      return names.length
+        ? names.join("、")
         : "暂无负责人员";
     }
 
