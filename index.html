@@ -1290,6 +1290,51 @@
       padding: 22px;
     }
     .upload strong { display: block; font-size: 17px; font-weight: 400; margin-bottom: 14px; }
+    .entry-upload-content {
+      width: min(720px, 100%);
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+    }
+    .entry-upload-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .entry-upload-btn { cursor: pointer; }
+    .entry-upload-btn input { display: none; }
+    .entry-upload-empty { color: var(--muted); font-size: 13px; }
+    .entry-file-list {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .entry-file-chip {
+      min-width: 0;
+      min-height: 54px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid #e4eaf2;
+      border-radius: 10px;
+      background: #f8fafc;
+      text-align: left;
+    }
+    .entry-file-main { min-width: 0; display: grid; gap: 4px; }
+    .entry-file-main strong {
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+    .entry-file-main span { color: var(--muted); font-size: 12px; }
     .seg-group { display: flex; flex-wrap: wrap; gap: 8px; }
     .seg {
       min-height: 40px;
@@ -1679,6 +1724,7 @@
       listEnd: "2026-06-30",
       listRangeOpen: false,
       listRangePreset: "month",
+      entryDocs: [],
       calendarOpen: true,
       calendarExpandedDay: "",
       productPanelOpen: false,
@@ -2307,15 +2353,32 @@
           ${badge("待识别", "orange")}
         </div>
         <div class="panel-body stack">
-          <div class="upload">
-            <div>
+          <div class="upload entry-upload">
+            <div class="entry-upload-content">
               <strong>上传达人专场文档</strong>
-              <button class="btn primary" data-action="recognizeDoc">选择文档</button>
+              <div class="entry-upload-actions">
+                <label class="btn primary entry-upload-btn">选择文档<input type="file" multiple data-entry-doc-upload accept=".doc,.docx,.pdf,.xls,.xlsx,.csv,.txt,.md,image/*"></label>
+                ${state.entryDocs.length ? `<button class="btn ghost" data-action="recognizeDoc">识别文档</button>` : ""}
+              </div>
+              ${entryDocumentFiles()}
             </div>
           </div>
         </div>
       </section>
       ${specialDetailSection()}`;
+    }
+
+    function entryDocumentFiles() {
+      const files = state.entryDocs || [];
+      if (!files.length) return `<div class="entry-upload-empty">未上传文件</div>`;
+      return `<div class="entry-file-list">${files.map(file => {
+        const name = escapeHtml(file.name);
+        const type = escapeHtml(file.type || file.ext || "本地文件");
+        return `<div class="entry-file-chip">
+          <div class="entry-file-main"><strong title="${name}">${name}</strong><span>${formatFileSize(file.size)} · ${type}</span></div>
+          <button class="file-remove" data-remove-entry-doc="${file.id}" aria-label="删除${name}">x</button>
+        </div>`;
+      }).join("")}</div>`;
     }
 
     function specialDetailSection() {
@@ -3658,6 +3721,8 @@
         input.addEventListener("input", updateSpecialDetailRange);
         input.addEventListener("change", updateSpecialDetailRange);
       });
+      document.querySelectorAll("[data-entry-doc-upload]").forEach(input => input.addEventListener("change", () => uploadEntryDocs(input.files)));
+      document.querySelectorAll("[data-remove-entry-doc]").forEach(btn => btn.addEventListener("click", () => removeEntryDoc(btn.dataset.removeEntryDoc)));
       document.querySelectorAll("[data-product-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.productPanelOpen = !state.productPanelOpen;
         render();
@@ -3793,6 +3858,49 @@
       task.files.splice(fileIndex, 1);
       toast("已删除上传文件");
       render();
+    }
+
+    function uploadEntryDocs(fileList) {
+      const files = Array.from(fileList || []).filter(file => file.name);
+      if (!files.length) return;
+      const docs = files.map((file, index) => ({
+        id: `DOC-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
+        name: file.name,
+        size: file.size || 0,
+        type: fileExt(file.name)
+      }));
+      state.entryDocs = [...(state.entryDocs || []), ...docs];
+      toast(`已上传 ${docs.length} 个文档`);
+      render();
+    }
+
+    function removeEntryDoc(id) {
+      const before = state.entryDocs.length;
+      state.entryDocs = state.entryDocs.filter(file => file.id !== id);
+      if (state.entryDocs.length !== before) toast("已删除上传文档");
+      render();
+    }
+
+    function fileExt(name) {
+      const ext = String(name || "").split(".").pop();
+      return ext && ext !== name ? ext.toUpperCase() : "本地文件";
+    }
+
+    function formatFileSize(bytes) {
+      if (!Number.isFinite(bytes) || bytes <= 0) return "大小未知";
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${Math.round(bytes / 102.4) / 10} KB`;
+      return `${Math.round(bytes / 1024 / 102.4) / 10} MB`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
     }
 
     function completeMyTask(key) {
@@ -3947,7 +4055,13 @@
 
     function action(name) {
       if (name === "newRecord") toast("已创建一条待填写的专场记录");
-      if (name === "recognizeDoc") toast("AI 已识别字段，并生成四类需求池建议");
+      if (name === "recognizeDoc") {
+        if (!state.entryDocs.length) {
+          toast("请先选择本地文档");
+          return;
+        }
+        toast(`已识别 ${state.entryDocs.length} 个文档，并生成四类需求池建议`);
+      }
       if (name === "createProjectFromEntry") {
         const newId = `ZC-${Date.now()}`;
         const talent = specialValue("达人昵称", "安然");
