@@ -2974,7 +2974,7 @@
             <div><h2 class="panel-title">专场进程</h2></div>
             <div class="row">${badge(`${progressRows.length} 条任务`, "orange")}<button class="btn ghost" data-special-progress-toggle>${state.specialProgressOpen ? "收起进程" : "展开进程"}</button></div>
           </div>
-          ${state.specialProgressOpen ? `<div class="panel-body node-record-stack">${nodeTimeline(record)}<div class="table-wrap">${nodeTable(record)}</div></div>` : ""}
+          ${state.specialProgressOpen ? `<div class="panel-body node-record-stack">${nodeTimeline(record)}</div>` : ""}
         </div>
       </section>`;
     }
@@ -3102,22 +3102,6 @@
       if (status === "进行中" || status === "执行中" || status === "已派发") return "blue";
       if (status === "待处理" || status === "待派发" || status === "待执行") return "orange";
       return "gray";
-    }
-
-    function nodeTable(record) {
-      const rows = projectTaskRecords(record);
-      return `<table><colgroup><col style="width:34%"><col style="width:16%"><col style="width:18%"><col style="width:16%"><col style="width:16%"></colgroup>
-        <thead><tr><th>任务名称</th><th>负责人</th><th>计划时间</th><th>状态</th><th>操作</th></tr></thead>
-        <tbody>${rows.map(row => {
-          const cls = nodeStatusClass(row.status);
-          return `<tr>
-            <td><strong>${row.name}</strong><div class="muted">${row.moduleName}</div></td>
-            <td>${row.owner}</td>
-            <td>${formatDate(row.fullDate)}</td>
-            <td>${badge(row.status, cls === "gray" ? "" : cls)}</td>
-            <td><button class="btn ghost" data-node-detail="${row.id}">查看</button></td>
-          </tr>`;
-        }).join("")}</tbody></table>`;
     }
 
     function nodeTimeline(record) {
