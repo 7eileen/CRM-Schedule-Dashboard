@@ -465,6 +465,23 @@
     }
     .record-card, .need-card, .module-card, .task-card { padding: 16px; display: grid; gap: 10px; text-align: left; width: 100%; color: inherit; }
     .record-card.active, .module-card.active { background: #fff8ef; border-color: var(--orange); box-shadow: none; }
+    .module-status-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .module-status-line strong { color: #00152e; font-weight: 500; }
+    .module-task-mini {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 12px;
+    }
     .field { min-height: 72px; padding: 14px; box-shadow: none; }
     .field label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 13px; font-weight: 400; }
     .field strong { display: block; color: #00152e; font-size: 14px; font-weight: 400; line-height: 1.45; overflow-wrap: anywhere; }
@@ -2743,7 +2760,7 @@
           <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
           <div class="stack">
             <h3 class="panel-title" style="font-size:16px">需求识别梗概</h3>
-            <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div>
+            <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module, record)).join("")}</div>
           </div>
         </div>
       </section>`;
@@ -2961,7 +2978,7 @@
         <div class="panel">
           <div class="panel-head"><div><h2 class="panel-title">需求识别结果</h2></div>${badge("7 条需求", "blue")}</div>
           <div class="panel-body">
-            <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module)).join("")}</div>
+            <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module, selectedRecord())).join("")}</div>
             <div style="height:18px"></div>
             <div class="stack">${needs.map(needCard).join("")}</div>
           </div>
@@ -2978,13 +2995,41 @@
       </section>`;
     }
 
-    function moduleNeedSummary(key, module) {
+    function moduleNeedSummary(key, module, record = selectedRecord()) {
       const list = needs.filter(item => item.module === key && item.exists);
-      return `<button class="module-card ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">
-        <div class="row"><strong>${module.name}</strong>${badge(`${list.length} 条`, module.cls)}</div>
-        <div class="progress"><span style="width:${Math.min(100, list.length * 28)}%"></span></div>
-        <span class="muted">负责人：${module.owner}</span>
+      const summary = moduleTaskSummary(record, key);
+      return `<button class="module-card ${state.module === key ? "active" : ""}" data-module="${key}" data-module-record="${record.id}" data-go="dispatch">
+        <div class="row"><strong>${module.name}</strong>${badge(`${summary.total || list.length} 条`, summary.badgeCls || module.cls)}</div>
+        <div class="progress"><span style="width:${summary.progress}%"></span></div>
+        <div class="module-status-line"><span>负责人：${module.owner}</span><strong>${summary.label}</strong></div>
+        <div class="module-task-mini">${summary.chips.map(chip => `<span>${chip}</span>`).join("")}</div>
       </button>`;
+    }
+
+    function moduleTaskSummary(record, moduleKey) {
+      const taskList = (dispatchTasks[record.id] && dispatchTasks[record.id][moduleKey]) || [];
+      const total = taskList.length;
+      const done = taskList.filter(task => task.status === "已完成").length;
+      const reviewing = taskList.filter(task => task.status === "待审核").length;
+      const delayed = taskList.filter(task => task.status === "延期中").length;
+      const canceled = taskList.filter(task => task.status === "已取消").length;
+      const uploaded = taskList.filter(task => (task.files || []).length && task.status !== "已完成" && task.status !== "已取消").length;
+      const assignment = assignmentFor(record.id, moduleKey);
+      const progress = total ? Math.round(done / total * 100) : (assignment.status === "已完成" ? 100 : 0);
+      const label = total
+        ? `${done}/${total} 已完成`
+        : assignment.status === "待派发"
+          ? "待派发"
+          : assignment.status;
+      const badgeCls = reviewing ? "purple" : delayed || canceled ? "red" : done === total && total ? "green" : uploaded ? "blue" : assignment.status === "待派发" ? "orange" : modules[moduleKey].cls;
+      const chips = [
+        total ? `子任务 ${total}` : "暂无子任务",
+        reviewing ? `待审核 ${reviewing}` : "",
+        uploaded ? `已上传 ${uploaded}` : "",
+        delayed ? `延期 ${delayed}` : "",
+        canceled ? `取消 ${canceled}` : ""
+      ].filter(Boolean);
+      return { total, done, reviewing, delayed, canceled, uploaded, progress, label, badgeCls, chips };
     }
 
     function needCard(need) {
@@ -4108,7 +4153,12 @@
         }
       }));
       document.querySelectorAll("[data-list-grade]").forEach(input => input.addEventListener("change", () => { state.listGrade = input.value; render(); }));
-      document.querySelectorAll("[data-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.module; state.dispatchOpen = ""; if (btn.dataset.go) state.view = btn.dataset.go; render(); }));
+      document.querySelectorAll("[data-module]").forEach(btn => btn.addEventListener("click", () => {
+        state.module = btn.dataset.module;
+        state.dispatchOpen = btn.dataset.moduleRecord ? `${btn.dataset.moduleRecord}:${btn.dataset.module}` : "";
+        if (btn.dataset.go) state.view = btn.dataset.go;
+        render();
+      }));
       document.querySelectorAll("[data-need]").forEach(btn => btn.addEventListener("click", () => openNeed(btn.dataset.need)));
       document.querySelectorAll("[data-task]").forEach(btn => btn.addEventListener("click", () => openTask(btn.dataset.task)));
       document.querySelectorAll("[data-task-done]").forEach(input => input.addEventListener("change", () => toggleTask(input.dataset.taskDone, input.checked)));
