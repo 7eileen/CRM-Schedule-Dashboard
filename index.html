@@ -1176,6 +1176,26 @@
     .task-memo-item strong { font-size: 13px; font-weight: 500; color: #995000; }
     .task-memo-item span { color: #526074; line-height: 1.55; }
     .task-memo-empty { color: var(--muted); font-size: 13px; }
+    .ads-forecast-form {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid rgba(0, 132, 255, .18);
+      border-radius: var(--radius);
+      background: #f7fbff;
+    }
+    .ads-forecast-form .task-field span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ads-forecast-tip {
+      color: #6f7b8c;
+      font-size: 12px;
+      line-height: 1.45;
+    }
     .my-task-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
     .delay-form {
       display: grid;
@@ -3604,6 +3624,7 @@
           ${field("执行组员", escapeHtml(task.owner || "待分配"))}
           ${field("计划时间", formatDate(task.delayDue || task.due))}
           ${field("当前状态", badge(status, taskStatusClass(status)))}
+          ${moduleKey === "ads" ? field("预估投放销售额", escapeHtml(task.adsForecastGmv || record.adsForecastGmv || "待填写")) : ""}
         </div>
         <div class="field-grid">
           ${field("延期原因", escapeHtml(task.delayReason || "无延期"))}
@@ -3813,7 +3834,7 @@
         const statusMatched = state.taskStatusFilter === "all" || item.task.status === statusMap[state.taskStatusFilter];
         const moduleMatched = state.taskModuleFilter === "all" || item.moduleKey === state.taskModuleFilter;
         const memoText = (item.task.memoHistory || []).map(memo => memo.text).join(" ");
-        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner, memoText, talentGrade(item.record)].join(" ").toLowerCase();
+        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner, item.task.adsForecastGmv, item.record.adsForecastGmv, memoText, talentGrade(item.record)].join(" ").toLowerCase();
         return statusMatched && moduleMatched && (!keyword || searchText.includes(keyword));
       }).sort(taskCompareByMode);
     }
@@ -3876,6 +3897,7 @@
           ${taskReviewNotice(task, module, moduleKey)}
           ${taskMemoPanel(key, task)}
           ${taskCancelForm(key, task)}
+          ${!isCanceled && moduleKey === "ads" ? adsForecastForm(key, record, task) : ""}
           ${isCanceled ? "" : taskUpload(key, task, moduleKey)}
           ${!isCanceled && isContentTask ? contentDocForm(key, record, task, module) : ""}
           ${task.delayEditing ? delayForm(key, task) : ""}
@@ -3885,6 +3907,18 @@
           </div>
         </div>
       </article>`;
+    }
+
+    function adsForecastForm(key, record, task) {
+      const value = task.adsForecastGmv || record.adsForecastGmv || "";
+      return `<div class="ads-forecast-form">
+        <label class="task-field">
+          <span>预估投放销售额 ${badge("投放人员填写", "blue")}</span>
+          <input class="input" value="${escapeHtml(value)}" placeholder="例如：¥168万" data-ads-forecast="${key}">
+          <em class="ads-forecast-tip">保存后同步至数据中心「投放预估达标率」</em>
+        </label>
+        <button class="btn primary" data-save-ads-forecast="${key}">保存预估</button>
+      </div>`;
     }
 
     function taskMemoButtonText(task) {
@@ -4742,6 +4776,8 @@
       document.querySelectorAll("[data-task-memo-draft]").forEach(input => input.addEventListener("input", () => updateTaskMemoDraft(input.dataset.taskMemoDraft, input.value)));
       document.querySelectorAll("[data-save-task-memo]").forEach(btn => btn.addEventListener("click", () => saveTaskMemo(btn.dataset.saveTaskMemo)));
       document.querySelectorAll("[data-close-task-memo]").forEach(btn => btn.addEventListener("click", () => closeTaskMemo(btn.dataset.closeTaskMemo)));
+      document.querySelectorAll("[data-ads-forecast]").forEach(input => input.addEventListener("input", () => updateAdsForecastDraft(input.dataset.adsForecast, input.value)));
+      document.querySelectorAll("[data-save-ads-forecast]").forEach(btn => btn.addEventListener("click", () => saveAdsForecast(btn.dataset.saveAdsForecast)));
       document.querySelectorAll("[data-review-comment]").forEach(input => input.addEventListener("input", () => {
         const task = taskByKey(input.dataset.reviewComment);
         if (task) task.reviewComment = input.value;
@@ -4891,6 +4927,36 @@
       task.memoOpen = true;
       toast("已保存节点备忘");
       render();
+    }
+
+    function updateAdsForecastDraft(key, value) {
+      const task = taskByKey(key);
+      if (task) task.adsForecastGmv = value;
+    }
+
+    function saveAdsForecast(key) {
+      const [recordId, moduleKey] = key.split(":");
+      const task = taskByKey(key);
+      const record = records.find(item => item.id === recordId);
+      if (!task || !record || moduleKey !== "ads") return;
+      const value = normalizeGmvText(task.adsForecastGmv || record.adsForecastGmv || "");
+      if (!value) {
+        toast("请填写预估投放销售额");
+        return;
+      }
+      task.adsForecastGmv = value;
+      record.adsForecastGmv = value;
+      toast("已保存预估投放销售额");
+      render();
+    }
+
+    function normalizeGmvText(value) {
+      const text = String(value || "").trim();
+      if (!text) return "";
+      if (/^待/.test(text)) return text;
+      if (/[万亿]/.test(text)) return text.startsWith("¥") ? text : `¥${text}`;
+      if (/^\d+(\.\d+)?$/.test(text)) return `¥${text}万`;
+      return text.startsWith("¥") ? text : `¥${text}`;
     }
 
     function uploadEntryDocs(fileList) {
