@@ -487,7 +487,7 @@
     }
     .module-task-detail-item {
       display: grid;
-      grid-template-columns: 36px minmax(220px, 1.4fr) minmax(96px, .8fr) minmax(110px, .8fr) minmax(90px, .7fr);
+      grid-template-columns: 36px minmax(220px, 1.4fr) minmax(96px, .8fr) minmax(110px, .8fr) minmax(90px, .7fr) auto;
       gap: 12px;
       align-items: center;
       padding: 14px;
@@ -500,6 +500,8 @@
     .module-task-title strong { color: #00152e; font-size: 15px; font-weight: 500; line-height: 1.35; }
     .module-task-title span, .module-task-cell span { color: var(--muted); font-size: 12px; }
     .module-task-cell { display: grid; gap: 5px; min-width: 0; }
+    .module-task-actions { justify-self: end; }
+    .module-task-actions .btn { min-height: 34px; padding: 0 12px; }
     .module-task-note {
       grid-column: 2 / -1;
       padding: 10px 12px;
@@ -509,6 +511,34 @@
       font-size: 13px;
       line-height: 1.55;
     }
+    .module-task-log {
+      grid-column: 2 / -1;
+      display: grid;
+      grid-template-columns: minmax(180px, .75fr) minmax(260px, 1.25fr) minmax(180px, .7fr);
+      gap: 10px;
+      padding: 12px;
+      border: 1px dashed #cfdbea;
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+    .module-task-log-block {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+    .module-task-log-block strong { color: #00152e; font-weight: 500; }
+    .module-task-log-empty, .module-task-log-text { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .module-task-log-item {
+      display: grid;
+      gap: 4px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #f6f8fb;
+      color: #526074;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .module-task-log-item span { color: #8a97a9; font-size: 12px; }
     .th-help {
       display: inline-flex;
       align-items: center;
@@ -1913,7 +1943,8 @@
       .calendar-cell.is-muted { display: none; }
       .task-review-line { grid-column: 1; }
       .task-row-actions { justify-content: flex-start; }
-      .module-task-note { grid-column: 1; }
+      .module-task-note, .module-task-log { grid-column: 1; }
+      .module-task-log { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; }
       .my-task-tools { display: grid; }
       .task-filter-right { justify-content: flex-start; }
@@ -2082,8 +2113,8 @@
     const dispatchTasks = {
       "ZC-0620": {
         content: [
-          { title: "预热视频脚本确认", owner: "毛毛", due: "2026-06-15", status: "待处理" },
-          { title: "千川视频脚本", owner: "小颖", due: "2026-06-16", status: "进行中" }
+          { title: "预热视频脚本确认", owner: "毛毛", due: "2026-06-15", status: "待处理", memoHistory: [{ time: "2026-06-12", user: "毛毛", text: "已和商务确认脚本方向，等待达人反馈禁忌点。" }] },
+          { title: "千川视频脚本", owner: "小颖", due: "2026-06-16", status: "进行中", memoHistory: [{ time: "2026-06-13", user: "小颖", text: "初稿已拆分，需补充达人热点背景。" }] }
         ],
         edit: [
           { title: "剪辑千川视频 3 条", owner: "陈响", due: "2026-06-16", status: "待处理" },
@@ -2095,7 +2126,7 @@
         ],
         ops: [
           { title: "直播设备与镜像确认", owner: "刘曼曼", due: "2026-06-14", status: "进行中" },
-          { title: "样品试用与福利品库存", owner: "张一凡", due: "2026-06-15", status: "延期中", originalDue: "2026-06-15", delayDue: "2026-06-17", delayReason: "商家补寄样品，签收时间后移。" }
+          { title: "样品试用与福利品库存", owner: "张一凡", due: "2026-06-15", status: "延期中", originalDue: "2026-06-15", delayDue: "2026-06-17", delayReason: "商家补寄样品，签收时间后移。", memoHistory: [{ time: "2026-06-14", user: "张一凡", text: "已提醒商务跟进快递签收，样品到仓后同步复核。" }] }
         ]
       },
       "ZC-0624": {
@@ -3379,6 +3410,7 @@
       const due = task.delayDue || task.due || assignmentFor(recordId, moduleKey).due;
       const status = task.status || "待处理";
       const note = moduleTaskDetailNote(moduleKey, task);
+      const key = `${recordId}:${moduleKey}:${index}`;
       return `<article class="module-task-detail-item">
         <span class="task-index">${index + 1}</span>
         <div class="module-task-title">
@@ -3388,7 +3420,9 @@
         <div class="module-task-cell"><span>执行人</span><strong>${escapeHtml(task.owner || "待分配")}</strong></div>
         <div class="module-task-cell"><span>完成时间</span><strong>${formatDate(due)}</strong></div>
         <div class="module-task-cell"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
+        <div class="module-task-actions"><button class="btn ghost" data-toggle-module-task-log="${key}">${task.logOpen ? "收起记录" : "查看记录"}</button></div>
         ${note ? `<div class="module-task-note">${note}</div>` : ""}
+        ${task.logOpen ? moduleTaskLogPanel(task, moduleKey) : ""}
       </article>`;
     }
 
@@ -3403,6 +3437,57 @@
       if (task.docNote) pieces.push(`备注：${escapeHtml(task.docNote)}`);
       if (files.length) pieces.push(`已上传：${files.map(escapeHtml).join("、")}`);
       return pieces.join("；");
+    }
+
+    function moduleTaskLogPanel(task, moduleKey) {
+      const delayText = task.delayReason
+        ? `${task.originalDue ? `原计划 ${formatDate(task.originalDue)}；` : ""}${task.delayDue ? `调整至 ${formatDate(task.delayDue)}；` : ""}${escapeHtml(task.delayReason)}`
+        : task.status === "延期中"
+          ? "原因待补充"
+          : "暂无延期";
+      const records = moduleTaskLogRecords(task, moduleKey);
+      const recordHtml = records.length
+        ? records.map(item => `<div class="module-task-log-item"><span>${item.meta}</span>${item.text}</div>`).join("")
+        : `<div class="module-task-log-empty">暂无备忘或编辑记录</div>`;
+      const fileHtml = (task.files || []).length
+        ? task.files.map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("")
+        : `<span class="module-task-log-empty">暂无上传附件</span>`;
+      return `<div class="module-task-log">
+        <div class="module-task-log-block"><strong>延期原因</strong><span class="module-task-log-text">${delayText}</span></div>
+        <div class="module-task-log-block"><strong>备忘 / 编辑记录</strong>${recordHtml}</div>
+        <div class="module-task-log-block"><strong>完成附件</strong><span class="task-observe-files">${fileHtml}</span></div>
+      </div>`;
+    }
+
+    function moduleTaskLogRecords(task, moduleKey) {
+      const records = [];
+      if (task.memoHistory && task.memoHistory.length) {
+        task.memoHistory.slice().reverse().forEach(item => records.push({
+          meta: `${formatDate(item.time)} · ${escapeHtml(item.user || task.owner || "记录人")}`,
+          text: escapeHtml(item.text)
+        }));
+      }
+      if (task.docNote) {
+        records.push({ meta: "完成备注", text: escapeHtml(task.docNote) });
+      }
+      if (task.reviewResult) {
+        records.push({ meta: "审核记录", text: escapeHtml(task.reviewResult) });
+      }
+      if (task.status === "待审核" && task.submittedAt) {
+        records.push({ meta: `提交记录 · ${formatDate(task.submittedAt)}`, text: `已提交给${escapeHtml(modules[moduleKey].owner)}审核` });
+      }
+      if (task.status === "已取消" && task.cancelReason) {
+        records.push({ meta: "取消记录", text: escapeHtml(task.cancelReason) });
+      }
+      return records;
+    }
+
+    function toggleModuleTaskLog(key) {
+      const [recordId, moduleKey] = key.split(":");
+      const task = taskByKey(key);
+      if (!task) return;
+      task.logOpen = !task.logOpen;
+      openModuleTaskDialog(`${recordId}:${moduleKey}`);
     }
 
     function needCard(need) {
@@ -5567,6 +5652,7 @@
       document.querySelectorAll("#drawer [data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
       document.querySelectorAll("[data-jump-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.jumpModule; state.view = "dispatch"; closeDrawer(); render(); }));
       document.querySelectorAll("[data-complete]").forEach(btn => btn.addEventListener("click", () => { const task = tasks.find(item => item.id === btn.dataset.complete); task.done = !task.done; task.status = task.done ? "已完成" : "进行中"; closeDrawer(); toast(task.done ? "任务已完成" : "任务已恢复"); render(); }));
+      document.querySelectorAll("[data-toggle-module-task-log]").forEach(btn => btn.addEventListener("click", () => toggleModuleTaskLog(btn.dataset.toggleModuleTaskLog)));
     }
 
     function toast(message) {
