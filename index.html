@@ -880,7 +880,7 @@
     .task-observer-list { display: grid; gap: 10px; padding: 14px 16px; background: #fff; }
     .task-observe-row {
       display: grid;
-      grid-template-columns: 34px minmax(220px, 1fr) 130px 118px 106px minmax(210px, 1fr) minmax(150px, .8fr) 76px;
+      grid-template-columns: 34px minmax(210px, 1fr) 120px 112px 100px minmax(190px, 1fr) minmax(140px, .75fr) 128px;
       gap: 12px;
       align-items: center;
       padding: 12px;
@@ -906,6 +906,16 @@
       min-width: 0;
     }
     .task-observe-files .file-chip { max-width: 170px; background: #eef6ff; color: #1c6fba; }
+    .task-observe-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .task-observe-actions .btn {
+      min-height: 34px;
+      padding: 0 12px;
+    }
     .task-review-line {
       grid-column: 2 / -1;
       display: grid;
@@ -3674,7 +3684,11 @@
         <div class="task-observe-cell"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
         <div class="task-observe-note">${taskObservationText(task, moduleKey)}</div>
         <div class="task-observe-files">${files.length ? files.map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("") : `<span class="muted">暂无附件</span>`}</div>
-        <button class="btn ghost" data-dispatch-task-detail="${key}">查看</button>
+        <div class="task-observe-actions">
+          <button class="btn ghost" data-dispatch-task-detail="${key}">查看</button>
+          ${status === "已完成" ? "" : `<button class="btn ${status === "已取消" ? "ghost" : "danger"}" data-cancel-task="${key}">${status === "已取消" ? "编辑原因" : "取消"}</button>`}
+        </div>
+        ${task.cancelEditing ? taskCancelForm(key, task) : ""}
       </article>`;
     }
 
