@@ -792,6 +792,16 @@
       background: #fff8ef;
     }
     .task-builder-head strong { display: block; font-size: 16px; font-weight: 400; }
+    .task-builder-head-actions { display: flex; align-items: center; gap: 8px; }
+    .dispatch-add-task {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--orange);
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+    }
     .task-list { display: grid; }
     .task-row {
       display: grid;
@@ -837,6 +847,35 @@
       border-top: 1px solid #e8eef5;
       background: #fff;
     }
+    .task-observer-list { display: grid; gap: 10px; padding: 14px 16px; background: #fff; }
+    .task-observe-row {
+      display: grid;
+      grid-template-columns: 34px minmax(220px, 1fr) 130px 118px 106px minmax(210px, 1fr) minmax(150px, .8fr) 76px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #e6edf5;
+      border-radius: var(--radius);
+      background: #fbfdff;
+    }
+    .task-observe-title { display: grid; gap: 5px; min-width: 0; }
+    .task-observe-title strong { color: #00152e; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .task-observe-title span, .task-observe-cell span { color: var(--muted); font-size: 12px; }
+    .task-observe-cell { display: grid; gap: 5px; min-width: 0; }
+    .task-observe-cell strong { font-weight: 500; color: #00152e; }
+    .task-observe-note {
+      color: #526074;
+      font-size: 13px;
+      line-height: 1.55;
+      min-width: 0;
+    }
+    .task-observe-files {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+    .task-observe-files .file-chip { max-width: 170px; background: #eef6ff; color: #1c6fba; }
     .task-review-line {
       grid-column: 2 / -1;
       display: grid;
@@ -1107,6 +1146,36 @@
       background: #f7fcf8;
       color: #1b9d4b;
     }
+    .task-memo-panel {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(255, 153, 15, .22);
+      border-radius: var(--radius);
+      background: #fffaf3;
+    }
+    .task-memo-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .task-memo-head strong { font-size: 15px; font-weight: 500; color: #00152e; }
+    .task-memo-head span { color: var(--muted); font-size: 12px; }
+    .task-memo-panel textarea { min-height: 80px; background: #fff; }
+    .task-memo-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .task-memo-history { display: grid; gap: 8px; }
+    .task-memo-item {
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border: 1px solid #f0e4d7;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .task-memo-item strong { font-size: 13px; font-weight: 500; color: #995000; }
+    .task-memo-item span { color: #526074; line-height: 1.55; }
+    .task-memo-empty { color: var(--muted); font-size: 13px; }
     .my-task-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
     .delay-form {
       display: grid;
@@ -1818,7 +1887,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -3442,6 +3511,8 @@
       const statusCls = taskStatusClass(assignment.status);
       const dispatchKey = `${record.id}:${moduleKey}`;
       const open = state.dispatchOpen === dispatchKey;
+      const published = assignment.status !== "待派发";
+      const draftCount = taskList.filter(task => task.isDraft).length;
       return `<article class="dispatch-card ${open ? "is-open" : ""}">
         <button class="dispatch-summary" data-toggle-dispatch="${dispatchKey}">
           <h3>${record.title}</h3>
@@ -3456,22 +3527,99 @@
             <div class="task-builder">
               <div class="task-builder-head">
                 <div>
-                  <strong>新建任务</strong>
+                  <strong>${published ? "任务观察" : "新建任务"}</strong>
                 </div>
-                ${badge(`${taskList.length} 条子任务`, module.cls)}
+                <div class="task-builder-head-actions">
+                  ${published ? `<button class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新增任务">+</button>` : ""}
+                  ${published ? badge(assignment.status, statusCls) : ""}
+                  ${badge(`${taskList.length} 条子任务`, module.cls)}
+                </div>
               </div>
-              <div class="task-list">
-                ${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}
-              </div>
-              <div class="task-actions">
+              ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
+              ${!published || draftCount ? `<div class="task-actions">
                 ${badge(assignment.status, statusCls)}
-                <button class="btn ghost" data-add-subtask="${record.id}:${moduleKey}">+ 新建任务</button>
-                <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "更新派工"}</button>
-              </div>
+                ${published ? badge(`${draftCount} 条待发布`, "orange") : `<button class="btn ghost" data-add-subtask="${record.id}:${moduleKey}">+ 新建任务</button>`}
+                <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "发布新增任务"}</button>
+              </div>` : ""}
             </div>
           </div>
         </div>` : ""}
       </article>`;
+    }
+
+    function taskObserverList(recordId, moduleKey, taskList) {
+      return `<div class="task-observer-list">${taskList.map((task, index) => (
+        task.isDraft ? taskRow(recordId, moduleKey, task, index) : taskObserveRow(recordId, moduleKey, task, index)
+      )).join("")}</div>`;
+    }
+
+    function taskObserveRow(recordId, moduleKey, task, index) {
+      const key = `${recordId}:${moduleKey}:${index}`;
+      const status = task.status || "待处理";
+      const due = task.delayDue || task.due;
+      const files = task.files || [];
+      return `<article class="task-observe-row">
+        <span class="task-index">${index + 1}</span>
+        <div class="task-observe-title">
+          <strong>${escapeHtml(task.title || taskTemplates[moduleKey][0])}</strong>
+          <span>${supportNeeds[moduleKey].title}</span>
+        </div>
+        <div class="task-observe-cell"><span>执行组员</span><strong>${escapeHtml(task.owner || "待分配")}</strong></div>
+        <div class="task-observe-cell"><span>计划时间</span><strong>${formatDate(due)}</strong></div>
+        <div class="task-observe-cell"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
+        <div class="task-observe-note">${taskObservationText(task, moduleKey)}</div>
+        <div class="task-observe-files">${files.length ? files.map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("") : `<span class="muted">暂无附件</span>`}</div>
+        <button class="btn ghost" data-dispatch-task-detail="${key}">查看</button>
+      </article>`;
+    }
+
+    function taskObservationText(task, moduleKey) {
+      const status = task.status || "待处理";
+      if (status === "已取消") return `取消原因：${escapeHtml(task.cancelReason || "原因待补充")}`;
+      if (status === "延期中") return `延期原因：${escapeHtml(task.delayReason || "原因待补充")}${task.originalDue ? `；原计划 ${formatDate(task.originalDue)}` : ""}`;
+      if (status === "已完成") {
+        const doneText = task.docNote || task.reviewResult || "任务已完成";
+        return `完成说明：${escapeHtml(doneText)}${task.completedAt ? `；完成时间 ${formatDate(task.completedAt)}` : ""}`;
+      }
+      if (status === "待审核") return `已提交给${escapeHtml(modules[moduleKey].owner)}审核${task.submittedAt ? `；提交时间 ${formatDate(task.submittedAt)}` : ""}`;
+      if ((task.files || []).length) return "已上传附件，等待提交完成";
+      return "暂未回收结果";
+    }
+
+    function openDispatchTaskDetail(key) {
+      const [recordId, moduleKey, index] = key.split(":");
+      const record = records.find(item => item.id === recordId);
+      const task = taskByKey(key);
+      if (!record || !task) return;
+      const status = task.status || "待处理";
+      const files = task.files || [];
+      const attachmentHtml = files.length
+        ? `<span class="task-observe-files">${files.map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("")}</span>`
+        : `<span class="muted">暂无上传附件</span>`;
+      const body = `<div class="stack">
+        <div class="field-grid">
+          ${field("所属专场", escapeHtml(record.title))}
+          ${field("支持模块", supportNeeds[moduleKey].title)}
+          ${field("任务名称", escapeHtml(task.title || taskTemplates[moduleKey][0]))}
+          ${field("执行组员", escapeHtml(task.owner || "待分配"))}
+          ${field("计划时间", formatDate(task.delayDue || task.due))}
+          ${field("当前状态", badge(status, taskStatusClass(status)))}
+        </div>
+        <div class="field-grid">
+          ${field("延期原因", escapeHtml(task.delayReason || "无延期"))}
+          ${field("取消原因", escapeHtml(task.cancelReason || "无取消"))}
+          ${field("完成说明", escapeHtml(task.docNote || task.reviewResult || (status === "已完成" ? "任务已完成" : "暂无完成说明")))}
+          ${field("上传附件", attachmentHtml)}
+          ${field("最近备忘", taskLatestMemoHtml(task))}
+        </div>
+      </div>`;
+      openDrawer("子任务详情", body, `<button class="btn primary" data-close>关闭</button>`, false, true);
+    }
+
+    function taskLatestMemoHtml(task) {
+      const latest = (task.memoHistory || []).slice().reverse()[0];
+      if (!latest) return `<span class="muted">暂无备忘记录</span>`;
+      return `<span>${escapeHtml(latest.text)}<br><span class="muted">${formatDate(latest.time)} · ${escapeHtml(latest.user || task.owner || "记录人")}</span></span>`;
     }
 
     function taskRow(recordId, moduleKey, task, index) {
@@ -3664,7 +3812,8 @@
       return items.filter(item => {
         const statusMatched = state.taskStatusFilter === "all" || item.task.status === statusMap[state.taskStatusFilter];
         const moduleMatched = state.taskModuleFilter === "all" || item.moduleKey === state.taskModuleFilter;
-        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner, talentGrade(item.record)].join(" ").toLowerCase();
+        const memoText = (item.task.memoHistory || []).map(memo => memo.text).join(" ");
+        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner, memoText, talentGrade(item.record)].join(" ").toLowerCase();
         return statusMatched && moduleMatched && (!keyword || searchText.includes(keyword));
       }).sort(taskCompareByMode);
     }
@@ -3725,15 +3874,39 @@
           </div>
           <div class="task-note">${demandText(record, moduleKey)}</div>
           ${taskReviewNotice(task, module, moduleKey)}
+          ${taskMemoPanel(key, task)}
           ${taskCancelForm(key, task)}
           ${isCanceled ? "" : taskUpload(key, task, moduleKey)}
           ${!isCanceled && isContentTask ? contentDocForm(key, record, task, module) : ""}
           ${task.delayEditing ? delayForm(key, task) : ""}
           <div class="my-task-actions">
+            <button class="btn ghost" data-toggle-task-memo="${key}">${taskMemoButtonText(task)}</button>
             ${actionContent}
           </div>
         </div>
       </article>`;
+    }
+
+    function taskMemoButtonText(task) {
+      const count = (task.memoHistory || []).length;
+      return count ? `备忘录 ${count}` : "备忘录";
+    }
+
+    function taskMemoPanel(key, task) {
+      if (!task.memoOpen) return "";
+      const history = task.memoHistory || [];
+      const historyHtml = history.length
+        ? `<div class="task-memo-history">${history.slice().reverse().map(item => `<div class="task-memo-item"><strong>${formatDate(item.time)} · ${escapeHtml(item.user || task.owner || "记录人")}</strong><span>${escapeHtml(item.text)}</span></div>`).join("")}</div>`
+        : `<div class="task-memo-empty">暂无备忘记录</div>`;
+      return `<div class="task-memo-panel">
+        <div class="task-memo-head">
+          <div><strong>节点备忘录</strong><span>记录本任务节点的沟通、风险、注意事项</span></div>
+          ${badge(`${history.length} 条记录`, history.length ? "orange" : "")}
+        </div>
+        <textarea class="input" placeholder="填写本节点备忘，例如沟通结论、待跟进事项、风险说明" data-task-memo-draft="${key}">${escapeHtml(task.memoDraft || "")}</textarea>
+        <div class="task-memo-actions"><button class="btn ghost" data-close-task-memo="${key}">收起</button><button class="btn primary" data-save-task-memo="${key}">保存备忘</button></div>
+        ${historyHtml}
+      </div>`;
     }
 
     function taskReviewNotice(task, module, moduleKey) {
@@ -4463,6 +4636,7 @@
       }));
       document.querySelectorAll("[data-add-subtask]").forEach(btn => btn.addEventListener("click", () => addDispatchTask(btn.dataset.addSubtask)));
       document.querySelectorAll("[data-remove-subtask]").forEach(btn => btn.addEventListener("click", () => removeDispatchTask(btn.dataset.removeSubtask)));
+      document.querySelectorAll("[data-dispatch-task-detail]").forEach(btn => btn.addEventListener("click", () => openDispatchTaskDetail(btn.dataset.dispatchTaskDetail)));
       document.querySelectorAll("[data-assign-owner]").forEach(input => input.addEventListener("change", () => {
         const [recordId, moduleKey] = input.dataset.assignOwner.split(":");
         assignmentFor(recordId, moduleKey).owner = input.value;
@@ -4564,6 +4738,10 @@
         const task = taskByKey(input.dataset.taskDocNote);
         if (task) task.docNote = input.value;
       }));
+      document.querySelectorAll("[data-toggle-task-memo]").forEach(btn => btn.addEventListener("click", () => toggleTaskMemo(btn.dataset.toggleTaskMemo)));
+      document.querySelectorAll("[data-task-memo-draft]").forEach(input => input.addEventListener("input", () => updateTaskMemoDraft(input.dataset.taskMemoDraft, input.value)));
+      document.querySelectorAll("[data-save-task-memo]").forEach(btn => btn.addEventListener("click", () => saveTaskMemo(btn.dataset.saveTaskMemo)));
+      document.querySelectorAll("[data-close-task-memo]").forEach(btn => btn.addEventListener("click", () => closeTaskMemo(btn.dataset.closeTaskMemo)));
       document.querySelectorAll("[data-review-comment]").forEach(input => input.addEventListener("input", () => {
         const task = taskByKey(input.dataset.reviewComment);
         if (task) task.reviewComment = input.value;
@@ -4617,14 +4795,18 @@
     function addDispatchTask(key) {
       const [recordId, moduleKey] = key.split(":");
       const list = tasksFor(recordId, moduleKey);
+      const assignment = assignmentFor(recordId, moduleKey);
       const templates = taskTemplates[moduleKey];
       const template = templates[list.length % templates.length];
       list.push({
         title: template,
         owner: moduleMembers[moduleKey][0],
-        due: dispatchDue(recordId, moduleKey)
+        due: dispatchDue(recordId, moduleKey),
+        status: "待处理",
+        isDraft: assignment.status !== "待派发"
       });
       state.dispatchOpen = key;
+      toast(assignment.status === "待派发" ? "已新增任务" : "已新增待发布任务");
       render();
     }
 
@@ -4669,6 +4851,45 @@
       if (!task || !task.files || Number.isNaN(fileIndex)) return;
       task.files.splice(fileIndex, 1);
       toast("已删除上传文件");
+      render();
+    }
+
+    function toggleTaskMemo(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      task.memoOpen = !task.memoOpen;
+      task.memoDraft = task.memoDraft || "";
+      render();
+    }
+
+    function updateTaskMemoDraft(key, value) {
+      const task = taskByKey(key);
+      if (task) task.memoDraft = value;
+    }
+
+    function closeTaskMemo(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      task.memoOpen = false;
+      render();
+    }
+
+    function saveTaskMemo(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      const text = (task.memoDraft || "").trim();
+      if (!text) {
+        toast("请先填写备忘内容");
+        return;
+      }
+      task.memoHistory = [...(task.memoHistory || []), {
+        time: actionDate,
+        user: state.taskScope === "mine" ? state.taskUser : task.owner,
+        text
+      }];
+      task.memoDraft = "";
+      task.memoOpen = true;
+      toast("已保存节点备忘");
       render();
     }
 
@@ -4980,6 +5201,10 @@
       const [recordId, moduleKey] = key.split(":");
       const assignment = assignmentFor(recordId, moduleKey);
       const taskList = tasksFor(recordId, moduleKey);
+      taskList.forEach(task => {
+        task.status = task.status || "待处理";
+        delete task.isDraft;
+      });
       assignment.status = "已派发";
       assignment.owner = taskList[0]?.owner || assignment.owner;
       assignment.due = dispatchDue(recordId, moduleKey);
