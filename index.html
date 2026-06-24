@@ -566,18 +566,18 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity .14s ease, transform .14s ease;
-      z-index: 40;
+      z-index: 120;
     }
     .help-tip::before {
       content: "";
-      bottom: calc(100% + 3px);
+      top: calc(100% + 3px);
       border: 5px solid transparent;
-      border-top-color: #00152e;
-      transform: translate(-50%, 2px);
+      border-bottom-color: #00152e;
+      transform: translate(-50%, -2px);
     }
     .help-tip::after {
       content: attr(data-tip);
-      bottom: calc(100% + 12px);
+      top: calc(100% + 12px);
       min-width: max-content;
       padding: 7px 10px;
       border-radius: 6px;
@@ -587,7 +587,7 @@
       font-size: 12px;
       font-weight: 400;
       white-space: nowrap;
-      transform: translate(-50%, 4px);
+      transform: translate(-50%, -4px);
     }
     .help-tip:hover::before,
     .help-tip:hover::after,
