@@ -4344,12 +4344,54 @@
 
     function monthlySpecialTable(rows) {
       if (!rows.length) return `<div class="upload"><div><strong>当前筛选暂无专场</strong></div></div>`;
-      return `<table><colgroup><col style="width:7%"><col style="width:7%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:16%"><col style="width:8%"></colgroup>
-        <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>等级</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>负责人员</th><th>未完成原因</th></tr></thead>
+      return `<table><colgroup><col style="width:7%"><col style="width:8%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:6%"><col style="width:15%"><col style="width:8%"></colgroup>
+        <thead><tr><th>达人UID</th><th>达人昵称</th><th>专场时间</th><th>负责商务</th><th>状态</th><th>等级</th><th>主推产品</th><th>目标销售额</th><th>实际销售额</th><th>达标率</th><th>负责人员</th><th>查看详情</th></tr></thead>
         <tbody>${rows.map(item => {
           const record = item.record;
-          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${urgencyBadge(talentGrade(record))}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyResponsiblePeopleCell(record)}</td><td>${escapeHtml(item.reason)}</td></tr>`;
+          return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${urgencyBadge(talentGrade(record))}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${record.actualGmv || "待回填"}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyResponsiblePeopleCell(record)}</td><td><button class="btn ghost" data-monthly-special-detail="${record.id}">查看详情</button></td></tr>`;
         }).join("")}</tbody></table>`;
+    }
+
+    function openMonthlySpecialDetail(recordId) {
+      const item = monthlySpecialRows().find(row => row.record.id === recordId)
+        || { record: records.find(record => record.id === recordId), status: null, reason: "" };
+      const record = item.record;
+      if (!record) return;
+      const status = item.status || monthlySpecialStatus(record);
+      const reason = item.reason || monthlyUnfinishedReason(record);
+      const rate = attainmentRate(record);
+      const taskRows = monthlyTaskBreakdown(record);
+      const taskTable = taskRows.length
+        ? `<div class="table-wrap"><table><colgroup><col style="width:18%"><col style="width:38%"><col style="width:22%"><col style="width:22%"></colgroup>
+          <thead><tr><th>支持类型</th><th>子任务</th><th>负责人</th><th>状态</th></tr></thead>
+          <tbody>${taskRows.map(row => `<tr><td>${row.module}</td><td><strong>${escapeHtml(row.title)}</strong></td><td>${escapeHtml(row.owner)}</td><td>${badge(row.status, taskStatusClass(row.status))}</td></tr>`).join("")}</tbody>
+        </table></div>`
+        : `<div class="upload"><div><strong>暂无子任务明细</strong></div></div>`;
+      openDrawer(
+        `${record.talent} 专场详情`,
+        `<div class="stack">
+          <div class="field-grid">
+            ${field("达人 UID", escapeHtml(record.uid))}
+            ${field("专场时间", formatDate(record.liveTime))}
+            ${field("负责商务", escapeHtml(record.business || "待填写"))}
+            ${field("当前状态", `<span class="monthly-status ${status.cls}">${status.label}</span>`)}
+            ${field("主推产品", escapeHtml(record.product))}
+            ${field("达人等级", urgencyBadge(talentGrade(record)))}
+            ${field("目标销售额", escapeHtml(record.expectedGmv || record.sales))}
+            ${field("实际销售额", escapeHtml(record.actualGmv || "待回填"))}
+            ${field("达标率", ratePill(rate))}
+            ${field("负责人员", monthlyResponsiblePeopleCell(record))}
+          </div>
+          ${field("未完成 / 异常原因", escapeHtml(reason))}
+          <section class="panel">
+            <div class="panel-head"><h2 class="panel-title">子任务明细</h2>${badge(`${taskRows.length} 条`, taskRows.length ? "orange" : "")}</div>
+            <div class="panel-body">${taskTable}</div>
+          </section>
+        </div>`,
+        `<button class="btn primary" data-close>关闭</button>`,
+        true,
+        true
+      );
     }
 
     function monthlyTaskBreakdown(record) {
@@ -4924,6 +4966,7 @@
       document.querySelectorAll("[data-monthly-status]").forEach(input => input.addEventListener("change", () => { state.monthlyStatus = input.value; render(); }));
       document.querySelectorAll("[data-monthly-grade]").forEach(input => input.addEventListener("change", () => { state.monthlyGrade = input.value; render(); }));
       document.querySelectorAll("[data-monthly-product]").forEach(input => input.addEventListener("change", () => { state.monthlyProduct = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-special-detail]").forEach(btn => btn.addEventListener("click", () => openMonthlySpecialDetail(btn.dataset.monthlySpecialDetail)));
       document.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
     }
 
