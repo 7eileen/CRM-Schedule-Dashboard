@@ -1894,40 +1894,74 @@
     }
     .calendar-event {
       width: 100%;
-      padding: 8px 9px;
+      padding: 9px;
       border-radius: 10px;
+      border: 1px solid rgba(240, 130, 0, .12);
       background: var(--orange-soft);
       color: #8a4a00;
       text-align: left;
       line-height: 1.35;
       font-size: 12px;
       display: grid;
-      gap: 4px;
+      gap: 7px;
+      box-shadow: 0 5px 14px rgba(240, 130, 0, .06);
     }
     .calendar-cell.has-many { min-height: 222px; }
     .calendar-cell.is-expanded { border-color: #f0b26b; box-shadow: inset 0 0 0 1px #f0b26b; }
-    .calendar-event.done { background: var(--green-soft); color: #14863d; }
-    .calendar-event.delay { background: var(--red-soft); color: #c43737; }
+    .calendar-event.done { border-color: rgba(43, 184, 107, .16); background: var(--green-soft); color: #14863d; box-shadow: 0 5px 14px rgba(43, 184, 107, .06); }
+    .calendar-event.delay { border-color: rgba(255, 77, 79, .14); background: var(--red-soft); color: #c43737; box-shadow: 0 5px 14px rgba(255, 77, 79, .06); }
     .calendar-event strong {
-      display: block;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: inherit;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+    .calendar-event-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-width: 0;
+    }
+    .calendar-pill {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      min-height: 20px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .7);
+      color: inherit;
+      font-weight: 700;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: inherit;
-      font-weight: 700;
     }
-    .calendar-event span {
-      display: block;
+    .calendar-event-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      min-width: 0;
+      padding-top: 2px;
+      border-top: 1px solid rgba(255, 255, 255, .64);
+    }
+    .calendar-business {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      opacity: .82;
+      opacity: .78;
+      font-weight: 600;
     }
-    .calendar-event b {
-      color: inherit;
-      font-weight: 700;
-      opacity: .72;
+    .calendar-gmv {
+      flex: 0 0 auto;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .84);
+      font-weight: 800;
     }
     .calendar-more {
       min-height: 28px;
@@ -2859,18 +2893,30 @@
       return liveRoomOptions[seed % liveRoomOptions.length] || liveRoomOptions[0];
     }
 
+    function calendarDateTime(value) {
+      const normalized = formatDate(value);
+      const match = normalized.match(/^\d{4}\/(\d{2})\/(\d{2})(.*)$/);
+      return match ? `${Number(match[1])}/${match[2]}${match[3]}` : normalized;
+    }
+
     function calendarEvent(record) {
       const displayStatus = record.scheduleStatus || record.status;
       const done = displayStatus === "待复盘" || record.progress >= 90;
       const delay = displayStatus.includes("延期") || displayStatus.includes("取消");
       const expectedGmv = record.expectedGmv || record.sales || "待填写";
       const liveRoom = recordLiveRoom(record);
+      const liveAt = calendarDateTime(record.liveTime);
+      const business = record.business || "待填写";
       return `<button class="calendar-event ${done ? "done" : ""} ${delay ? "delay" : ""}" data-open-project="${record.id}">
         <strong title="${escapeHtml(record.title)}">${escapeHtml(record.title)}</strong>
-        <span><b>直播间</b> ${escapeHtml(liveRoom)}</span>
-        <span><b>日期</b> ${formatDate(record.liveTime)}</span>
-        <span><b>商务</b> ${escapeHtml(record.business || "待填写")}</span>
-        <span><b>预估</b> ${escapeHtml(expectedGmv)}</span>
+        <div class="calendar-event-meta">
+          <span class="calendar-pill">${escapeHtml(liveAt)}</span>
+          <span class="calendar-pill">${escapeHtml(liveRoom)}</span>
+        </div>
+        <div class="calendar-event-foot">
+          <span class="calendar-business">商务 ${escapeHtml(business)}</span>
+          <span class="calendar-gmv">${escapeHtml(expectedGmv)}</span>
+        </div>
       </button>`;
     }
 
