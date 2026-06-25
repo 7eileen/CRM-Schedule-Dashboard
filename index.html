@@ -1868,7 +1868,7 @@
       font-weight: 600;
     }
     .calendar-cell {
-      min-height: 106px;
+      min-height: 188px;
       padding: 10px;
       border: 1px solid #e4eaf2;
       border-radius: 12px;
@@ -1894,15 +1894,17 @@
     }
     .calendar-event {
       width: 100%;
-      padding: 7px 8px;
+      padding: 8px 9px;
       border-radius: 10px;
       background: var(--orange-soft);
       color: #8a4a00;
       text-align: left;
       line-height: 1.35;
       font-size: 12px;
+      display: grid;
+      gap: 4px;
     }
-    .calendar-cell.has-many { min-height: 128px; }
+    .calendar-cell.has-many { min-height: 222px; }
     .calendar-cell.is-expanded { border-color: #f0b26b; box-shadow: inset 0 0 0 1px #f0b26b; }
     .calendar-event.done { background: var(--green-soft); color: #14863d; }
     .calendar-event.delay { background: var(--red-soft); color: #c43737; }
@@ -1914,7 +1916,19 @@
       color: inherit;
       font-weight: 700;
     }
-    .calendar-event span { display: block; margin-top: 3px; opacity: .78; }
+    .calendar-event span {
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      opacity: .82;
+    }
+    .calendar-event b {
+      color: inherit;
+      font-weight: 700;
+      opacity: .72;
+    }
     .calendar-more {
       min-height: 28px;
       border: 1px dashed #d9e1eb;
@@ -2199,6 +2213,7 @@
       "联名粉底液",
       "联名粉底霜"
     ];
+    const liveRoomOptions = ["直播间A", "直播间B", "直播间C", "直播间D"];
 
     const specialDetailGroups = [
       {
@@ -2210,6 +2225,7 @@
           { label: "负责商务", value: "池维杞" },
           { label: "状态", value: "已排期", type: "select", options: ["已排期", "已延期", "已取消"] },
           { label: "类型", value: "专场", type: "select", options: ["专场", "新闻号", "单品直播间"] },
+          { label: "直播间", value: "直播间A", type: "select", options: liveRoomOptions },
           { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions, wide: "full" },
           { label: "目标销售额", value: "¥180万" },
           { label: "是否有试用", value: "有，达人及助播试用 20 份" },
@@ -2836,13 +2852,25 @@
       return `${year}-${month}-${day}`;
     }
 
+    function recordLiveRoom(record) {
+      if (record.liveRoom) return record.liveRoom;
+      const source = record.id || record.uid || record.talent || "";
+      const seed = Array.from(source).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      return liveRoomOptions[seed % liveRoomOptions.length] || liveRoomOptions[0];
+    }
+
     function calendarEvent(record) {
       const displayStatus = record.scheduleStatus || record.status;
       const done = displayStatus === "待复盘" || record.progress >= 90;
       const delay = displayStatus.includes("延期") || displayStatus.includes("取消");
+      const expectedGmv = record.expectedGmv || record.sales || "待填写";
+      const liveRoom = recordLiveRoom(record);
       return `<button class="calendar-event ${done ? "done" : ""} ${delay ? "delay" : ""}" data-open-project="${record.id}">
-        <strong>${record.talent} · ${record.product}</strong>
-        <span>${record.liveTime.slice(11, 16)} / ${displayStatus}</span>
+        <strong title="${escapeHtml(record.title)}">${escapeHtml(record.title)}</strong>
+        <span><b>直播间</b> ${escapeHtml(liveRoom)}</span>
+        <span><b>日期</b> ${formatDate(record.liveTime)}</span>
+        <span><b>商务</b> ${escapeHtml(record.business || "待填写")}</span>
+        <span><b>预估</b> ${escapeHtml(expectedGmv)}</span>
       </button>`;
     }
 
@@ -3130,7 +3158,7 @@
       return `<section class="panel" style="margin-bottom:18px">
         <div class="panel-head"><h2 class="panel-title">项目详情</h2><button class="btn ghost" data-drawer="record">原始记录</button></div>
         <div class="panel-body stack">
-          <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
+          <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
           <div class="stack">
             <h3 class="panel-title" style="font-size:16px">需求识别梗概</h3>
             <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module, record)).join("")}</div>
@@ -3322,7 +3350,7 @@
         <div class="panel">
           <div class="panel-head"><div><h2 class="panel-title">${record.title}</h2></div><button class="btn ghost" data-drawer="record">查看原始记录</button></div>
           <div class="panel-body stack">
-            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
+            <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
             <div class="upload"><div><strong>专场记录表入口</strong><button class="btn primary" data-go="analysis">提交需求识别</button></div></div>
           </div>
         </div>
@@ -5445,6 +5473,7 @@
         const business = specialValue("负责商务", "商务");
         const scheduleStatus = specialValue("状态", "已排期");
         const type = specialValue("类型", "专场");
+        const liveRoom = specialValue("直播间", "直播间A");
         const product = specialValue("主推产品", "油皮气垫pro");
         const sales = specialValue("目标销售额", specialValue("预估销售额", "¥180万"));
         records.unshift({
@@ -5456,6 +5485,7 @@
           status: "待识别",
           scheduleStatus,
           type,
+          liveRoom,
           liveTime: liveAt,
           business,
           expectedGmv: sales,
@@ -5666,7 +5696,7 @@
 
     function openRecordDrawer() {
       const record = selectedRecord();
-      openDrawer("专场记录表原文", `<div class="stack">${field("达人", record.talent)}${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("主推产品", record.product)}${field("记录来源", "商务填写专场记录表 / 飞书表格同步")}</div>`);
+      openDrawer("专场记录表原文", `<div class="stack">${field("达人", record.talent)}${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("主推产品", record.product)}${field("记录来源", "商务填写专场记录表 / 飞书表格同步")}</div>`);
     }
 
     function openLogDrawer() {
