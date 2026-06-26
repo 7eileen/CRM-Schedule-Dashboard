@@ -797,6 +797,13 @@
       color: inherit;
       width: 100%;
     }
+    .dispatch-summary-title,
+    .module-card-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
     .dispatch-summary h3 { margin: 0; font-size: 17px; font-weight: 400; line-height: 1.35; }
     .dispatch-summary-meta { display: flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 400; white-space: nowrap; }
     .dispatch-chevron { color: var(--orange); font-size: 17px; line-height: 1; transition: transform .16s ease; }
@@ -890,6 +897,14 @@
       background: #ff4d4f;
       box-shadow: 0 0 0 3px #fff;
       z-index: 1;
+    }
+    .summary-notice-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #ff4d4f;
+      box-shadow: 0 0 0 3px #fff1f2;
+      flex: 0 0 auto;
     }
     .task-field { display: grid; gap: 7px; }
     .task-field span { color: var(--muted); font-size: 12px; font-weight: 400; }
@@ -3471,7 +3486,7 @@
       const list = needs.filter(item => item.module === key && item.exists);
       const summary = moduleTaskSummary(record, key);
       return `<button class="module-card ${state.module === key ? "active" : ""}" data-open-module-tasks="${record.id}:${key}">
-        <div class="row"><strong>${module.name}</strong>${badge(`${summary.total || list.length} 条`, summary.badgeCls || module.cls)}</div>
+        <div class="row"><span class="module-card-title"><strong>${module.name}</strong>${summaryNoticeDot(summary.noticeCount, "该需求有新增子任务提醒")}</span>${badge(`${summary.total || list.length} 条`, summary.badgeCls || module.cls)}</div>
         <div class="progress"><span style="width:${summary.progress}%"></span></div>
         <div class="module-status-line"><span>负责人：${module.owner}</span><strong>${summary.label}</strong></div>
         <div class="module-task-mini">${summary.chips.map(chip => `<span>${chip}</span>`).join("")}</div>
@@ -3486,6 +3501,7 @@
       const delayed = taskList.filter(task => task.status === "延期中").length;
       const canceled = taskList.filter(task => task.status === "已取消").length;
       const uploaded = taskList.filter(task => (task.files || []).length && task.status !== "已完成" && task.status !== "已取消").length;
+      const noticeCount = taskNoticeCount(taskList);
       const assignment = assignmentFor(record.id, moduleKey);
       const progress = total ? Math.round(done / total * 100) : (assignment.status === "已完成" ? 100 : 0);
       const label = total
@@ -3501,7 +3517,7 @@
         delayed ? `延期 ${delayed}` : "",
         canceled ? `取消 ${canceled}` : ""
       ].filter(Boolean);
-      return { total, done, reviewing, delayed, canceled, uploaded, progress, label, badgeCls, chips };
+      return { total, done, reviewing, delayed, canceled, uploaded, noticeCount, progress, label, badgeCls, chips };
     }
 
     function openModuleTaskDialog(key) {
@@ -3539,6 +3555,14 @@
       if (task.businessNotice) return task.businessNotice;
       if (task.isNew) return "new";
       return "";
+    }
+
+    function taskNoticeCount(taskList) {
+      return taskList.filter(task => taskBusinessNotice(task)).length;
+    }
+
+    function summaryNoticeDot(count, label) {
+      return count ? `<span class="summary-notice-dot" title="${label} ${count} 条" aria-label="${label} ${count} 条"></span>` : "";
     }
 
     function taskIndexNotice(index, task) {
@@ -3809,9 +3833,10 @@
       const open = state.dispatchOpen === dispatchKey;
       const published = assignment.status !== "待派发";
       const draftCount = taskList.filter(task => task.isDraft).length;
+      const noticeCount = taskNoticeCount(taskList);
       return `<article class="dispatch-card ${open ? "is-open" : ""}">
         <button class="dispatch-summary" data-toggle-dispatch="${dispatchKey}">
-          <h3>${record.title}</h3>
+          <div class="dispatch-summary-title"><h3>${record.title}</h3>${summaryNoticeDot(noticeCount, "该专场有新增子任务提醒")}</div>
           <div class="dispatch-summary-meta"><span>预计完成 ${formatDate(dispatchDue(record.id, moduleKey))}</span><span class="dispatch-chevron">⌄</span></div>
         </button>
         ${open ? `<div class="dispatch-detail">
