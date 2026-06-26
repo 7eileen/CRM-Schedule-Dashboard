@@ -2660,6 +2660,7 @@
     ];
 
     applySeedMemberOverrides();
+    seedSpecialNoticeTasks();
 
     const projectNodes = [
       { id: "record", name: "专场记录表填写", owner: "商务", status: "已完成", date: "06/10", type: "record", note: "商务填写专场记录表" },
@@ -3730,6 +3731,49 @@
               task.owner = memberList[index] || owner;
             });
           }
+        });
+      });
+    }
+
+    function seedSpecialNoticeTasks() {
+      const seedModules = ["content", "ads", "ops"];
+      records.forEach((record, recordIndex) => {
+        if (!dispatchTasks[record.id]) dispatchTasks[record.id] = {};
+        const existingTasks = Object.values(dispatchTasks[record.id]).flat();
+        let noticeCount = existingTasks.filter(task => task.businessNotice || task.isNew).length;
+        existingTasks.forEach(task => {
+          if (noticeCount >= 3) return;
+          if (task.status === "已完成" || task.status === "已取消" || task.businessNotice) return;
+          task.businessNotice = "new";
+          task.noticeAt = actionDate;
+          noticeCount += 1;
+        });
+        seedModules.forEach((moduleKey, moduleIndex) => {
+          if (noticeCount >= 3) return;
+          const list = tasksFor(record.id, moduleKey);
+          const hasNewNotice = list.some(task => task.businessNotice === "new" || task.isNew);
+          if (hasNewNotice) return;
+          const templateIndex = (recordIndex + moduleIndex) % taskTemplates[moduleKey].length;
+          const seedTask = list.find(task => task.status !== "已完成" && task.status !== "已取消" && !task.businessNotice);
+          const seedData = {
+            title: taskTemplates[moduleKey][templateIndex],
+            owner: defaultOwnerFor(record.id, moduleKey),
+            due: defaultDue(record),
+            status: "待处理",
+            businessNotice: "new",
+            noticeAt: actionDate,
+            isNew: true
+          };
+          if (seedTask) {
+            Object.assign(seedTask, seedData, {
+              title: seedTask.title || seedData.title,
+              owner: seedTask.owner || seedData.owner,
+              due: seedTask.due || seedData.due
+            });
+          } else {
+            list.push(seedData);
+          }
+          noticeCount += 1;
         });
       });
     }
