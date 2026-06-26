@@ -872,6 +872,25 @@
       color: var(--orange);
       font-weight: 400;
     }
+    .task-index-wrap {
+      position: relative;
+      width: 32px;
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .business-notice-dot {
+      position: absolute;
+      top: -3px;
+      left: -2px;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #ff4d4f;
+      box-shadow: 0 0 0 3px #fff;
+      z-index: 1;
+    }
     .task-field { display: grid; gap: 7px; }
     .task-field span { color: var(--muted); font-size: 12px; font-weight: 400; }
     .task-remove {
@@ -3510,6 +3529,21 @@
       );
     }
 
+    function taskBusinessNotice(task) {
+      const status = task.status || "";
+      if (status === "已取消") return "";
+      if (status === "已完成") return "done";
+      if (task.businessNotice) return task.businessNotice;
+      if (task.isNew) return "new";
+      return "";
+    }
+
+    function taskIndexNotice(index, task) {
+      const notice = taskBusinessNotice(task);
+      const label = notice === "new" ? "新增任务，提醒商务关注" : "子任务已完成，提醒商务查看";
+      return `<span class="task-index-wrap">${notice ? `<span class="business-notice-dot" title="${label}" aria-label="${label}"></span>` : ""}<span class="task-index">${index + 1}</span></span>`;
+    }
+
     function moduleTaskDetailRow(recordId, moduleKey, task, index) {
       const module = modules[moduleKey];
       const due = task.delayDue || task.due || assignmentFor(recordId, moduleKey).due;
@@ -3517,7 +3551,7 @@
       const note = moduleTaskDetailNote(moduleKey, task);
       const key = `${recordId}:${moduleKey}:${index}`;
       return `<article class="module-task-detail-item">
-        <span class="task-index">${index + 1}</span>
+        ${taskIndexNotice(index, task)}
         <div class="module-task-title">
           <strong>${escapeHtml(task.title || taskTemplates[moduleKey][0])}</strong>
           <span>${supportNeeds[moduleKey].title} · 负责人：${escapeHtml(module.owner)}</span>
@@ -3769,7 +3803,7 @@
       const due = task.delayDue || task.due;
       const files = task.files || [];
       return `<article class="task-observe-row">
-        <span class="task-index">${index + 1}</span>
+        ${taskIndexNotice(index, task)}
         <div class="task-observe-title">
           <strong>${escapeHtml(task.title || taskTemplates[moduleKey][0])}</strong>
           <span>${supportNeeds[moduleKey].title}</span>
@@ -3842,7 +3876,7 @@
       const status = task.status || "待处理";
       const statusCls = taskStatusClass(status);
       return `<div class="task-row">
-        <span class="task-index">${index + 1}</span>
+        ${taskIndexNotice(index, task)}
         <label class="task-field">
           <span>任务名称</span>
           <input class="input" value="${task.title}" data-subtask-title="${key}">
@@ -5076,6 +5110,8 @@
         owner: moduleMembers[moduleKey][0],
         due: dispatchDue(recordId, moduleKey),
         status: "待处理",
+        businessNotice: "new",
+        noticeAt: actionDate,
         isDraft: assignment.status !== "待派发"
       });
       state.dispatchOpen = key;
@@ -5312,6 +5348,8 @@
       task.status = "已取消";
       task.cancelReason = reason;
       task.canceledAt = actionDate;
+      delete task.businessNotice;
+      delete task.noticeAt;
       delete task.cancelEditing;
       delete task.cancelDraft;
       delete task.delayEditing;
@@ -5342,6 +5380,8 @@
         task.status = "已完成";
         task.submittedAt = actionDate;
         task.completedAt = actionDate;
+        task.businessNotice = "done";
+        task.noticeAt = actionDate;
         task.reviewResult = "无需审核";
         delete task.reviewedAt;
         delete task.rejectedAt;
@@ -5377,6 +5417,8 @@
       task.status = "已完成";
       task.completedAt = actionDate;
       task.reviewedAt = actionDate;
+      task.businessNotice = "done";
+      task.noticeAt = actionDate;
       task.reviewResult = "通过";
       delete task.rejectReason;
       delete task.rejectedAt;
@@ -5401,6 +5443,8 @@
       task.status = "进行中";
       task.rejectReason = reason;
       task.rejectedAt = actionDate;
+      delete task.businessNotice;
+      delete task.noticeAt;
       delete task.completedAt;
       delete task.reviewedAt;
       delete task.reviewResult;
@@ -5504,7 +5548,12 @@
       const [recordId, moduleKey] = key.split(":");
       const assignment = assignmentFor(recordId, moduleKey);
       const taskList = tasksFor(recordId, moduleKey);
+      const firstPublish = assignment.status === "待派发";
       taskList.forEach(task => {
+        if ((firstPublish || task.isDraft) && !task.businessNotice) {
+          task.businessNotice = "new";
+          task.noticeAt = actionDate;
+        }
         task.status = task.status || "待处理";
         delete task.isDraft;
       });
