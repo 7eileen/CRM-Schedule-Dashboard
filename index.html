@@ -687,6 +687,25 @@
     .time-range-separator { color: var(--muted); font-size: 13px; font-style: normal; }
     .detail-field.long { grid-column: span 2; }
     .detail-field.full { grid-column: 1 / -1; }
+    .entry-detail-panel { overflow: hidden; }
+    .entry-detail-panel > .panel-body {
+      background: linear-gradient(135deg, #fff5ed 0%, #fffaf6 48%, #f6fbff 100%);
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .entry-detail-panel .detail-card {
+      border-color: #ffd2a8;
+      background: linear-gradient(135deg, rgba(255, 247, 241, .98) 0%, rgba(255, 252, 248, .96) 56%, rgba(246, 251, 255, .96) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+    }
+    .entry-detail-panel .detail-card.is-collapsed {
+      border-color: #e6edf5;
+      background: linear-gradient(135deg, #fbfcfe 0%, #fff9f4 100%);
+    }
+    .entry-detail-panel .input,
+    .entry-detail-panel .select,
+    .entry-detail-panel textarea {
+      background: rgba(255, 255, 255, .82);
+    }
     .product-field {
       display: grid;
       gap: 10px;
@@ -3005,7 +3024,7 @@
     }
 
     function specialDetailSection() {
-      return `<section class="panel" style="margin-top:18px">
+      return `<section class="panel entry-detail-panel" style="margin-top:18px">
         <div class="panel-head">
           <div><h2 class="panel-title">专场详情</h2></div>
         </div>
