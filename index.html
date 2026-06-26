@@ -3533,6 +3533,8 @@
       const status = task.status || "";
       if (status === "已取消") return "";
       if (status === "已完成") return "done";
+      if (status === "待审核") return "submitted";
+      if ((task.files || []).length) return "uploaded";
       if (task.businessNotice) return task.businessNotice;
       if (task.isNew) return "new";
       return "";
@@ -3540,7 +3542,13 @@
 
     function taskIndexNotice(index, task) {
       const notice = taskBusinessNotice(task);
-      const label = notice === "new" ? "新增任务，提醒商务关注" : "子任务已完成，提醒商务查看";
+      const noticeLabels = {
+        new: "新增任务，提醒商务关注",
+        uploaded: "子任务已上传附件，提醒商务查看",
+        submitted: "子任务已提交审核，提醒商务查看",
+        done: "子任务已完成，提醒商务查看"
+      };
+      const label = noticeLabels[notice] || "子任务有更新，提醒商务查看";
       return `<span class="task-index-wrap">${notice ? `<span class="business-notice-dot" title="${label}" aria-label="${label}"></span>` : ""}<span class="task-index">${index + 1}</span></span>`;
     }
 
