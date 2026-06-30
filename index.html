@@ -2676,6 +2676,7 @@
 
     applySeedMemberOverrides();
     seedSpecialNoticeTasks();
+    normalizeUploadCompleteTasks();
 
     const projectNodes = [
       { id: "record", name: "专场记录表填写", owner: "商务", status: "已完成", date: "06/10", type: "record", note: "商务填写专场记录表" },
@@ -3497,7 +3498,6 @@
       const taskList = (dispatchTasks[record.id] && dispatchTasks[record.id][moduleKey]) || [];
       const total = taskList.length;
       const done = taskList.filter(task => task.status === "已完成").length;
-      const reviewing = taskList.filter(task => task.status === "待审核").length;
       const delayed = taskList.filter(task => task.status === "延期中").length;
       const canceled = taskList.filter(task => task.status === "已取消").length;
       const uploaded = taskList.filter(task => (task.files || []).length && task.status !== "已完成" && task.status !== "已取消").length;
@@ -3509,15 +3509,14 @@
         : assignment.status === "待派发"
           ? "待派发"
           : assignment.status;
-      const badgeCls = reviewing ? "purple" : delayed || canceled ? "red" : done === total && total ? "green" : uploaded ? "blue" : assignment.status === "待派发" ? "orange" : modules[moduleKey].cls;
+      const badgeCls = delayed || canceled ? "red" : done === total && total ? "green" : uploaded ? "blue" : assignment.status === "待派发" ? "orange" : modules[moduleKey].cls;
       const chips = [
         total ? `子任务 ${total}` : "暂无子任务",
-        reviewing ? `待审核 ${reviewing}` : "",
         uploaded ? `已上传 ${uploaded}` : "",
         delayed ? `延期 ${delayed}` : "",
         canceled ? `取消 ${canceled}` : ""
       ].filter(Boolean);
-      return { total, done, reviewing, delayed, canceled, uploaded, noticeCount, progress, label, badgeCls, chips };
+      return { total, done, delayed, canceled, uploaded, noticeCount, progress, label, badgeCls, chips };
     }
 
     function openModuleTaskDialog(key) {
@@ -3550,7 +3549,7 @@
       const status = task.status || "";
       if (status === "已取消") return "";
       if (status === "已完成") return "done";
-      if (status === "待审核") return "submitted";
+      if (status === "待审核") return "done";
       if ((task.files || []).length) return "uploaded";
       if (task.businessNotice) return task.businessNotice;
       if (task.isNew) return "new";
@@ -3570,7 +3569,7 @@
       const noticeLabels = {
         new: "新增任务，提醒商务关注",
         uploaded: "子任务已上传附件，提醒商务查看",
-        submitted: "子任务已提交审核，提醒商务查看",
+        submitted: "子任务已上传完成，提醒商务查看",
         done: "子任务已完成，提醒商务查看"
       };
       const label = noticeLabels[notice] || "子任务有更新，提醒商务查看";
@@ -3603,9 +3602,9 @@
       const pieces = [];
       if (task.status === "已取消") pieces.push(`取消原因：${escapeHtml(task.cancelReason || "原因待补充")}`);
       if (task.status === "延期中") pieces.push(`延期原因：${escapeHtml(task.delayReason || "原因待补充")}`);
-      if (task.status === "待审核") pieces.push(`已提交待负责人审核${task.submittedAt ? `，提交时间：${formatDate(task.submittedAt)}` : ""}`);
-      if (task.status === "已完成" && moduleKey === "content") pieces.push("内容文档和备注已提交，无需审核");
-      if (task.reviewResult) pieces.push(`审核结果：${escapeHtml(task.reviewResult)}`);
+      if (task.status === "待审核") pieces.push(`已上传完成${task.submittedAt ? `，提交时间：${formatDate(task.submittedAt)}` : ""}`);
+      if (task.status === "已完成" && moduleKey === "content") pieces.push("内容文档和备注已提交，任务已完成");
+      if (task.reviewResult) pieces.push(`完成记录：${escapeHtml(task.reviewResult)}`);
       if (task.docNote) pieces.push(`备注：${escapeHtml(task.docNote)}`);
       if (files.length) pieces.push(`已上传：${files.map(escapeHtml).join("、")}`);
       return pieces.join("；");
@@ -3643,10 +3642,10 @@
         records.push({ meta: "完成备注", text: escapeHtml(task.docNote) });
       }
       if (task.reviewResult) {
-        records.push({ meta: "审核记录", text: escapeHtml(task.reviewResult) });
+        records.push({ meta: "完成记录", text: escapeHtml(task.reviewResult) });
       }
       if (task.status === "待审核" && task.submittedAt) {
-        records.push({ meta: `提交记录 · ${formatDate(task.submittedAt)}`, text: `已提交给${escapeHtml(modules[moduleKey].owner)}审核` });
+        records.push({ meta: `提交记录 · ${formatDate(task.submittedAt)}`, text: "已上传完成，任务自动闭环" });
       }
       if (task.status === "已取消" && task.cancelReason) {
         records.push({ meta: "取消记录", text: escapeHtml(task.cancelReason) });
@@ -3690,9 +3689,8 @@
     function moduleTab(key) {
       const module = modules[key];
       const pending = records.filter(record => assignmentFor(record.id, key).status === "待派发").length;
-      const reviewing = dispatchRecoveryItems(key).filter(item => taskRecoveryStatus(item).key === "reviewing").length;
       return `<button class="module-tab ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">
-        <div class="row"><strong>${supportNeeds[key].title}</strong>${reviewing ? badge(`${reviewing} 待审核`, "purple") : badge(`${pending} 待派发`, pending ? "orange" : "green")}</div>
+        <div class="row"><strong>${supportNeeds[key].title}</strong>${badge(`${pending} 待派发`, pending ? "orange" : "green")}</div>
         <span class="muted">负责人：${module.owner}</span>
       </button>`;
     }
@@ -3705,7 +3703,7 @@
 
     function taskRecoveryStatus(item) {
       const task = item.task;
-      if (task.status === "待审核") return { key: "reviewing", label: "待审核", cls: "purple" };
+      if (task.status === "待审核") return { key: "done", label: "已回收", cls: "green" };
       if (task.status === "已完成" && (task.submittedAt || task.completedAt || task.reviewedAt || (task.files || []).length)) return { key: "done", label: "已回收", cls: "green" };
       if ((task.files || []).length && task.status !== "已取消") return { key: "uploaded", label: "已上传待提交", cls: "blue" };
       return null;
@@ -3713,7 +3711,7 @@
 
     function taskRecoverySortValue(item) {
       const status = taskRecoveryStatus(item);
-      const rank = { reviewing: "0", uploaded: "1", done: "2" }[status?.key] || "9";
+      const rank = { uploaded: "0", done: "1" }[status?.key] || "9";
       return `${rank}-${taskDataDate(item.task)}-${item.record.liveTime}`;
     }
 
@@ -3798,6 +3796,33 @@
             list.push(seedData);
           }
           noticeCount += 1;
+        });
+      });
+    }
+
+    function normalizeUploadCompleteTasks() {
+      Object.entries(dispatchTasks).forEach(([recordId, moduleMap]) => {
+        Object.entries(moduleMap).forEach(([moduleKey, taskList]) => {
+          taskList.forEach(task => {
+            if (task.status !== "待审核") return;
+            task.status = "已完成";
+            task.submittedAt = task.submittedAt || actionDate;
+            task.completedAt = task.completedAt || task.submittedAt;
+            task.businessNotice = "done";
+            task.noticeAt = task.noticeAt || actionDate;
+            task.reviewResult = task.reviewResult || (moduleKey === "content" ? "内容文档已提交" : "完成文件已上传");
+            delete task.reviewedAt;
+            delete task.rejectedAt;
+            delete task.rejectReason;
+            task.reviewComment = "";
+          });
+        });
+        Object.entries(dispatchAssignments[recordId] || {}).forEach(([moduleKey, assignment]) => {
+          if (!assignment || assignment.status !== "待审核") return;
+          const taskList = dispatchTasks[recordId]?.[moduleKey] || [];
+          assignment.status = taskList.length && taskList.every(task => task.status === "已完成")
+            ? "已完成"
+            : "已派发";
         });
       });
     }
@@ -3906,7 +3931,7 @@
         const doneText = task.docNote || task.reviewResult || "任务已完成";
         return `完成说明：${escapeHtml(doneText)}${task.completedAt ? `；完成时间 ${formatDate(task.completedAt)}` : ""}`;
       }
-      if (status === "待审核") return `已提交给${escapeHtml(modules[moduleKey].owner)}审核${task.submittedAt ? `；提交时间 ${formatDate(task.submittedAt)}` : ""}`;
+      if (status === "待审核") return `已上传完成${task.submittedAt ? `；提交时间 ${formatDate(task.submittedAt)}` : ""}`;
       if ((task.files || []).length) return "已上传附件，等待提交完成";
       return "暂未回收结果";
     }
@@ -3982,29 +4007,18 @@
     function taskReviewLine(key, moduleKey, task) {
       const module = modules[moduleKey];
       if (task.status === "待审核") {
-        return `<div class="task-review-line">
-          <div class="review-copy">
-            <strong>待负责人审核</strong>
-            <span>${task.owner} 于 ${formatDate(task.submittedAt)} 提交，负责人：${module.owner}</span>
-          </div>
-          <input class="input" value="${task.reviewComment || ""}" placeholder="驳回原因（驳回时必填）" data-review-comment="${key}">
-          <button class="btn ghost" data-review-reject="${key}">驳回修改</button>
-          <button class="btn primary" data-review-approve="${key}">审核通过</button>
-        </div>`;
-      }
-      if (moduleKey === "content" && task.status === "已完成" && task.reviewResult === "无需审核") {
         return `<div class="task-review-line is-done">
           <div class="review-copy">
-            <strong>内容文档已提交，无需审核</strong>
-            <span>${task.owner} 于 ${formatDate(task.submittedAt || task.completedAt)} 提交${task.docNote ? `，备注：${escapeHtml(task.docNote)}` : ""}</span>
+            <strong>任务已上传完成</strong>
+            <span>${task.owner} 于 ${formatDate(task.submittedAt)} 提交，上传即完成。</span>
           </div>
         </div>`;
       }
-      if (task.status === "已完成" && task.reviewedAt) {
+      if (task.status === "已完成" && (task.submittedAt || task.completedAt || task.reviewResult || (task.files || []).length)) {
         return `<div class="task-review-line is-done">
           <div class="review-copy">
-            <strong>负责人已审核通过</strong>
-            <span>${module.owner} 于 ${formatDate(task.reviewedAt)} 完成审核</span>
+            <strong>任务已完成</strong>
+            <span>${task.owner || module.owner} 于 ${formatDate(task.submittedAt || task.completedAt || actionDate)} 提交${task.docNote ? `，备注：${escapeHtml(task.docNote)}` : ""}</span>
           </div>
         </div>`;
       }
@@ -4049,7 +4063,6 @@
       const done = scopeItems.filter(item => item.task.status === "已完成").length;
       const delayed = scopeItems.filter(item => item.task.status === "延期中").length;
       const canceled = scopeItems.filter(item => item.task.status === "已取消").length;
-      const reviewing = scopeItems.filter(item => item.task.status === "待审核").length;
       const doing = scopeItems.filter(item => item.task.status !== "已完成" && item.task.status !== "已取消").length;
       const pending = scopeItems.filter(item => item.task.status === "待处理").length;
       const running = scopeItems.filter(item => item.task.status === "进行中").length;
@@ -4058,7 +4071,6 @@
           ${taskStatusFilterButton("all", "全部", scopeItems.length)}
           ${taskStatusFilterButton("pending", "待处理", pending)}
           ${taskStatusFilterButton("running", "进行中", running)}
-          ${taskStatusFilterButton("reviewing", "待审核", reviewing)}
           ${taskStatusFilterButton("done", "已完成", done)}
           ${taskStatusFilterButton("delayed", "延期中", delayed)}
           ${taskStatusFilterButton("canceled", "已取消", canceled)}
@@ -4129,7 +4141,6 @@
       const statusMap = {
         pending: "待处理",
         running: "进行中",
-        reviewing: "待审核",
         done: "已完成",
         delayed: "延期中",
         canceled: "已取消"
@@ -4177,11 +4188,9 @@
       const isCanceled = task.status === "已取消";
       const statusCls = taskStatusClass(task.status);
       const actionContent = task.status === "已完成"
-        ? `<span class="muted">${isContentTask ? "内容文档已提交" : "负责人已审核通过"}</span>`
+        ? `<span class="muted">${isContentTask ? "内容文档已提交" : "完成文件已上传"}</span>`
         : isCanceled
           ? `<span class="muted">任务已取消，原因已留存</span>`
-        : task.status === "待审核"
-          ? `<span class="muted">等待${module.owner}审核</span>`
           : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn danger" data-cancel-task="${key}">取消任务</button><button class="btn primary" data-complete-task="${key}">${isContentTask ? "提交文档" : "提交完成"}</button>`;
       return `<article class="my-task-card">
         <div class="my-task-head">
@@ -4195,7 +4204,7 @@
           <div class="row">
             <div>
               <div class="task-name">${task.title}</div>
-              <div class="meta"><span>执行人：${task.owner}</span><span>组长：${module.owner}</span><span>需求时间：${formatDate(taskDemandDate(item))}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}${task.reviewedAt ? `<span>审核于：${formatDate(task.reviewedAt)}</span>` : ""}${task.rejectedAt ? `<span>驳回于：${formatDate(task.rejectedAt)}</span>` : ""}</div>
+              <div class="meta"><span>执行人：${task.owner}</span><span>组长：${module.owner}</span><span>需求时间：${formatDate(taskDemandDate(item))}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}</div>
             </div>
           </div>
           <div class="task-note">${demandText(record, moduleKey)}</div>
@@ -4250,16 +4259,16 @@
 
     function taskReviewNotice(task, module, moduleKey) {
       if (task.status === "待审核") {
-        return `<div class="task-review-result is-reviewing">已提交给${module.owner}审核，负责人通过后任务才会进入已完成。</div>`;
+        return `<div class="task-review-result is-approved">完成文件已上传，任务已自动完成。</div>`;
       }
       if (task.rejectReason) {
-        return `<div class="task-review-result is-rejected">驳回原因：${task.rejectReason}</div>`;
+        return `<div class="task-review-result is-rejected">历史退回原因：${task.rejectReason}</div>`;
       }
-      if (moduleKey === "content" && task.status === "已完成" && task.reviewResult === "无需审核") {
-        return `<div class="task-review-result is-approved">内容文档和备注已提交，无需审核；文档仅按权限范围查看。</div>`;
+      if (moduleKey === "content" && task.status === "已完成") {
+        return `<div class="task-review-result is-approved">内容文档和备注已提交，任务已完成；文档仅按权限范围查看。</div>`;
       }
-      if (task.status === "已完成" && task.reviewedAt) {
-        return `<div class="task-review-result is-approved">${module.owner}已审核通过，本任务已闭环。</div>`;
+      if (task.status === "已完成" && (task.submittedAt || task.completedAt || task.reviewResult || (task.files || []).length)) {
+        return `<div class="task-review-result is-approved">完成文件已上传，任务已完成。</div>`;
       }
       return "";
     }
@@ -4306,11 +4315,10 @@
     }
 
     function contentDocForm(key, record, task, module) {
-      const isDone = task.status === "已完成";
       return `<div class="content-doc-flow">
         <label class="content-doc-note">
           <span>编导备注信息</span>
-          <textarea data-task-doc-note="${key}" placeholder="填写文档链接、脚本说明或交付备注" ${isDone ? "disabled" : ""}>${escapeHtml(task.docNote || "")}</textarea>
+          <textarea data-task-doc-note="${key}" placeholder="填写文档链接、脚本说明或交付备注">${escapeHtml(task.docNote || "")}</textarea>
         </label>
         <div class="doc-permission-note">
           <strong>文档权限</strong>
@@ -4458,7 +4466,7 @@
             </div>
             <label class="filter-field"><span>支持类型</span><select class="select" data-data-module><option value="all">全部</option>${moduleOrder.map(key => `<option value="${key}" ${state.dataModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
             <label class="filter-field"><span>成员</span><select class="select" data-data-member><option value="all">全部</option>${ownersWithTasks(allDispatchTaskItems()).map(owner => `<option ${state.dataMember === owner ? "selected" : ""}>${owner}</option>`).join("")}</select></label>
-            <label class="filter-field"><span>状态</span><select class="select" data-data-status>${["all:全部", "待处理:待处理", "进行中:进行中", "待审核:待审核", "延期中:延期中", "已取消:已取消", "已完成:已完成"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.dataStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
+            <label class="filter-field"><span>状态</span><select class="select" data-data-status>${["all:全部", "待处理:待处理", "进行中:进行中", "延期中:延期中", "已取消:已取消", "已完成:已完成"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.dataStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
           </div>
         </div>
       </section>`;
@@ -5125,12 +5133,6 @@
       document.querySelectorAll("[data-close-task-memo]").forEach(btn => btn.addEventListener("click", () => closeTaskMemo(btn.dataset.closeTaskMemo)));
       document.querySelectorAll("[data-ads-forecast]").forEach(input => input.addEventListener("input", () => updateAdsForecastDraft(input.dataset.adsForecast, input.value)));
       document.querySelectorAll("[data-save-ads-forecast]").forEach(btn => btn.addEventListener("click", () => saveAdsForecast(btn.dataset.saveAdsForecast)));
-      document.querySelectorAll("[data-review-comment]").forEach(input => input.addEventListener("input", () => {
-        const task = taskByKey(input.dataset.reviewComment);
-        if (task) task.reviewComment = input.value;
-      }));
-      document.querySelectorAll("[data-review-approve]").forEach(btn => btn.addEventListener("click", () => approveTask(btn.dataset.reviewApprove)));
-      document.querySelectorAll("[data-review-reject]").forEach(btn => btn.addEventListener("click", () => rejectTask(btn.dataset.reviewReject)));
       document.querySelectorAll("[data-delay-task]").forEach(btn => btn.addEventListener("click", () => startDelayTask(btn.dataset.delayTask)));
       document.querySelectorAll("[data-delay-due]").forEach(input => input.addEventListener("change", () => {
         const task = taskByKey(input.dataset.delayDue);
@@ -5226,7 +5228,21 @@
       const names = Array.from(fileList || []).map(file => file.name).filter(Boolean);
       if (!names.length) return;
       task.files = [...(task.files || []), ...names];
-      toast(moduleKey === "content" ? "内容文档已上传" : "完成文件已上传");
+      if (task.status !== "已取消") {
+        task.status = "已完成";
+        task.submittedAt = actionDate;
+        task.completedAt = actionDate;
+        task.businessNotice = "done";
+        task.noticeAt = actionDate;
+        task.reviewResult = moduleKey === "content" ? "内容文档已上传" : "完成文件已上传";
+        delete task.reviewedAt;
+        delete task.rejectedAt;
+        delete task.rejectReason;
+        delete task.delayEditing;
+        task.reviewComment = "";
+        syncAssignmentStatusFromTaskKey(key);
+      }
+      toast(moduleKey === "content" ? "内容文档已上传，任务已完成" : "完成文件已上传，任务已完成");
       render();
     }
 
@@ -5454,80 +5470,20 @@
           toast("请先填写编导备注信息");
           return;
         }
-        task.status = "已完成";
-        task.submittedAt = actionDate;
-        task.completedAt = actionDate;
-        task.businessNotice = "done";
-        task.noticeAt = actionDate;
-        task.reviewResult = "无需审核";
-        delete task.reviewedAt;
-        delete task.rejectedAt;
-        delete task.rejectReason;
-        delete task.delayEditing;
-        task.reviewComment = "";
-        syncAssignmentStatusFromTaskKey(key);
-        toast("内容文档已提交并完成");
-        render();
-        return;
       }
-      task.status = "待审核";
+      task.status = "已完成";
       task.submittedAt = actionDate;
-      delete task.completedAt;
+      task.completedAt = actionDate;
+      task.businessNotice = "done";
+      task.noticeAt = actionDate;
+      task.reviewResult = moduleKey === "content" ? "内容文档已提交" : "完成文件已上传";
       delete task.reviewedAt;
-      delete task.reviewResult;
       delete task.rejectedAt;
       delete task.rejectReason;
       delete task.delayEditing;
       task.reviewComment = "";
       syncAssignmentStatusFromTaskKey(key);
-      toast("已提交负责人审核");
-      render();
-    }
-
-    function approveTask(key) {
-      const task = taskByKey(key);
-      if (!task) return;
-      if (task.status === "已取消") {
-        toast("已取消任务不能审核通过");
-        return;
-      }
-      task.status = "已完成";
-      task.completedAt = actionDate;
-      task.reviewedAt = actionDate;
-      task.businessNotice = "done";
-      task.noticeAt = actionDate;
-      task.reviewResult = "通过";
-      delete task.rejectReason;
-      delete task.rejectedAt;
-      task.reviewComment = "";
-      syncAssignmentStatusFromTaskKey(key);
-      toast("审核通过，任务已完成");
-      render();
-    }
-
-    function rejectTask(key) {
-      const task = taskByKey(key);
-      if (!task) return;
-      if (task.status === "已取消") {
-        toast("已取消任务不能驳回");
-        return;
-      }
-      const reason = (task.reviewComment || "").trim();
-      if (!reason) {
-        toast("请先填写驳回原因");
-        return;
-      }
-      task.status = "进行中";
-      task.rejectReason = reason;
-      task.rejectedAt = actionDate;
-      delete task.businessNotice;
-      delete task.noticeAt;
-      delete task.completedAt;
-      delete task.reviewedAt;
-      delete task.reviewResult;
-      task.reviewComment = "";
-      syncAssignmentStatusFromTaskKey(key);
-      toast("已驳回，任务退回组员修改");
+      toast(moduleKey === "content" ? "内容文档已提交并完成" : "完成文件已上传，任务已完成");
       render();
     }
 
@@ -5550,10 +5506,6 @@
       }
       if (list.every(task => task.status === "已完成")) {
         assignment.status = "已完成";
-        return;
-      }
-      if (list.some(task => task.status === "待审核")) {
-        assignment.status = "待审核";
         return;
       }
       if (list.some(task => task.status === "延期中")) {
