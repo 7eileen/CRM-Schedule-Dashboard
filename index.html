@@ -1023,6 +1023,19 @@
       min-width: 0;
       flex-wrap: nowrap;
     }
+    .my-task-tools.task-filter-only { justify-content: flex-end; }
+    .my-task-tools.task-filter-only .task-filter-right { flex: 0 1 auto; }
+    .task-filter-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-weight: 400;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .task-filter-field .select { width: 168px; min-width: 168px; }
+    .task-filter-field.task-node .select { width: 180px; min-width: 180px; }
     .member-switch {
       display: flex;
       align-items: center;
@@ -1093,7 +1106,7 @@
     }
     .task-sort-option.active { background: #fff5ec; color: var(--orange); }
     .task-filter-right > .select { width: 170px; min-width: 170px; }
-    .task-search { width: 240px; min-width: 200px; }
+    .task-search { width: 260px; min-width: 220px; }
     .my-task-list { display: grid; gap: 14px; }
     .my-task-card {
       border: 1px solid var(--line);
@@ -2163,6 +2176,7 @@
       taskScope: "mine",
       taskSort: "urgency",
       taskSortOpen: false,
+      taskPriorityFilter: "all",
       taskStatusFilter: "all",
       taskModuleFilter: "all",
       taskSearch: "",
@@ -3810,7 +3824,7 @@
             task.completedAt = task.completedAt || task.submittedAt;
             task.businessNotice = "done";
             task.noticeAt = task.noticeAt || actionDate;
-            task.reviewResult = task.reviewResult || (moduleKey === "content" ? "内容文档已提交" : "完成文件已上传");
+            task.reviewResult = task.reviewResult || (moduleKey === "content" ? "内容文档已提交" : "完成文件已提交");
             delete task.reviewedAt;
             delete task.rejectedAt;
             delete task.rejectReason;
@@ -4009,8 +4023,8 @@
       if (task.status === "待审核") {
         return `<div class="task-review-line is-done">
           <div class="review-copy">
-            <strong>任务已上传完成</strong>
-            <span>${task.owner} 于 ${formatDate(task.submittedAt)} 提交，上传即完成。</span>
+            <strong>任务已提交完成</strong>
+            <span>${task.owner} 于 ${formatDate(task.submittedAt)} 提交完成。</span>
           </div>
         </div>`;
       }
@@ -4066,34 +4080,19 @@
       const doing = scopeItems.filter(item => item.task.status !== "已完成" && item.task.status !== "已取消").length;
       const pending = scopeItems.filter(item => item.task.status === "待处理").length;
       const running = scopeItems.filter(item => item.task.status === "进行中").length;
-      return `<div class="my-task-tools">
-        <div class="seg-group">
-          ${taskStatusFilterButton("all", "全部", scopeItems.length)}
-          ${taskStatusFilterButton("pending", "待处理", pending)}
-          ${taskStatusFilterButton("running", "进行中", running)}
-          ${taskStatusFilterButton("done", "已完成", done)}
-          ${taskStatusFilterButton("delayed", "延期中", delayed)}
-          ${taskStatusFilterButton("canceled", "已取消", canceled)}
-        </div>
+      const priorityOptions = ["all:全部优先级", "S+:S+ 级", "S:S 级", "A:A 级", "B:B 级", "C:C 级"];
+      const nodeOptions = [`all:全部节点 ${scopeItems.length}`, `pending:待处理 ${doing}`, `done:已完成 ${done}`, `canceled:已取消 ${canceled}`];
+      return `<div class="my-task-tools task-filter-only">
         <div class="task-filter-right">
-          <div class="task-sort-filter">
-            <button class="task-sort-trigger ${state.taskSortOpen ? "active" : ""}" data-task-sort-toggle>
-              <span>任务紧急程度排序</span>
-              <strong>${taskSortTitle()}</strong>
-              <i>⌄</i>
-            </button>
-            ${state.taskSortOpen ? `<div class="task-sort-menu">${taskSortOptions.map(option => `<button class="task-sort-option ${state.taskSort === option.id ? "active" : ""}" data-task-sort="${option.id}"><span>${option.label}</span>${state.taskSort === option.id ? badge("当前", "orange") : ""}</button>`).join("")}</div>` : ""}
-          </div>
-          <div class="member-switch">
-            <span>查看范围</span>
-            <select class="select" data-task-scope>${taskScopeOptions.map(option => `<option value="${option.id}" ${state.taskScope === option.id ? "selected" : ""}>${option.label}</option>`).join("")}</select>
-          </div>
-          <div class="member-switch">
-            <span>${state.taskScope === "mine" ? "成员视角" : "查看对象"}</span>
-            ${state.taskScope === "mine" ? `<select class="select" data-task-user>${owners.filter(owner => owner !== "待分配").map(owner => `<option ${owner === state.taskUser ? "selected" : ""}>${owner}</option>`).join("")}</select>` : `<strong>${taskScopeTitle()}</strong>`}
-          </div>
-          <select class="select" data-task-module-filter><option value="all">全部支持</option>${moduleOrder.map(key => `<option value="${key}" ${state.taskModuleFilter === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select>
-          <input class="input task-search" value="${state.taskSearch}" placeholder="搜索任务..." data-task-search>
+          <label class="task-filter-field">
+            <span>任务优先级</span>
+            <select class="select" data-task-priority-filter>${priorityOptions.map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.taskPriorityFilter === value ? "selected" : ""}>${label}</option>`; }).join("")}</select>
+          </label>
+          <label class="task-filter-field task-node">
+            <span>任务节点</span>
+            <select class="select" data-task-status-filter>${nodeOptions.map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.taskStatusFilter === value ? "selected" : ""}>${label}</option>`; }).join("")}</select>
+          </label>
+          <input class="input task-search" value="${state.taskSearch}" placeholder="搜索专场名称" data-task-search>
         </div>
       </div>
       <section class="stats">
@@ -4103,7 +4102,7 @@
         <div class="stat stat-red"><div><strong>${delayed + canceled}</strong><span>延期/取消</span></div></div>
       </section>
       <section class="panel">
-        <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2><div class="muted">已按${taskSortTitle()}排序</div></div>${badge(`${myItems.length} 条任务`, "orange")}</div>
+        <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2><div class="muted">按任务优先级与需求时间排序</div></div>${badge(`${myItems.length} 条任务`, "orange")}</div>
         <div class="panel-body">
           ${myItems.length ? `<div class="my-task-list">${myItems.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
         </div>
@@ -4138,21 +4137,16 @@
     }
 
     function filteredMyTaskItems(items) {
-      const statusMap = {
-        pending: "待处理",
-        running: "进行中",
-        done: "已完成",
-        delayed: "延期中",
-        canceled: "已取消"
-      };
       const keyword = state.taskSearch.trim().toLowerCase();
       return items.filter(item => {
-        const statusMatched = state.taskStatusFilter === "all" || item.task.status === statusMap[state.taskStatusFilter];
-        const moduleMatched = state.taskModuleFilter === "all" || item.moduleKey === state.taskModuleFilter;
-        const memoText = (item.task.memoHistory || []).map(memo => memo.text).join(" ");
-        const searchText = [item.record.title, item.record.talent, item.record.uid, item.record.product, supportNeeds[item.moduleKey].title, item.task.title, item.task.status, item.task.owner, item.task.adsForecastGmv, item.record.adsForecastGmv, memoText, talentGrade(item.record)].join(" ").toLowerCase();
-        return statusMatched && moduleMatched && (!keyword || searchText.includes(keyword));
-      }).sort(taskCompareByMode);
+        const statusMatched = state.taskStatusFilter === "all"
+          || (state.taskStatusFilter === "pending" && item.task.status !== "已完成" && item.task.status !== "已取消")
+          || (state.taskStatusFilter === "done" && item.task.status === "已完成")
+          || (state.taskStatusFilter === "canceled" && item.task.status === "已取消");
+        const priorityMatched = state.taskPriorityFilter === "all" || talentGrade(item.record) === state.taskPriorityFilter;
+        const searchText = item.record.title.toLowerCase();
+        return statusMatched && priorityMatched && (!keyword || searchText.includes(keyword));
+      }).sort(taskUrgencyCompare);
     }
 
     function taskCompareByMode(a, b) {
@@ -4188,7 +4182,7 @@
       const isCanceled = task.status === "已取消";
       const statusCls = taskStatusClass(task.status);
       const actionContent = task.status === "已完成"
-        ? `<span class="muted">${isContentTask ? "内容文档已提交" : "完成文件已上传"}</span>`
+        ? `<span class="muted">任务已完成</span>`
         : isCanceled
           ? `<span class="muted">任务已取消，原因已留存</span>`
           : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn danger" data-cancel-task="${key}">取消任务</button><button class="btn primary" data-complete-task="${key}">${isContentTask ? "提交文档" : "提交完成"}</button>`;
@@ -4259,7 +4253,7 @@
 
     function taskReviewNotice(task, module, moduleKey) {
       if (task.status === "待审核") {
-        return `<div class="task-review-result is-approved">完成文件已上传，任务已自动完成。</div>`;
+        return `<div class="task-review-result is-approved">完成文件已提交，任务已完成。</div>`;
       }
       if (task.rejectReason) {
         return `<div class="task-review-result is-rejected">历史退回原因：${task.rejectReason}</div>`;
@@ -4268,7 +4262,7 @@
         return `<div class="task-review-result is-approved">内容文档和备注已提交，任务已完成；文档仅按权限范围查看。</div>`;
       }
       if (task.status === "已完成" && (task.submittedAt || task.completedAt || task.reviewResult || (task.files || []).length)) {
-        return `<div class="task-review-result is-approved">完成文件已上传，任务已完成。</div>`;
+        return `<div class="task-review-result is-approved">完成文件已提交，任务已完成。</div>`;
       }
       return "";
     }
@@ -5084,30 +5078,12 @@
         render();
       }));
       document.querySelectorAll("[data-drawer]").forEach(btn => btn.addEventListener("click", () => openRecordDrawer()));
-      document.querySelectorAll("[data-task-user]").forEach(input => input.addEventListener("change", () => {
-        state.taskUser = input.value;
+      document.querySelectorAll("[data-task-priority-filter]").forEach(input => input.addEventListener("change", () => {
+        state.taskPriorityFilter = input.value;
         render();
       }));
-      document.querySelectorAll("[data-task-scope]").forEach(input => input.addEventListener("change", () => {
-        state.taskScope = input.value;
-        state.taskModuleFilter = "all";
-        render();
-      }));
-      document.querySelectorAll("[data-task-sort-toggle]").forEach(btn => btn.addEventListener("click", () => {
-        state.taskSortOpen = !state.taskSortOpen;
-        render();
-      }));
-      document.querySelectorAll("[data-task-sort]").forEach(btn => btn.addEventListener("click", () => {
-        state.taskSort = btn.dataset.taskSort;
-        state.taskSortOpen = false;
-        render();
-      }));
-      document.querySelectorAll("[data-task-status-filter]").forEach(btn => btn.addEventListener("click", () => {
-        state.taskStatusFilter = btn.dataset.taskStatusFilter;
-        render();
-      }));
-      document.querySelectorAll("[data-task-module-filter]").forEach(input => input.addEventListener("change", () => {
-        state.taskModuleFilter = input.value;
+      document.querySelectorAll("[data-task-status-filter]").forEach(input => input.addEventListener("change", () => {
+        state.taskStatusFilter = input.value;
         render();
       }));
       document.querySelectorAll("[data-task-search]").forEach(input => input.addEventListener("input", () => {
@@ -5229,20 +5205,19 @@
       if (!names.length) return;
       task.files = [...(task.files || []), ...names];
       if (task.status !== "已取消") {
-        task.status = "已完成";
-        task.submittedAt = actionDate;
-        task.completedAt = actionDate;
-        task.businessNotice = "done";
+        if (task.status === "待处理") task.status = "进行中";
+        task.businessNotice = "uploaded";
         task.noticeAt = actionDate;
-        task.reviewResult = moduleKey === "content" ? "内容文档已上传" : "完成文件已上传";
+        if (task.status !== "已完成") {
+          delete task.submittedAt;
+          delete task.completedAt;
+          delete task.reviewResult;
+        }
         delete task.reviewedAt;
         delete task.rejectedAt;
         delete task.rejectReason;
-        delete task.delayEditing;
-        task.reviewComment = "";
-        syncAssignmentStatusFromTaskKey(key);
       }
-      toast(moduleKey === "content" ? "内容文档已上传，任务已完成" : "完成文件已上传，任务已完成");
+      toast(moduleKey === "content" ? "内容文档已保存，请点击提交文档完成" : "完成文件已保存，请点击提交完成");
       render();
     }
 
@@ -5476,14 +5451,14 @@
       task.completedAt = actionDate;
       task.businessNotice = "done";
       task.noticeAt = actionDate;
-      task.reviewResult = moduleKey === "content" ? "内容文档已提交" : "完成文件已上传";
+      task.reviewResult = moduleKey === "content" ? "内容文档已提交" : "完成文件已提交";
       delete task.reviewedAt;
       delete task.rejectedAt;
       delete task.rejectReason;
       delete task.delayEditing;
       task.reviewComment = "";
       syncAssignmentStatusFromTaskKey(key);
-      toast(moduleKey === "content" ? "内容文档已提交并完成" : "完成文件已上传，任务已完成");
+      toast(moduleKey === "content" ? "内容文档已提交并完成" : "完成文件已提交，任务已完成");
       render();
     }
 
