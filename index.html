@@ -171,6 +171,14 @@
     .stat.stat-green strong { color: var(--green); }
     .stat.stat-blue strong { color: var(--blue); }
     .stat.stat-red strong { color: var(--red); }
+    button.stat {
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    button.stat:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(15, 35, 65, .1); }
+    button.stat:focus-visible { outline: 3px solid rgba(255, 122, 0, .28); outline-offset: 3px; }
     .panel {
       border: 0;
       border-radius: var(--radius);
@@ -1107,6 +1115,62 @@
     .task-sort-option.active { background: #fff5ec; color: var(--orange); }
     .task-filter-right > .select { width: 170px; min-width: 170px; }
     .task-search { width: 260px; min-width: 220px; }
+    .task-module-tabs {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 14px;
+      background: #f1f4f8;
+      flex-wrap: wrap;
+    }
+    .task-module-tab {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 11px;
+      border-radius: 10px;
+      color: #526074;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .task-module-tab.active {
+      color: var(--orange);
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(15, 35, 65, .06);
+    }
+    .task-module-tab i {
+      min-width: 18px;
+      height: 18px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255, 122, 0, .1);
+      color: var(--orange);
+      font-style: normal;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .task-total-list {
+      display: grid;
+      gap: 10px;
+    }
+    .task-total-row {
+      display: grid;
+      grid-template-columns: minmax(230px, 1.3fr) minmax(180px, 1fr) 110px 90px 110px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid #e7edf5;
+      border-radius: 12px;
+      background: #fbfdff;
+    }
+    .task-total-row strong { color: #00152e; font-weight: 500; }
+    .task-total-row span { color: var(--muted); font-size: 13px; }
     .my-task-list { display: grid; gap: 14px; }
     .my-task-card {
       border: 1px solid var(--line);
@@ -2064,6 +2128,7 @@
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .task-total-row { grid-template-columns: minmax(220px, 1fr) minmax(180px, 1fr) 110px; }
       .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
       .my-task-tools, .task-filter-right { flex-wrap: wrap; }
     }
@@ -2077,7 +2142,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -4110,17 +4175,41 @@
         </div>
       </div>
       <section class="stats">
-        <div class="stat stat-orange"><div><strong>${scopeItems.length}</strong><span>范围任务</span></div></div>
+        <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeItems.length}</strong><span>总量任务</span></div></button>
         <div class="stat stat-blue"><div><strong>${doing}</strong><span>待处理</span></div></div>
         <div class="stat stat-green"><div><strong>${done}</strong><span>已完成</span></div></div>
         <div class="stat stat-red"><div><strong>${delayed + canceled}</strong><span>延期/取消</span></div></div>
       </section>
       <section class="panel">
-        <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2><div class="muted">按任务优先级与需求时间排序</div></div>${badge(`${myItems.length} 条任务`, "orange")}</div>
+        <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2></div>${taskModulePoolTabs(scopeItems)}</div>
         <div class="panel-body">
           ${myItems.length ? `<div class="my-task-list">${myItems.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
         </div>
       </section>`;
+    }
+
+    function taskModulePoolTabs(items) {
+      const order = taskModuleFilterOptions();
+      const active = activeTaskModuleFilter(items);
+      return `<div class="task-module-tabs" aria-label="需求池切换">${order.map(item => {
+        const count = items.filter(taskItem => taskItem.moduleKey === item.key).length;
+        return `<button class="task-module-tab ${active === item.key ? "active" : ""}" data-task-module-filter="${item.key}">${item.label}<i>${count}</i></button>`;
+      }).join("")}</div>`;
+    }
+
+    function taskModuleFilterOptions() {
+      return [
+        { key: "ops", label: "运营" },
+        { key: "edit", label: "剪辑" },
+        { key: "content", label: "内容" },
+        { key: "ads", label: "投放" }
+      ];
+    }
+
+    function activeTaskModuleFilter(items) {
+      const options = taskModuleFilterOptions();
+      if (options.some(item => item.key === state.taskModuleFilter)) return state.taskModuleFilter;
+      return options.find(item => items.some(taskItem => taskItem.moduleKey === item.key))?.key || options[0].key;
     }
 
     function scopedTaskItems() {
@@ -4152,14 +4241,16 @@
 
     function filteredMyTaskItems(items) {
       const keyword = state.taskSearch.trim().toLowerCase();
+      const moduleFilter = activeTaskModuleFilter(items);
       return items.filter(item => {
         const statusMatched = state.taskStatusFilter === "all"
           || (state.taskStatusFilter === "pending" && item.task.status !== "已完成" && item.task.status !== "已取消")
           || (state.taskStatusFilter === "done" && item.task.status === "已完成")
           || (state.taskStatusFilter === "canceled" && item.task.status === "已取消");
+        const moduleMatched = item.moduleKey === moduleFilter;
         const priorityMatched = state.taskPriorityFilter === "all" || talentGrade(item.record) === state.taskPriorityFilter;
         const searchText = item.record.title.toLowerCase();
-        return statusMatched && priorityMatched && (!keyword || searchText.includes(keyword));
+        return moduleMatched && statusMatched && priorityMatched && (!keyword || searchText.includes(keyword));
       }).sort(taskUrgencyCompare);
     }
 
@@ -4217,7 +4308,6 @@
           </div>
           <div class="task-note">${demandText(record, moduleKey)}</div>
           ${taskReviewNotice(task, module, moduleKey)}
-          ${taskMemoPanel(key, task)}
           ${taskCancelForm(key, task)}
           ${!isCanceled && moduleKey === "ads" ? adsForecastForm(key, record, task) : ""}
           ${isCanceled ? "" : taskUpload(key, task, moduleKey)}
@@ -4248,21 +4338,50 @@
       return count ? `备忘录 ${count}` : "备忘录";
     }
 
-    function taskMemoPanel(key, task) {
-      if (!task.memoOpen) return "";
+    function taskMemoDialogBody(key, task) {
       const history = task.memoHistory || [];
       const historyHtml = history.length
         ? `<div class="task-memo-history">${history.slice().reverse().map(item => `<div class="task-memo-item"><strong>${formatDate(item.time)} · ${escapeHtml(item.user || task.owner || "记录人")}</strong><span>${escapeHtml(item.text)}</span></div>`).join("")}</div>`
         : `<div class="task-memo-empty">暂无备忘记录</div>`;
       return `<div class="task-memo-panel">
         <div class="task-memo-head">
-          <div><strong>节点备忘录</strong><span>记录本任务节点的沟通、风险、注意事项</span></div>
+          <div><strong>节点备忘录</strong></div>
           ${badge(`${history.length} 条记录`, history.length ? "orange" : "")}
         </div>
         <textarea class="input" placeholder="填写本节点备忘，例如沟通结论、待跟进事项、风险说明" data-task-memo-draft="${key}">${escapeHtml(task.memoDraft || "")}</textarea>
-        <div class="task-memo-actions"><button class="btn ghost" data-close-task-memo="${key}">收起</button><button class="btn primary" data-save-task-memo="${key}">保存备忘</button></div>
         ${historyHtml}
       </div>`;
+    }
+
+    function openTaskMemoDialog(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      task.memoDraft = task.memoDraft || "";
+      openDrawer(
+        "节点备忘录",
+        taskMemoDialogBody(key, task),
+        `<button class="btn ghost" data-close>关闭</button><button class="btn primary" data-save-task-memo="${key}">保存备忘</button>`,
+        false,
+        true
+      );
+    }
+
+    function openMyTaskTotalDrawer() {
+      const items = scopedTaskItems().sort(taskUrgencyCompare);
+      const rows = items.map(item => `<div class="task-total-row">
+        <div><strong>${escapeHtml(item.record.title)}</strong><span>${escapeHtml(item.record.talent)} · ${escapeHtml(item.record.product)}</span></div>
+        <div><strong>${escapeHtml(item.task.title || "")}</strong><span>${supportNeeds[item.moduleKey].title}</span></div>
+        <div><span>执行人</span><strong>${escapeHtml(item.task.owner || "待分配")}</strong></div>
+        <div>${badge(item.task.status || "待处理", taskStatusClass(item.task.status || "待处理"))}</div>
+        <div><span>需求时间</span><strong>${formatDate(taskDemandDate(item))}</strong></div>
+      </div>`).join("");
+      openDrawer(
+        `${taskScopeTitle()}的总量任务`,
+        `<div class="stack"><div class="meta">${badge(`${items.length} 条任务`, "orange")}<span>当前本人任务池</span></div><div class="task-total-list">${rows || `<div class="upload"><div><strong>暂无任务</strong></div></div>`}</div></div>`,
+        `<button class="btn primary" data-close>关闭</button>`,
+        true,
+        true
+      );
     }
 
     function taskReviewNotice(task, module, moduleKey) {
@@ -5100,6 +5219,11 @@
         state.taskStatusFilter = input.value;
         render();
       }));
+      document.querySelectorAll("[data-task-module-filter]").forEach(btn => btn.addEventListener("click", () => {
+        state.taskModuleFilter = btn.dataset.taskModuleFilter;
+        render();
+      }));
+      document.querySelectorAll("[data-open-my-task-total]").forEach(btn => btn.addEventListener("click", openMyTaskTotalDrawer));
       document.querySelectorAll("[data-task-search]").forEach(input => input.addEventListener("input", () => {
         const cursor = input.selectionStart;
         state.taskSearch = input.value;
@@ -5248,9 +5372,8 @@
     function toggleTaskMemo(key) {
       const task = taskByKey(key);
       if (!task) return;
-      task.memoOpen = !task.memoOpen;
       task.memoDraft = task.memoDraft || "";
-      render();
+      openTaskMemoDialog(key);
     }
 
     function updateTaskMemoDraft(key, value) {
@@ -5262,7 +5385,7 @@
       const task = taskByKey(key);
       if (!task) return;
       task.memoOpen = false;
-      render();
+      closeDrawer();
     }
 
     function saveTaskMemo(key) {
@@ -5279,9 +5402,13 @@
         text
       }];
       task.memoDraft = "";
-      task.memoOpen = true;
       toast("已保存节点备忘");
-      render();
+      const memoInput = $("#drawerBody").querySelector("[data-task-memo-draft]");
+      if ($("#drawer").classList.contains("show") && memoInput && memoInput.dataset.taskMemoDraft === key) {
+        openTaskMemoDialog(key);
+      } else {
+        render();
+      }
     }
 
     function updateAdsForecastDraft(key, value) {
@@ -5874,6 +6001,9 @@
       document.querySelectorAll("[data-jump-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.jumpModule; state.view = "dispatch"; closeDrawer(); render(); }));
       document.querySelectorAll("[data-complete]").forEach(btn => btn.addEventListener("click", () => { const task = tasks.find(item => item.id === btn.dataset.complete); task.done = !task.done; task.status = task.done ? "已完成" : "进行中"; closeDrawer(); toast(task.done ? "任务已完成" : "任务已恢复"); render(); }));
       document.querySelectorAll("[data-toggle-module-task-log]").forEach(btn => btn.addEventListener("click", () => toggleModuleTaskLog(btn.dataset.toggleModuleTaskLog)));
+      document.querySelectorAll("#drawer [data-task-memo-draft]").forEach(input => input.addEventListener("input", () => updateTaskMemoDraft(input.dataset.taskMemoDraft, input.value)));
+      document.querySelectorAll("#drawer [data-save-task-memo]").forEach(btn => btn.addEventListener("click", () => saveTaskMemo(btn.dataset.saveTaskMemo)));
+      document.querySelectorAll("#drawer [data-close-task-memo]").forEach(btn => btn.addEventListener("click", () => closeTaskMemo(btn.dataset.closeTaskMemo)));
     }
 
     function toast(message) {
