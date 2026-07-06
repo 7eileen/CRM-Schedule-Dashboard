@@ -126,6 +126,7 @@
     .btn.ghost { background: #fff; border: 1px solid #d9e1eb; }
     .btn.green { color: white; background: var(--green); }
     .btn.danger { color: var(--red); background: var(--red-soft); border: 1px solid rgba(240, 68, 68, .24); }
+    .btn:disabled { opacity: .48; cursor: not-allowed; box-shadow: none; }
 
     .process {
       display: grid;
@@ -1743,21 +1744,87 @@
     }
     .upload strong { display: block; font-size: 17px; font-weight: 400; margin-bottom: 14px; }
     .entry-upload-content {
-      width: min(720px, 100%);
+      width: 100%;
       display: grid;
-      justify-items: center;
       gap: 12px;
+    }
+    .entry-source-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: stretch;
+    }
+    .entry-source-card {
+      min-height: 236px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+      padding: 18px;
+      border: 1px solid #e4eaf2;
+      border-radius: 14px;
+      background: #fbfdff;
+      text-align: left;
+    }
+    .entry-source-card.is-primary {
+      border-color: rgba(255, 122, 0, .32);
+      background: linear-gradient(180deg, #fff8f1 0%, #ffffff 72%);
+    }
+    .entry-source-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .entry-source-head strong {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #00152e;
+    }
+    .entry-source-kicker {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #fff1e4;
+      color: var(--orange);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .entry-source-copy {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 13px;
     }
     .entry-upload-actions {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 10px;
       flex-wrap: wrap;
     }
     .entry-upload-btn { cursor: pointer; }
     .entry-upload-btn input { display: none; }
     .entry-upload-empty { color: var(--muted); font-size: 13px; }
+    .entry-textarea {
+      width: 100%;
+      min-height: 118px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid #d9e1eb;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      outline: 0;
+      line-height: 1.6;
+    }
+    .entry-textarea:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255, 122, 0, .12);
+    }
     .entry-file-list {
       width: 100%;
       display: grid;
@@ -2142,7 +2209,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -2268,6 +2335,7 @@
       listRangeOpen: false,
       listRangePreset: "month",
       entryDocs: [],
+      entryText: "",
       calendarOpen: true,
       specialProgressOpen: true,
       calendarExpandedDay: "",
@@ -3126,12 +3194,32 @@
         <div class="panel-body stack">
           <div class="upload entry-upload">
             <div class="entry-upload-content">
-              <strong>上传达人专场文档</strong>
-              <div class="entry-upload-actions">
-                <label class="btn primary entry-upload-btn">选择文档<input type="file" multiple data-entry-doc-upload accept=".doc,.docx,.pdf,.xls,.xlsx,.csv,.txt,.md,image/*"></label>
-                ${state.entryDocs.length ? `<button class="btn ghost" data-action="recognizeDoc">识别文档</button>` : ""}
+              <div class="entry-source-grid">
+                <div class="entry-source-card is-primary">
+                  <div class="entry-source-head">
+                    <strong>文档上传识别填写</strong>
+                    <span class="entry-source-kicker">本地文档</span>
+                  </div>
+                  <div class="entry-source-copy">上传达人专场文档后，系统识别字段并回填到下方专场详情。</div>
+                  ${entryDocumentFiles()}
+                  <div class="entry-upload-actions">
+                    <label class="btn primary entry-upload-btn">选择文档<input type="file" multiple data-entry-doc-upload accept=".doc,.docx,.pdf,.xls,.xlsx,.csv,.txt,.md,image/*"></label>
+                    <button class="btn ghost" data-action="recognizeDoc" ${state.entryDocs.length ? "" : "disabled"}>识别文档并填写</button>
+                  </div>
+                </div>
+                <div class="entry-source-card">
+                  <div class="entry-source-head">
+                    <strong>文本粘贴识别填写</strong>
+                    <span class="entry-source-kicker">文字识别</span>
+                  </div>
+                  <div class="entry-source-copy">从飞书、微信或表格复制整段专场信息，粘贴后点击识别即可自动填表。</div>
+                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万">${escapeHtml(state.entryText)}</textarea>
+                  <div class="entry-upload-actions">
+                    <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
+                    <button class="btn ghost" data-clear-entry-text>清空文本</button>
+                  </div>
+                </div>
               </div>
-              ${entryDocumentFiles()}
             </div>
           </div>
         </div>
@@ -3150,6 +3238,145 @@
           <button class="file-remove" data-remove-entry-doc="${file.id}" aria-label="删除${name}">x</button>
         </div>`;
       }).join("")}</div>`;
+    }
+
+    function recognizeEntryDocs() {
+      const fileText = (state.entryDocs || []).map(file => file.name).join("\n");
+      const parsed = extractEntryFieldsFromText(fileText);
+      return hasRecognizedFields(parsed) ? parsed : sampleEntryRecognition();
+    }
+
+    function sampleEntryRecognition() {
+      return {
+        uid: "dy26060101",
+        talent: "河北卫视中华好诗词",
+        liveAt: "2026-06-01T20:00",
+        business: "刘则宇黄娇",
+        status: "已排期",
+        type: "专场",
+        liveRoom: "直播间C",
+        product: "防晒素颜霜（化学款-老）",
+        targetSales: "¥180万"
+      };
+    }
+
+    function hasRecognizedFields(fields) {
+      return Object.entries(fields || {}).some(([key, value]) => key !== "raw" && String(value || "").trim());
+    }
+
+    function extractEntryFieldsFromText(raw) {
+      const text = String(raw || "").replace(/\r/g, "\n");
+      const compact = text.replace(/\s+/g, " ");
+      const fields = {
+        uid: pickRecognizedLine(text, ["达人 UID", "达人UID", "UID", "达人抖音号", "抖音号"]),
+        talent: pickRecognizedLine(text, ["达人昵称", "达人名称", "达人名", "达人"]),
+        liveAt: parseEntryDateTime(pickRecognizedLine(text, ["专场排期（时间）", "专场排期", "排期时间", "直播时间", "开播时间", "专场时间", "时间"]) || compact),
+        business: pickRecognizedLine(text, ["负责商务", "跟进商务", "商务"]),
+        status: pickRecognizedLine(text, ["状态"]) || inferEntryStatus(compact),
+        type: pickRecognizedLine(text, ["类型"]) || inferEntryType(compact),
+        liveRoom: pickRecognizedLine(text, ["直播间"]) || inferEntryLiveRoom(compact),
+        product: standardProductName(pickRecognizedLine(text, ["主推产品", "商品", "产品"]) || inferEntryProduct(compact)),
+        targetSales: pickRecognizedLine(text, ["目标销售额", "预估销售额", "预计销售额", "目标GMV", "GMV"]) || inferEntrySales(compact)
+      };
+      const uidMatch = compact.match(/\bdy\d{5,}\b/i);
+      if (!fields.uid && uidMatch) fields.uid = uidMatch[0];
+      return fields;
+    }
+
+    function pickRecognizedLine(text, labels) {
+      const parts = String(text || "").split(/[\n；;]+/).map(item => item.trim()).filter(Boolean);
+      for (const part of parts) {
+        for (const label of labels) {
+          const re = new RegExp(`^${escapeRegExp(label)}(?:\\s|[:：])+(.+)$`, "i");
+          const match = part.match(re);
+          if (match) return cleanRecognizedValue(match[1]);
+        }
+      }
+      for (const label of labels) {
+        const re = new RegExp(`${escapeRegExp(label)}\\s*[:：]\\s*([^\\n；;]+)`, "i");
+        const match = String(text || "").match(re);
+        if (match) return cleanRecognizedValue(match[1]);
+      }
+      return "";
+    }
+
+    function cleanRecognizedValue(value) {
+      return String(value || "").replace(/^[：:\s]+/, "").replace(/\s+/g, " ").trim();
+    }
+
+    function parseEntryDateTime(value) {
+      const text = String(value || "");
+      const match = text.match(/(20\d{2})[年/.-](\d{1,2})[月/.-](\d{1,2})(?:日)?(?:\s*(\d{1,2})[:：](\d{2}))?/);
+      if (!match) return "";
+      return `${match[1]}-${padTimePart(match[2])}-${padTimePart(match[3])}T${padTimePart(match[4] || "20")}:${padTimePart(match[5] || "00")}`;
+    }
+
+    function inferEntryStatus(text) {
+      if (text.includes("已取消")) return "已取消";
+      if (text.includes("已延期")) return "已延期";
+      if (text.includes("已排期") || text.includes("排期")) return "已排期";
+      return "";
+    }
+
+    function inferEntryType(text) {
+      if (text.includes("新闻号")) return "新闻号";
+      if (text.includes("单品直播间")) return "单品直播间";
+      if (text.includes("专场")) return "专场";
+      return "";
+    }
+
+    function inferEntryLiveRoom(text) {
+      const match = String(text || "").match(/直播间\s*[:：]?\s*(?:直播间)?\s*([A-D])/i);
+      return match ? `直播间${match[1].toUpperCase()}` : "";
+    }
+
+    function inferEntryProduct(text) {
+      const normalizedText = normalizeProductText(text);
+      return productOptions.find(option => normalizedText.includes(normalizeProductText(option))) || "";
+    }
+
+    function standardProductName(value) {
+      const normalizedValue = normalizeProductText(value);
+      if (!normalizedValue) return "";
+      return productOptions.find(option => normalizeProductText(option) === normalizedValue)
+        || productOptions.find(option => normalizeProductText(option).includes(normalizedValue) || normalizedValue.includes(normalizeProductText(option)))
+        || value;
+    }
+
+    function normalizeProductText(value) {
+      return String(value || "").toLowerCase().replace(/[()\s（）\-—_、，,]/g, "");
+    }
+
+    function inferEntrySales(text) {
+      const source = String(text || "");
+      const labeled = source.match(/(?:目标销售额|预估销售额|预计销售额|目标GMV|GMV)\s*[:：]?\s*(¥?\d+(?:\.\d+)?\s*(?:万|w|W|百万)?)/i);
+      if (labeled) return labeled[1].replace(/[wW]/, "万");
+      const amount = source.match(/¥?\d+(?:\.\d+)?\s*(?:万|w|W|百万)/);
+      return amount ? amount[0].replace(/[wW]/, "万") : "";
+    }
+
+    function applyEntryRecognition(fields, sourceLabel) {
+      const applied = [];
+      const assign = (label, value, transform = item => item) => {
+        const next = transform(value);
+        if (!String(next || "").trim()) return;
+        const group = specialDetailGroups.find(item => item.title === "专场信息");
+        const field = group ? group.fields.find(item => item.label === label) : null;
+        if (!field) return;
+        field.value = next;
+        applied.push(label);
+      };
+      assign("达人 UID", fields.uid);
+      assign("达人昵称", fields.talent);
+      assign("专场排期（时间）", fields.liveAt);
+      assign("负责商务", fields.business);
+      assign("状态", fields.status, value => ["已排期", "已延期", "已取消"].includes(value) ? value : "");
+      assign("类型", fields.type, value => ["专场", "新闻号", "单品直播间"].includes(value) ? value : "");
+      assign("直播间", fields.liveRoom, value => liveRoomOptions.includes(value) ? value : "");
+      assign("主推产品", fields.product, standardProductName);
+      assign("目标销售额", fields.targetSales, normalizeGmvText);
+      toast(applied.length ? `${sourceLabel}已识别并回填 ${applied.length} 项` : `未从${sourceLabel}中识别到可回填字段`);
+      render();
     }
 
     function specialDetailSection() {
@@ -5200,6 +5427,11 @@
       });
       document.querySelectorAll("[data-entry-doc-upload]").forEach(input => input.addEventListener("change", () => uploadEntryDocs(input.files)));
       document.querySelectorAll("[data-remove-entry-doc]").forEach(btn => btn.addEventListener("click", () => removeEntryDoc(btn.dataset.removeEntryDoc)));
+      document.querySelectorAll("[data-entry-text]").forEach(input => input.addEventListener("input", () => { state.entryText = input.value; }));
+      document.querySelectorAll("[data-clear-entry-text]").forEach(btn => btn.addEventListener("click", () => {
+        state.entryText = "";
+        render();
+      }));
       document.querySelectorAll("[data-product-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.productPanelOpen = !state.productPanelOpen;
         render();
@@ -5484,6 +5716,10 @@
       }[char]));
     }
 
+    function escapeRegExp(value) {
+      return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
     function startCancelRecord(id) {
       const record = records.find(item => item.id === id);
       if (!record) return;
@@ -5719,7 +5955,16 @@
           toast("请先选择本地文档");
           return;
         }
-        toast(`已识别 ${state.entryDocs.length} 个文档，并生成四类需求池建议`);
+        applyEntryRecognition(recognizeEntryDocs(), "文档");
+        return;
+      }
+      if (name === "recognizeText") {
+        if (!String(state.entryText || "").trim()) {
+          toast("请先粘贴专场文字信息");
+          return;
+        }
+        applyEntryRecognition(extractEntryFieldsFromText(state.entryText), "文本");
+        return;
       }
       if (name === "createProjectFromEntry") {
         const requiredErrors = entryRequiredErrors();
