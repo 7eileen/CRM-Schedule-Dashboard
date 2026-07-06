@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>达播专场产品状态机</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #fff;
+      --text: #0f1f33;
+      --muted: #6f8096;
+      --line: #dce5ef;
+      --orange: #ff7a00;
+      --blue: #1677ff;
+      --soft-orange: #fff4e8;
+      --soft-blue: #eef6ff;
+      --shadow: 0 14px 34px rgba(15, 31, 51, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1160px, calc(100vw - 44px));
+      margin: 0 auto;
+      padding: 36px 0 68px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 32px 34px;
+      background: linear-gradient(135deg, #fff7ef 0%, #fff 52%, #eef6ff 100%);
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 20px;
+      line-height: 1.3;
+    }
+
+    p {
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .tag,
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .tag {
+      height: 28px;
+      padding: 0 12px;
+      background: var(--soft-orange);
+      color: #bf5700;
+    }
+
+    .pill {
+      height: 26px;
+      padding: 0 10px;
+      background: var(--soft-blue);
+      color: var(--blue);
+      white-space: nowrap;
+    }
+
+    .panel {
+      margin-top: 24px;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-body {
+      padding: 24px;
+    }
+
+    .machine {
+      display: grid;
+      grid-template-columns: minmax(310px, 0.95fr) minmax(420px, 1.05fr);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .code-side {
+      min-width: 0;
+      background: #fbfcfe;
+      border-right: 1px solid var(--line);
+    }
+
+    .chart-side {
+      min-height: 380px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    }
+
+    pre {
+      margin: 0;
+      padding: 22px 24px;
+      overflow: auto;
+      font: 13px/1.62 Consolas, "SFMono-Regular", Menlo, monospace;
+      color: #172b43;
+      white-space: pre;
+    }
+
+    .mermaid {
+      width: 100%;
+      text-align: center;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fbfcfe;
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .summary-card span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 860px) {
+      main {
+        width: min(100vw - 28px, 1160px);
+        padding-top: 24px;
+      }
+
+      .hero,
+      .panel-head,
+      .panel-body {
+        padding: 20px;
+      }
+
+      .panel-head {
+        display: block;
+      }
+
+      .pill {
+        margin-top: 10px;
+      }
+
+      .machine,
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .code-side {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>达播专场产品状态机</h1>
+      <p>本页按当前达播专场排期系统原型梳理：专场主流程、模块派工、子任务、商务提醒、月度统计五套状态机。左侧为 Mermaid 源码，右侧为渲染流程图。</p>
+      <div class="tags">
+        <span class="tag">上传文件仅保存</span>
+        <span class="tag">点击提交后完成</span>
+        <span class="tag">延期和取消原因留存</span>
+        <span class="tag">月度统计由状态派生</span>
+      </div>
+      <p>完整文字版文档：<a href="https://github.com/7eileen/CRM-Schedule-Dashboard/blob/main/docs/dabo-special-state-machine.md">GitHub Markdown 文档</a></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>1. 专场主状态机</h2>
+          <p>覆盖从创建、识别、排期、派工、复盘到完成，以及延期和取消。</p>
+        </div>
+        <span class="pill">主流程</span>
+      </div>
+      <div class="panel-body">
+        <div class="machine">
+          <div class="code-side"><pre><code>stateDiagram-v2
+  state pendingInput as "待录入"
+  state pendingRecognition as "待识别"
+  state scheduled as "已排期"
+  state dispatching as "派工中"
+  state waitingReview as "待复盘"
+  state completed as "已完成"
+  state delayed as "已延期"
+  state canceled as "已取消"
+
+  [*] --&gt; pendingInput : 打开新建专场
+  pendingInput --&gt; pendingRecognition : 商务填写并保存
+  pendingRecognition --&gt; scheduled : 识别或手动确认
+  scheduled --&gt; dispatching : 发布派工
+  dispatching --&gt; waitingReview : 直播结束
+  waitingReview --&gt; completed : 回填实际销售额和复盘
+  scheduled --&gt; delayed : 专场延期
+  dispatching --&gt; delayed : 任务延期影响排期
+  delayed --&gt; scheduled : 确认新排期
+  scheduled --&gt; canceled : 创建后取消并填写原因
+  dispatching --&gt; canceled : 已派发后取消并填写原因
+  waitingReview --&gt; canceled : 复盘前确认取消
+  completed --&gt; [*]
+  canceled --&gt; [*]</code></pre></div>
+          <div class="chart-side"><div class="mermaid">
+stateDiagram-v2
+  state pendingInput as "待录入"
+  state pendingRecognition as "待识别"
+  state scheduled as "已排期"
+  state dispatching as "派工中"
+  state waitingReview as "待复盘"
+  state completed as "已完成"
+  state delayed as "已延期"
+  state canceled as "已取消"
+
+  [*] --> pendingInput : 打开新建专场
+  pendingInput --> pendingRecognition : 商务填写并保存
+  pendingRecognition --> scheduled : 识别或手动确认
+  scheduled --> dispatching : 发布派工
+  dispatching --> waitingReview : 直播结束
+  waitingReview --> completed : 回填实际销售额和复盘
+  scheduled --> delayed : 专场延期
+  dispatching --> delayed : 任务延期影响排期
+  delayed --> scheduled : 确认新排期
+  scheduled --> canceled : 创建后取消并填写原因
+  dispatching --> canceled : 已派发后取消并填写原因
+  waitingReview --> canceled : 复盘前确认取消
+  completed --> [*]
+  canceled --> [*]
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>2. 模块派工状态机</h2>
+          <p>内容、剪辑、投放、运营四类需求池，按子任务完成情况同步模块状态。</p>
+        </div>
+        <span class="pill">需求池</span>
+      </div>
+      <div class="panel-body">
+        <div class="machine">
+          <div class="code-side"><pre><code>stateDiagram-v2
+  state pendingDispatch as "待派发"
+  state dispatched as "已派发"
+  state delayed as "延期中"
+  state completed as "已完成"
+  state canceled as "已取消"
+
+  [*] --&gt; pendingDispatch : 需求识别完成
+  pendingDispatch --&gt; dispatched : 负责人发布派工
+  dispatched --&gt; delayed : 任一子任务延期
+  delayed --&gt; dispatched : 调整计划后继续执行
+  dispatched --&gt; completed : 全部子任务完成
+  delayed --&gt; completed : 延期任务完成
+  dispatched --&gt; canceled : 模块取消并填写原因
+  delayed --&gt; canceled : 延期后取消
+  completed --&gt; [*]
+  canceled --&gt; [*]</code></pre></div>
+          <div class="chart-side"><div class="mermaid">
+stateDiagram-v2
+  state pendingDispatch as "待派发"
+  state dispatched as "已派发"
+  state delayed as "延期中"
+  state completed as "已完成"
+  state canceled as "已取消"
+
+  [*] --> pendingDispatch : 需求识别完成
+  pendingDispatch --> dispatched : 负责人发布派工
+  dispatched --> delayed : 任一子任务延期
+  delayed --> dispatched : 调整计划后继续执行
+  dispatched --> completed : 全部子任务完成
+  delayed --> completed : 延期任务完成
+  dispatched --> canceled : 模块取消并填写原因
+  delayed --> canceled : 延期后取消
+  completed --> [*]
+  canceled --> [*]
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>3. 子任务状态机</h2>
+          <p>任务执行最小节点。上传只保存附件，点击提交后才完成任务。</p>
+        </div>
+        <span class="pill">执行节点</span>
+      </div>
+      <div class="panel-body">
+        <div class="machine">
+          <div class="code-side"><pre><code>stateDiagram-v2
+  state pending as "待处理"
+  state running as "进行中"
+  state delayed as "延期中"
+  state completed as "已完成"
+  state canceled as "已取消"
+
+  [*] --&gt; pending : 任务创建
+  pending --&gt; running : 开始处理或上传文件
+  running --&gt; running : 上传文件仅保存附件
+  running --&gt; delayed : 申请延期并填写原因
+  delayed --&gt; running : 调整完成时间继续处理
+  running --&gt; completed : 点击提交完成
+  pending --&gt; canceled : 取消并填写原因
+  running --&gt; canceled : 取消并填写原因
+  delayed --&gt; canceled : 取消并填写原因
+  completed --&gt; [*]
+  canceled --&gt; [*]</code></pre></div>
+          <div class="chart-side"><div class="mermaid">
+stateDiagram-v2
+  state pending as "待处理"
+  state running as "进行中"
+  state delayed as "延期中"
+  state completed as "已完成"
+  state canceled as "已取消"
+
+  [*] --> pending : 任务创建
+  pending --> running : 开始处理或上传文件
+  running --> running : 上传文件仅保存附件
+  running --> delayed : 申请延期并填写原因
+  delayed --> running : 调整完成时间继续处理
+  running --> completed : 点击提交完成
+  pending --> canceled : 取消并填写原因
+  running --> canceled : 取消并填写原因
+  delayed --> canceled : 取消并填写原因
+  completed --> [*]
+  canceled --> [*]
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>4. 商务提醒状态机</h2>
+          <p>红点提醒由子任务变化派生，提醒商务查看新增、上传和完成。</p>
+        </div>
+        <span class="pill">红点提醒</span>
+      </div>
+      <div class="panel-body">
+        <div class="machine">
+          <div class="code-side"><pre><code>stateDiagram-v2
+  state noNotice as "无提醒"
+  state newNotice as "新增提醒"
+  state uploadedNotice as "附件已上传提醒"
+  state doneNotice as "完成提醒"
+  state cleared as "已读/处理"
+
+  [*] --&gt; noNotice
+  noNotice --&gt; newNotice : 新增子任务
+  noNotice --&gt; uploadedNotice : 上传附件
+  newNotice --&gt; uploadedNotice : 上传附件
+  uploadedNotice --&gt; doneNotice : 点击提交完成
+  newNotice --&gt; doneNotice : 直接提交完成
+  doneNotice --&gt; cleared : 商务查看或处理
+  uploadedNotice --&gt; cleared : 商务查看
+  cleared --&gt; noNotice</code></pre></div>
+          <div class="chart-side"><div class="mermaid">
+stateDiagram-v2
+  state noNotice as "无提醒"
+  state newNotice as "新增提醒"
+  state uploadedNotice as "附件已上传提醒"
+  state doneNotice as "完成提醒"
+  state cleared as "已读/处理"
+
+  [*] --> noNotice
+  noNotice --> newNotice : 新增子任务
+  noNotice --> uploadedNotice : 上传附件
+  newNotice --> uploadedNotice : 上传附件
+  uploadedNotice --> doneNotice : 点击提交完成
+  newNotice --> doneNotice : 直接提交完成
+  doneNotice --> cleared : 商务查看或处理
+  uploadedNotice --> cleared : 商务查看
+  cleared --> noNotice
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>5. 月度统计派生流程图</h2>
+          <p>月度统计不单独维护主状态，而是按取消、延期、完成、未完成的优先级派生。</p>
+        </div>
+        <span class="pill">数据中心</span>
+      </div>
+      <div class="panel-body">
+        <div class="machine">
+          <div class="code-side"><pre><code>flowchart TD
+  start["月度统计读取专场记录"] --&gt; canceledCheck{"专场是否已取消"}
+  canceledCheck --&gt;|是| canceled["已取消"]
+  canceledCheck --&gt;|否| delayedCheck{"专场或子任务是否延期"}
+  delayedCheck --&gt;|是| delayed["已延期"]
+  delayedCheck --&gt;|否| doneCheck{"是否已回填实际销售额或进入待复盘"}
+  doneCheck --&gt;|是| done["已完成"]
+  doneCheck --&gt;|否| unfinished["未完成"]</code></pre></div>
+          <div class="chart-side"><div class="mermaid">
+flowchart TD
+  start["月度统计读取专场记录"] --> canceledCheck{"专场是否已取消"}
+  canceledCheck -->|是| canceled["已取消"]
+  canceledCheck -->|否| delayedCheck{"专场或子任务是否延期"}
+  delayedCheck -->|是| delayed["已延期"]
+  delayedCheck -->|否| doneCheck{"是否已回填实际销售额或进入待复盘"}
+  doneCheck -->|是| done["已完成"]
+  doneCheck -->|否| unfinished["未完成"]
+          </div></div>
+        </div>
+        <div class="summary">
+          <div class="summary-card"><strong>已取消优先</strong><span>取消后不再计入完成率分母，取消原因必须留存。</span></div>
+          <div class="summary-card"><strong>延期第二优先</strong><span>专场延期或存在延期子任务时，统计为已延期。</span></div>
+          <div class="summary-card"><strong>完成第三优先</strong><span>回填实际销售额、进入待复盘或已有达标率时，统计为已完成。</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#fff7ed",
+        primaryTextColor: "#0f1f33",
+        primaryBorderColor: "#ff7a00",
+        lineColor: "#8aa0b8",
+        secondaryColor: "#eef6ff",
+        tertiaryColor: "#ffffff",
+        fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Microsoft YaHei, sans-serif"
+      }
+    });
+  </script>
+</body>
+</html>
