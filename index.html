@@ -4696,10 +4696,10 @@
     }
 
     function taskUrgencyCompare(a, b) {
-      const gradeDelta = taskGradeCompare(a, b);
-      if (gradeDelta) return gradeDelta;
       const dateDelta = taskDemandCompare(a, b);
       if (dateDelta) return dateDelta;
+      const gradeDelta = taskGradeCompare(a, b);
+      if (gradeDelta) return gradeDelta;
       return a.record.liveTime.localeCompare(b.record.liveTime);
     }
 
