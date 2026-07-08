@@ -2463,10 +2463,16 @@
     };
 
     const supportNeeds = {
-      edit: { enabled: true, title: "剪辑支持", content: "需要收集产品素材，剪辑千川视频 3 条，直播前完成审核版本。" },
-      content: { enabled: true, title: "内容支持", content: "需要确认达人内容方向禁忌、热点背景、出镜配合与脚本交付要求。" },
-      ads: { enabled: true, title: "投放支持", content: "需要核验千川合作码，建立达人画像、人群包和投放计划。" },
-      ops: { enabled: true, title: "运营支持", content: "需要确认直播设备、镜像、化妆、样品试用和福利品秒杀库存。" }
+      edit: { title: "剪辑支持", content: "需要收集产品素材，剪辑千川视频 3 条，直播前完成审核版本。" },
+      content: { title: "内容支持", content: "需要确认达人内容方向禁忌、热点背景、出镜配合与脚本交付要求。" },
+      ads: { title: "投放支持", content: "需要核验千川合作码，建立达人画像、人群包和投放计划。" },
+      ops: { title: "运营支持", content: "需要确认直播设备、镜像、化妆、样品试用和福利品秒杀库存。" }
+    };
+    const entrySupportEnabled = {
+      edit: true,
+      content: true,
+      ads: true,
+      ops: true
     };
 
     const productOptions = [
@@ -3468,7 +3474,7 @@
     }
 
     function detailCard(group, groupIndex) {
-      const enabled = !group.supportKey || supportNeeds[group.supportKey].enabled;
+      const enabled = !group.supportKey || entrySupportEnabled[group.supportKey] !== false;
       return `<div class="detail-card ${enabled ? "" : "is-collapsed"}">
         <div class="detail-card-head">
           <h3>${group.title}</h3>
@@ -3480,7 +3486,7 @@
 
     function supportSwitch(key, label) {
       return `<label class="support-switch">
-        <input type="checkbox" data-detail-support-toggle="${key}" ${supportNeeds[key].enabled ? "checked" : ""}>
+        <input type="checkbox" data-detail-support-toggle="${key}" ${entrySupportEnabled[key] !== false ? "checked" : ""}>
         <span class="switch-track"></span>
         <span>${label}</span>
       </label>`;
@@ -4068,7 +4074,6 @@
 
     function pageDispatch() {
       const module = modules[state.module];
-      const enabled = supportNeeds[state.module] ? supportNeeds[state.module].enabled : true;
       const pending = records.filter(record => assignmentFor(record.id, state.module).status === "待派发").length;
       return `<section class="module-tabs">${moduleOrder.map(moduleTab).join("")}</section>
       <section class="panel">
@@ -4077,7 +4082,7 @@
           ${badge(`${pending} 个待派发`, pending ? "orange" : "green")}
         </div>
         <div class="panel-body">
-          ${enabled ? `<div class="dispatch-list">${records.map(record => dispatchCard(record, state.module)).join("")}</div>` : emptyDispatch(module)}
+          <div class="dispatch-list">${records.map(record => dispatchCard(record, state.module)).join("")}</div>
         </div>
       </section>`;
     }
@@ -4433,10 +4438,6 @@
         ops: `设备：双机位、补光灯、收音麦；镜像：是；化妆：2 人；福利品：9.9 元洁面小样 200 单；需确认样品与开播检查。`
       }[moduleKey];
       return `<span>${text}</span>`;
-    }
-
-    function emptyDispatch(module) {
-      return `<div class="upload"><div><strong>${supportNeeds[state.module].title}未开启</strong><button class="btn ghost" data-view="entry">返回录入页调整</button></div></div>`;
     }
 
     function allDispatchTaskItems() {
@@ -5513,7 +5514,7 @@
       document.querySelectorAll("[data-dismiss-cancel-record]").forEach(btn => btn.addEventListener("click", () => dismissCancelRecord(btn.dataset.dismissCancelRecord)));
       document.querySelectorAll("[data-save-cancel-record]").forEach(btn => btn.addEventListener("click", () => saveCancelRecord(btn.dataset.saveCancelRecord)));
       document.querySelectorAll("[data-detail-support-toggle]").forEach(input => input.addEventListener("change", () => {
-        supportNeeds[input.dataset.detailSupportToggle].enabled = input.checked;
+        entrySupportEnabled[input.dataset.detailSupportToggle] = input.checked;
         render();
       }));
       document.querySelectorAll("[data-special-detail]").forEach(input => {
@@ -6281,7 +6282,7 @@
     function entryRequiredErrors() {
       const errors = [];
       specialDetailGroups.forEach((group, groupIndex) => {
-        if (group.supportKey && !supportNeeds[group.supportKey].enabled) return;
+        if (group.supportKey && entrySupportEnabled[group.supportKey] === false) return;
         group.fields.forEach(field => {
           if (!field.required || !shouldShowDetailField(groupIndex, field)) return;
           const value = field.type === "computed-shot-count" ? (field.value || shootCountAutoText()) : field.value;
@@ -6291,7 +6292,7 @@
       const needShoot = specialGroupValue("剪辑支持", "是否需要拍剪");
       const beautyHabit = specialGroupValue("剪辑支持", "是否有达人美颜参数习惯？");
       const beautyParams = specialGroupValue("剪辑支持", "美颜参数说明");
-      if (supportNeeds.edit.enabled && needShoot === "是" && beautyHabit === "是" && (!String(beautyParams || "").trim() || beautyParams === "无")) {
+      if (entrySupportEnabled.edit !== false && needShoot === "是" && beautyHabit === "是" && (!String(beautyParams || "").trim() || beautyParams === "无")) {
         errors.push("美颜参数说明");
       }
       return errors;
