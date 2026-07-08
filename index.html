@@ -1222,6 +1222,35 @@
       overflow-wrap: anywhere;
     }
     .task-name { font-size: 16px; font-weight: 400; color: #00152e; }
+    .my-task-subtasks {
+      display: grid;
+      gap: 8px;
+    }
+    .my-task-subtask {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid #e7edf5;
+      border-radius: 10px;
+      background: #fbfdff;
+    }
+    .my-task-subtask strong {
+      display: block;
+      color: #00152e;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+    .my-task-subtask span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
     .task-note {
       padding: 12px 14px;
       border: 1px solid #e4eaf2;
@@ -4457,6 +4486,7 @@
     function pageMyTasks() {
       const scopeItems = scopedTaskItems();
       const myItems = filteredMyTaskItems(scopeItems);
+      const myGroups = groupedMyTaskItems(myItems);
       const done = scopeItems.filter(item => item.task.status === "已完成").length;
       const delayed = scopeItems.filter(item => item.task.status === "延期中").length;
       const canceled = scopeItems.filter(item => item.task.status === "已取消").length;
@@ -4487,7 +4517,7 @@
       <section class="panel">
         <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2></div>${taskModulePoolTabs(scopeItems)}</div>
         <div class="panel-body">
-          ${myItems.length ? `<div class="my-task-list">${myItems.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
+          ${myGroups.length ? `<div class="my-task-list">${myGroups.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
         </div>
       </section>`;
     }
@@ -4556,6 +4586,107 @@
         const searchText = item.record.title.toLowerCase();
         return moduleMatched && statusMatched && priorityMatched && (!keyword || searchText.includes(keyword));
       }).sort(taskUrgencyCompare);
+    }
+
+    function groupedMyTaskItems(items) {
+      const groups = new Map();
+      items.forEach(item => {
+        const owner = item.task.owner || "待分配";
+        const groupId = `${item.record.id}|${item.moduleKey}|${owner}`;
+        if (!groups.has(groupId)) {
+          groups.set(groupId, {
+            ...item,
+            groupKey: myTaskGroupKey(item.record.id, item.moduleKey, owner),
+            groupItems: []
+          });
+        }
+        groups.get(groupId).groupItems.push(item);
+      });
+      return Array.from(groups.values()).map(group => {
+        group.groupItems.sort((a, b) => taskDemandCompare(a, b) || a.index - b.index);
+        const primary = primaryGroupTaskItem(group.groupItems);
+        return {
+          ...group,
+          record: primary.record,
+          moduleKey: primary.moduleKey,
+          task: primary.task,
+          index: primary.index,
+          key: group.groupItems.length > 1 ? group.groupKey : primary.key
+        };
+      });
+    }
+
+    function myTaskGroupKey(recordId, moduleKey, owner) {
+      return `group|${recordId}|${moduleKey}|${encodeURIComponent(owner || "待分配")}`;
+    }
+
+    function primaryGroupTaskItem(items) {
+      return items.find(item => item.task.delayEditing)
+        || items.find(item => item.task.status === "延期中")
+        || items.find(item => item.task.status !== "已完成" && item.task.status !== "已取消")
+        || items.find(item => item.task.status === "已完成")
+        || items[0];
+    }
+
+    function myTaskGroupStatus(items) {
+      const statuses = items.map(item => item.task.status || "待处理");
+      if (statuses.every(status => status === "已完成")) return "已完成";
+      if (statuses.every(status => status === "已取消")) return "已取消";
+      if (statuses.some(status => status === "延期中")) return "延期中";
+      if (statuses.some(status => status === "进行中" || status === "待审核")) return "进行中";
+      return "待处理";
+    }
+
+    function myTaskSubtaskList(items) {
+      return `<div class="my-task-subtasks">${items.map((item, index) => {
+        const task = item.task;
+        const due = taskDemandDate(item);
+        const submitted = task.submittedAt ? ` · 提交于 ${formatDate(task.submittedAt)}` : "";
+        const delayed = task.delayReason ? ` · 延期原因：${escapeHtml(task.delayReason)}` : "";
+        const canceled = task.cancelReason ? ` · 取消原因：${escapeHtml(task.cancelReason)}` : "";
+        return `<div class="my-task-subtask">
+          <div>
+            <strong>${index + 1}. ${escapeHtml(task.title || "未命名任务")}</strong>
+            <span>需求时间：${formatDate(due)}${submitted}${delayed}${canceled}</span>
+          </div>
+          ${badge(task.status || "待处理", taskStatusClass(task.status || "待处理"))}
+        </div>`;
+      }).join("")}</div>`;
+    }
+
+    function taskActionItems(key) {
+      if (String(key || "").startsWith("group|")) {
+        const [, recordId, moduleKey, ownerValue = ""] = String(key).split("|");
+        const owner = decodeURIComponent(ownerValue) || "待分配";
+        return allDispatchTaskItems().filter(item =>
+          item.record.id === recordId
+          && item.moduleKey === moduleKey
+          && (item.task.owner || "待分配") === owner
+        );
+      }
+      const [recordId, moduleKey, indexValue] = String(key || "").split(":");
+      const record = records.find(item => item.id === recordId);
+      const task = tasksFor(recordId, moduleKey)[Number(indexValue)];
+      return record && task ? [{ record, moduleKey, task, index: Number(indexValue), key }] : [];
+    }
+
+    function tasksByActionKey(key) {
+      return taskActionItems(key).map(item => item.task);
+    }
+
+    function moduleKeyFromTaskAction(key) {
+      if (String(key || "").startsWith("group|")) return String(key).split("|")[2];
+      return String(key || "").split(":")[1];
+    }
+
+    function recordIdFromTaskAction(key) {
+      if (String(key || "").startsWith("group|")) return String(key).split("|")[1];
+      return String(key || "").split(":")[0];
+    }
+
+    function taskFilesForActionKey(key, fallbackTask) {
+      const files = [...new Set(tasksByActionKey(key).flatMap(task => task.files || []))];
+      return files.length ? files : (fallbackTask.files || []);
     }
 
     function taskCompareByMode(a, b) {
@@ -4627,32 +4758,38 @@
     }
 
     function myTaskCard(item) {
-      const { record, moduleKey, task, key } = item;
+      const groupItems = item.groupItems || [item];
+      const primary = primaryGroupTaskItem(groupItems);
+      const { record, moduleKey } = primary;
+      const task = primary.task;
+      const key = groupItems.length > 1 ? item.groupKey : primary.key;
       const module = modules[moduleKey];
       const isContentTask = moduleKey === "content";
-      const isCanceled = task.status === "已取消";
-      const statusCls = taskStatusClass(task.status);
-      const actionContent = task.status === "已完成"
+      const groupStatus = myTaskGroupStatus(groupItems);
+      const isCanceled = groupStatus === "已取消";
+      const statusCls = taskStatusClass(groupStatus);
+      const actionContent = groupStatus === "已完成"
         ? `<span class="muted">任务已完成</span>`
         : isCanceled
           ? `<span class="muted">任务已取消，原因已留存</span>`
-          : `<button class="btn ghost" data-delay-task="${key}">${task.status === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn danger" data-cancel-task="${key}">取消任务</button><button class="btn primary" data-complete-task="${key}">${isContentTask ? "提交文档" : "提交完成"}</button>`;
+          : `<button class="btn ghost" data-delay-task="${key}">${groupStatus === "延期中" ? "继续编辑延期" : "延期"}</button><button class="btn danger" data-cancel-task="${key}">取消任务</button><button class="btn primary" data-complete-task="${key}">${isContentTask ? "提交文档" : "提交完成"}</button>`;
       return `<article class="my-task-card">
         <div class="my-task-head">
           <div>
             <h3>${record.title}</h3>
-            <div class="meta">${urgencyBadge(talentGrade(record))}<span>${record.talent}</span><span>${record.liveTime}</span><span>${record.product}</span>${badge(supportNeeds[moduleKey].title, module.cls)}</div>
+            <div class="meta">${urgencyBadge(talentGrade(record))}<span>${record.talent}</span><span>${record.liveTime}</span><span>${record.product}</span>${badge(supportNeeds[moduleKey].title, module.cls)}${groupItems.length > 1 ? badge(`${groupItems.length} 条子任务`, "blue") : ""}</div>
           </div>
-          ${badge(task.status, statusCls)}
+          ${badge(groupStatus, statusCls)}
         </div>
         <div class="my-task-body">
           ${myTaskSpecialInfo(record)}
           <div class="row">
             <div>
-              <div class="task-name">${task.title}</div>
-              <div class="meta"><span>执行人：${task.owner}</span><span>组长：${module.owner}</span><span>需求时间：${formatDate(taskDemandDate(item))}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}</div>
+              <div class="task-name">${groupItems.length > 1 ? `${escapeHtml(task.owner || "待分配")}的${supportNeeds[moduleKey].title}任务` : escapeHtml(task.title)}</div>
+              <div class="meta"><span>执行人：${task.owner}</span><span>组长：${module.owner}</span><span>最早需求：${formatDate(taskDemandDate(primary))}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}</div>
             </div>
           </div>
+          ${groupItems.length > 1 ? myTaskSubtaskList(groupItems) : ""}
           <div class="task-note">${demandText(record, moduleKey)}</div>
           ${taskReviewNotice(task, module, moduleKey)}
           ${taskCancelForm(key, task)}
@@ -4661,7 +4798,7 @@
           ${!isCanceled && isContentTask ? contentDocForm(key, record, task, module) : ""}
           ${task.delayEditing ? delayForm(key, task) : ""}
           <div class="my-task-actions">
-            <button class="btn ghost" data-toggle-task-memo="${key}">${taskMemoButtonText(task)}</button>
+            <button class="btn ghost" data-toggle-task-memo="${key}">${taskMemoButtonTextForItems(groupItems)}</button>
             <div class="my-task-action-group">${actionContent}</div>
           </div>
         </div>
@@ -4685,10 +4822,19 @@
       return count ? `备忘录 ${count}` : "备忘录";
     }
 
+    function taskMemoButtonTextForItems(items) {
+      const count = items.reduce((sum, item) => sum + ((item.task.memoHistory || []).length), 0);
+      return count ? `备忘录 ${count}` : "备忘录";
+    }
+
     function taskMemoDialogBody(key, task) {
-      const history = task.memoHistory || [];
+      const actionItems = taskActionItems(key);
+      const history = actionItems.flatMap(item => (item.task.memoHistory || []).map(historyItem => ({
+        ...historyItem,
+        taskTitle: item.task.title
+      })));
       const historyHtml = history.length
-        ? `<div class="task-memo-history">${history.slice().reverse().map(item => `<div class="task-memo-item"><strong>${formatDate(item.time)} · ${escapeHtml(item.user || task.owner || "记录人")}</strong><span>${escapeHtml(item.text)}</span></div>`).join("")}</div>`
+        ? `<div class="task-memo-history">${history.slice().reverse().map(item => `<div class="task-memo-item"><strong>${formatDate(item.time)} · ${escapeHtml(item.user || task.owner || "记录人")}${actionItems.length > 1 ? ` · ${escapeHtml(item.taskTitle || "")}` : ""}</strong><span>${escapeHtml(item.text)}</span></div>`).join("")}</div>`
         : `<div class="task-memo-empty">暂无备忘记录</div>`;
       return `<div class="task-memo-panel">
         <div class="task-memo-head">
@@ -4703,7 +4849,7 @@
     function openTaskMemoDialog(key) {
       const task = taskByKey(key);
       if (!task) return;
-      task.memoDraft = task.memoDraft || "";
+      tasksByActionKey(key).forEach(item => { item.memoDraft = item.memoDraft || task.memoDraft || ""; });
       openDrawer(
         "节点备忘录",
         taskMemoDialogBody(key, task),
@@ -4774,12 +4920,12 @@
     }
 
     function taskUpload(key, task, moduleKey) {
-      const files = task.files || [];
+      const files = taskFilesForActionKey(key, task);
       const isContentTask = moduleKey === "content";
       return `<div class="task-upload">
         <div class="task-upload-main">
           <span class="task-upload-title">${isContentTask ? "内容文档" : "完成文件"}</span>
-          <span class="task-files">${files.length ? files.map((name, index) => `<span class="file-chip"><span class="file-chip-name">${name}</span><button class="file-remove" data-remove-task-file="${key}:${index}" aria-label="删除${name}">x</button></span>`).join("") : `<span class="muted">未上传文件</span>`}</span>
+          <span class="task-files">${files.length ? files.map((name, index) => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span><button class="file-remove" data-remove-task-file="${key}:${index}" aria-label="删除${escapeHtml(name)}">x</button></span>`).join("") : `<span class="muted">未上传文件</span>`}</span>
         </div>
         <label class="task-upload-btn">
           ${isContentTask ? "上传内容文档" : "上传完成文件"}
@@ -5590,8 +5736,7 @@
       document.querySelectorAll("[data-task-upload]").forEach(input => input.addEventListener("change", () => uploadTaskFiles(input.dataset.taskUpload, input.files)));
       document.querySelectorAll("[data-remove-task-file]").forEach(btn => btn.addEventListener("click", () => removeTaskFile(btn.dataset.removeTaskFile)));
       document.querySelectorAll("[data-task-doc-note]").forEach(input => input.addEventListener("input", () => {
-        const task = taskByKey(input.dataset.taskDocNote);
-        if (task) task.docNote = input.value;
+        tasksByActionKey(input.dataset.taskDocNote).forEach(task => { task.docNote = input.value; });
       }));
       document.querySelectorAll("[data-toggle-task-memo]").forEach(btn => btn.addEventListener("click", () => toggleTaskMemo(btn.dataset.toggleTaskMemo)));
       document.querySelectorAll("[data-task-memo-draft]").forEach(input => input.addEventListener("input", () => updateTaskMemoDraft(input.dataset.taskMemoDraft, input.value)));
@@ -5601,12 +5746,10 @@
       document.querySelectorAll("[data-save-ads-forecast]").forEach(btn => btn.addEventListener("click", () => saveAdsForecast(btn.dataset.saveAdsForecast)));
       document.querySelectorAll("[data-delay-task]").forEach(btn => btn.addEventListener("click", () => startDelayTask(btn.dataset.delayTask)));
       document.querySelectorAll("[data-delay-due]").forEach(input => input.addEventListener("change", () => {
-        const task = taskByKey(input.dataset.delayDue);
-        if (task) task.delayDue = input.value;
+        tasksByActionKey(input.dataset.delayDue).forEach(task => { task.delayDue = input.value; });
       }));
       document.querySelectorAll("[data-delay-reason]").forEach(input => input.addEventListener("input", () => {
-        const task = taskByKey(input.dataset.delayReason);
-        if (task) task.delayReason = input.value;
+        tasksByActionKey(input.dataset.delayReason).forEach(task => { task.delayReason = input.value; });
       }));
       document.querySelectorAll("[data-cancel-delay]").forEach(btn => btn.addEventListener("click", () => cancelDelayTask(btn.dataset.cancelDelay)));
       document.querySelectorAll("[data-save-delay]").forEach(btn => btn.addEventListener("click", () => saveDelayTask(btn.dataset.saveDelay)));
@@ -5675,8 +5818,7 @@
     }
 
     function taskByKey(key) {
-      const [recordId, moduleKey, index] = key.split(":");
-      return tasksFor(recordId, moduleKey)[Number(index)];
+      return taskActionItems(key)[0]?.task;
     }
 
     function focusDispatchTask(key) {
@@ -5688,13 +5830,13 @@
     }
 
     function uploadTaskFiles(key, fileList) {
-      const task = taskByKey(key);
-      if (!task) return;
-      const [, moduleKey] = key.split(":");
+      const tasks = tasksByActionKey(key);
+      if (!tasks.length) return;
+      const moduleKey = moduleKeyFromTaskAction(key);
       const names = Array.from(fileList || []).map(file => file.name).filter(Boolean);
       if (!names.length) return;
-      task.files = [...(task.files || []), ...names];
-      if (task.status !== "已取消") {
+      tasks.filter(task => task.status !== "已取消").forEach(task => {
+        task.files = [...(task.files || []), ...names];
         if (task.status === "待处理") task.status = "进行中";
         task.businessNotice = "uploaded";
         task.noticeAt = actionDate;
@@ -5706,7 +5848,7 @@
         delete task.reviewedAt;
         delete task.rejectedAt;
         delete task.rejectReason;
-      }
+      });
       toast(moduleKey === "content" ? "内容文档已保存，请点击提交文档完成" : "完成文件已保存，请点击提交完成");
       render();
     }
@@ -5714,9 +5856,13 @@
     function removeTaskFile(fileKey) {
       const parts = fileKey.split(":");
       const fileIndex = Number(parts.pop());
-      const task = taskByKey(parts.join(":"));
-      if (!task || !task.files || Number.isNaN(fileIndex)) return;
-      task.files.splice(fileIndex, 1);
+      const key = parts.join(":");
+      const tasks = tasksByActionKey(key);
+      const fileName = taskFilesForActionKey(key, tasks[0] || {})[fileIndex];
+      if (!tasks.length || !fileName || Number.isNaN(fileIndex)) return;
+      tasks.forEach(task => {
+        task.files = (task.files || []).filter(name => name !== fileName);
+      });
       toast("已删除上传文件");
       render();
     }
@@ -5729,31 +5875,31 @@
     }
 
     function updateTaskMemoDraft(key, value) {
-      const task = taskByKey(key);
-      if (task) task.memoDraft = value;
+      tasksByActionKey(key).forEach(task => { task.memoDraft = value; });
     }
 
     function closeTaskMemo(key) {
-      const task = taskByKey(key);
-      if (!task) return;
-      task.memoOpen = false;
+      tasksByActionKey(key).forEach(task => { task.memoOpen = false; });
       closeDrawer();
     }
 
     function saveTaskMemo(key) {
-      const task = taskByKey(key);
+      const tasks = tasksByActionKey(key);
+      const task = tasks[0];
       if (!task) return;
       const text = (task.memoDraft || "").trim();
       if (!text) {
         toast("请先填写备忘内容");
         return;
       }
-      task.memoHistory = [...(task.memoHistory || []), {
-        time: actionDate,
-        user: state.taskScope === "mine" ? state.taskUser : task.owner,
-        text
-      }];
-      task.memoDraft = "";
+      tasks.forEach(item => {
+        item.memoHistory = [...(item.memoHistory || []), {
+          time: actionDate,
+          user: state.taskScope === "mine" ? state.taskUser : item.owner,
+          text
+        }];
+        item.memoDraft = "";
+      });
       toast("已保存节点备忘");
       const memoInput = $("#drawerBody").querySelector("[data-task-memo-draft]");
       if ($("#drawer").classList.contains("show") && memoInput && memoInput.dataset.taskMemoDraft === key) {
@@ -5764,13 +5910,14 @@
     }
 
     function updateAdsForecastDraft(key, value) {
-      const task = taskByKey(key);
-      if (task) task.adsForecastGmv = value;
+      tasksByActionKey(key).forEach(task => { task.adsForecastGmv = value; });
     }
 
     function saveAdsForecast(key) {
-      const [recordId, moduleKey] = key.split(":");
-      const task = taskByKey(key);
+      const recordId = recordIdFromTaskAction(key);
+      const moduleKey = moduleKeyFromTaskAction(key);
+      const tasks = tasksByActionKey(key);
+      const task = tasks[0];
       const record = records.find(item => item.id === recordId);
       if (!task || !record || moduleKey !== "ads") return;
       const value = normalizeGmvText(task.adsForecastGmv || record.adsForecastGmv || "");
@@ -5778,7 +5925,7 @@
         toast("请填写预估投放销售额");
         return;
       }
-      task.adsForecastGmv = value;
+      tasks.forEach(item => { item.adsForecastGmv = value; });
       record.adsForecastGmv = value;
       toast("已保存预估投放销售额");
       render();
@@ -5882,86 +6029,99 @@
     }
 
     function startCancelTask(key) {
-      const task = taskByKey(key);
-      if (!task) return;
-      task.cancelEditing = true;
-      task.cancelDraft = task.cancelReason || "";
+      const tasks = tasksByActionKey(key);
+      if (!tasks.length) return;
+      const draft = tasks.find(task => task.cancelReason)?.cancelReason || "";
+      tasks.filter(task => task.status !== "已取消").forEach(task => {
+        task.cancelEditing = true;
+        task.cancelDraft = task.cancelReason || draft;
+      });
       render();
     }
 
     function updateCancelTaskDraft(key, value) {
-      const task = taskByKey(key);
-      if (task) task.cancelDraft = value;
+      tasksByActionKey(key).forEach(task => { task.cancelDraft = value; });
     }
 
     function dismissCancelTask(key) {
-      const task = taskByKey(key);
-      if (!task) return;
-      delete task.cancelEditing;
-      delete task.cancelDraft;
+      tasksByActionKey(key).forEach(task => {
+        delete task.cancelEditing;
+        delete task.cancelDraft;
+      });
       render();
     }
 
     function saveCancelTask(key) {
-      const task = taskByKey(key);
+      const tasks = tasksByActionKey(key);
+      const task = tasks[0];
       if (!task) return;
       const reason = (task.cancelDraft || "").trim();
       if (!reason) {
         toast("请填写取消原因");
         return;
       }
-      task.status = "已取消";
-      task.cancelReason = reason;
-      task.canceledAt = actionDate;
-      delete task.businessNotice;
-      delete task.noticeAt;
-      delete task.cancelEditing;
-      delete task.cancelDraft;
-      delete task.delayEditing;
-      delete task.delayBackup;
-      task.reviewComment = "";
+      tasks.filter(item => item.status !== "已取消").forEach(item => {
+        item.status = "已取消";
+        item.cancelReason = reason;
+        item.canceledAt = actionDate;
+        delete item.businessNotice;
+        delete item.noticeAt;
+        delete item.cancelEditing;
+        delete item.cancelDraft;
+        delete item.delayEditing;
+        delete item.delayBackup;
+        item.reviewComment = "";
+      });
       syncAssignmentStatusFromTaskKey(key);
       toast("已取消任务并留存原因");
       render();
     }
 
     function completeMyTask(key) {
-      const task = taskByKey(key);
-      const [, moduleKey] = key.split(":");
-      if (!task) return;
-      if (task.status === "已取消") {
+      const tasks = tasksByActionKey(key);
+      const moduleKey = moduleKeyFromTaskAction(key);
+      const activeTasks = tasks.filter(task => task.status !== "已取消" && task.status !== "已完成");
+      if (!tasks.length) return;
+      if (!activeTasks.length && tasks.every(task => task.status === "已取消")) {
         toast("已取消任务不能提交完成");
         return;
       }
-      if (!task.files || !task.files.length) {
+      if (!activeTasks.length) {
+        toast("当前任务已完成");
+        return;
+      }
+      if (activeTasks.some(task => !task.files || !task.files.length)) {
         toast(moduleKey === "content" ? "请先上传内容文档" : "请先上传完成文件");
         return;
       }
       if (moduleKey === "content") {
-        if (!(task.docNote || "").trim()) {
+        if (activeTasks.some(task => !(task.docNote || "").trim())) {
           toast("请先填写编导备注信息");
           return;
         }
       }
-      task.status = "已完成";
-      task.submittedAt = actionDate;
-      task.completedAt = actionDate;
-      task.businessNotice = "done";
-      task.noticeAt = actionDate;
-      task.reviewResult = moduleKey === "content" ? "内容文档已提交" : "完成文件已提交";
-      delete task.reviewedAt;
-      delete task.rejectedAt;
-      delete task.rejectReason;
-      delete task.delayEditing;
-      task.reviewComment = "";
+      activeTasks.forEach(task => {
+        task.status = "已完成";
+        task.submittedAt = actionDate;
+        task.completedAt = actionDate;
+        task.businessNotice = "done";
+        task.noticeAt = actionDate;
+        task.reviewResult = moduleKey === "content" ? "内容文档已提交" : "完成文件已提交";
+        delete task.reviewedAt;
+        delete task.rejectedAt;
+        delete task.rejectReason;
+        delete task.delayEditing;
+        task.reviewComment = "";
+      });
       syncAssignmentStatusFromTaskKey(key);
       toast(moduleKey === "content" ? "内容文档已提交并完成" : "完成文件已提交，任务已完成");
       render();
     }
 
     function syncAssignmentStatusFromTaskKey(key) {
-      const [recordId, moduleKey] = key.split(":");
-      syncAssignmentStatus(recordId, moduleKey);
+      const recordId = recordIdFromTaskAction(key);
+      const moduleKey = moduleKeyFromTaskAction(key);
+      if (recordId && moduleKey) syncAssignmentStatus(recordId, moduleKey);
     }
 
     function syncAssignmentStatus(recordId, moduleKey) {
@@ -5988,58 +6148,67 @@
     }
 
     function startDelayTask(key) {
-      const task = taskByKey(key);
-      if (!task) return;
-      if (task.status === "已取消") {
+      const tasks = tasksByActionKey(key).filter(task => task.status !== "已完成");
+      if (!tasks.length) return;
+      if (tasks.every(task => task.status === "已取消")) {
         toast("已取消任务不能延期");
         return;
       }
-      if (!task.delayEditing) {
-        task.delayBackup = {
-          status: task.status,
-          due: task.due,
-          originalDue: task.originalDue,
-          delayDue: task.delayDue,
-          delayReason: task.delayReason
-        };
-      }
-      task.delayEditing = true;
-      task.status = "延期中";
-      task.originalDue = task.originalDue || task.due;
-      task.delayDue = task.delayDue || task.due;
-      task.delayReason = task.delayReason || "";
+      tasks.filter(task => task.status !== "已取消").forEach(task => {
+        if (!task.delayEditing) {
+          task.delayBackup = {
+            status: task.status,
+            due: task.due,
+            originalDue: task.originalDue,
+            delayDue: task.delayDue,
+            delayReason: task.delayReason
+          };
+        }
+        task.delayEditing = true;
+        task.status = "延期中";
+        task.originalDue = task.originalDue || task.due;
+        task.delayDue = task.delayDue || task.due;
+        task.delayReason = task.delayReason || "";
+      });
       syncAssignmentStatusFromTaskKey(key);
       render();
     }
 
     function cancelDelayTask(key) {
-      const task = taskByKey(key);
-      if (!task) return;
-      if (task.delayBackup) {
-        task.status = task.delayBackup.status;
-        task.due = task.delayBackup.due;
-        task.originalDue = task.delayBackup.originalDue;
-        task.delayDue = task.delayBackup.delayDue;
-        task.delayReason = task.delayBackup.delayReason;
-      }
-      delete task.delayEditing;
-      delete task.delayBackup;
+      const tasks = tasksByActionKey(key);
+      if (!tasks.length) return;
+      tasks.forEach(task => {
+        if (task.delayBackup) {
+          task.status = task.delayBackup.status;
+          task.due = task.delayBackup.due;
+          task.originalDue = task.delayBackup.originalDue;
+          task.delayDue = task.delayBackup.delayDue;
+          task.delayReason = task.delayBackup.delayReason;
+        }
+        delete task.delayEditing;
+        delete task.delayBackup;
+      });
       syncAssignmentStatusFromTaskKey(key);
       toast("已取消延期编辑");
       render();
     }
 
     function saveDelayTask(key) {
-      const task = taskByKey(key);
+      const tasks = tasksByActionKey(key).filter(task => task.delayEditing);
+      const task = tasks[0];
       if (!task) return;
       if (!task.delayDue || !task.delayReason.trim()) {
         toast("请填写新的完成时间和延期原因");
         return;
       }
-      task.due = task.delayDue;
-      task.status = "延期中";
-      delete task.delayEditing;
-      delete task.delayBackup;
+      tasks.forEach(item => {
+        item.delayDue = task.delayDue;
+        item.delayReason = task.delayReason;
+        item.due = task.delayDue;
+        item.status = "延期中";
+        delete item.delayEditing;
+        delete item.delayBackup;
+      });
       syncAssignmentStatusFromTaskKey(key);
       toast("延期信息已回填");
       render();
