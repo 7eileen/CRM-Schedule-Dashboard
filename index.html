@@ -1978,6 +1978,22 @@
       line-height: 1.5;
     }
     .entry-link-status.is-ready { color: #0f8a4b; }
+    .entry-link-open {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .entry-link-open a {
+      max-width: 100%;
+      color: var(--blue);
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .entry-upload-actions {
       display: flex;
       align-items: center;
@@ -3468,6 +3484,8 @@
 
     function pageEntry() {
       const feishuLink = String(state.entryFeishuLink || "").trim();
+      const validFeishuLink = isFeishuLink(feishuLink);
+      const feishuStatus = validFeishuLink ? "已保存飞书链接，可跳转查看文档。" : (feishuLink ? "请输入有效的飞书文档链接" : "未粘贴飞书链接");
       return `<section class="panel">
         <div class="panel-head">
           <div><h2 class="panel-title">专场文档录入</h2></div>
@@ -3475,21 +3493,34 @@
         <div class="panel-body stack">
           <div class="upload entry-upload">
             <div class="entry-upload-content">
-              <div class="entry-source-grid is-single">
+              <div class="entry-source-grid">
                 <div class="entry-source-card is-primary entry-link-card">
                   <div class="entry-source-head">
-                    <strong>飞书链接识别填写</strong>
+                    <strong>飞书链接上传</strong>
                     <span class="entry-source-kicker">飞书文档</span>
                   </div>
-                  <div class="entry-source-copy">粘贴飞书文档链接后，系统读取文档内容并回填到下方专场详情。</div>
+                  <div class="entry-source-copy">粘贴飞书文档链接后，系统保存文档地址，并展示可跳转入口。</div>
                   <label class="entry-link-field">
                     <span>飞书文档链接</span>
                     <input class="entry-link-input" type="url" inputmode="url" data-entry-feishu-link value="${escapeHtml(state.entryFeishuLink)}" placeholder="https://xxx.feishu.cn/docx/..." aria-label="飞书文档链接">
                   </label>
-                  <div class="entry-link-status ${feishuLink ? "is-ready" : ""}">${feishuLink ? "已粘贴飞书链接，可识别并回填专场详情。" : "未粘贴飞书链接"}</div>
+                  <div class="entry-link-status ${validFeishuLink ? "is-ready" : ""}">${feishuStatus}</div>
+                  <div class="entry-link-open">${validFeishuLink ? `<span>跳转入口</span><a href="${escapeHtml(feishuLink)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(feishuLink)}">${escapeHtml(feishuLink)}</a>` : `<span>保存后展示飞书文档跳转入口</span>`}</div>
                   <div class="entry-upload-actions">
-                    <button class="btn primary" data-action="recognizeFeishuLink">识别飞书链接并填写</button>
+                    <button class="btn primary" data-action="saveFeishuLink">保存飞书链接</button>
                     <button class="btn ghost" data-action="clearFeishuLink">清空链接</button>
+                  </div>
+                </div>
+                <div class="entry-source-card">
+                  <div class="entry-source-head">
+                    <strong>文本粘贴识别填写</strong>
+                    <span class="entry-source-kicker">文字识别</span>
+                  </div>
+                  <div class="entry-source-copy">从飞书、微信或表格复制整段专场信息，粘贴后点击识别即可自动填表。</div>
+                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万&#10;是否有试用：正装试用&#10;福袋需求：飞机盒礼盒（价值599元）">${escapeHtml(state.entryText)}</textarea>
+                  <div class="entry-upload-actions">
+                    <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
+                    <button class="btn ghost" data-clear-entry-text>清空文本</button>
                   </div>
                 </div>
               </div>
@@ -3516,12 +3547,6 @@
     function recognizeEntryDocs() {
       const fileText = (state.entryDocs || []).map(file => file.name).join("\n");
       const parsed = extractEntryFieldsFromText(fileText);
-      return hasRecognizedFields(parsed) ? parsed : sampleEntryRecognition();
-    }
-
-    function recognizeFeishuLink() {
-      const link = String(state.entryFeishuLink || "").trim();
-      const parsed = extractEntryFieldsFromText(link);
       return hasRecognizedFields(parsed) ? parsed : sampleEntryRecognition();
     }
 
@@ -6690,7 +6715,7 @@
         applyEntryRecognition(extractEntryFieldsFromText(state.entryText), "文本");
         return;
       }
-      if (name === "recognizeFeishuLink") {
+      if (name === "saveFeishuLink") {
         const link = String(state.entryFeishuLink || "").trim();
         if (!link) {
           toast("请先粘贴飞书文档链接");
@@ -6700,7 +6725,8 @@
           toast("请粘贴有效的飞书文档链接");
           return;
         }
-        applyEntryRecognition(recognizeFeishuLink(), "飞书链接");
+        toast("已保存飞书链接，可点击跳转查看");
+        render();
         return;
       }
       if (name === "clearFeishuLink") {
