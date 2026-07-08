@@ -3226,17 +3226,11 @@
 
     function pageList() {
       const month = state.listMonth || "2026-06";
-      const { rangeRecords, gradeAndSearchRecords } = listBaseRecords();
-      const gradeOptions = ["S+", "S", "A", "B", "C"];
-      const statGroups = listStatGroups({ rangeRecords, gradeAndSearchRecords });
+      const { rangeRecords } = listBaseRecords();
+      const statGroups = listStatGroups({ rangeRecords, gradeAndSearchRecords: rangeRecords });
       const running = statGroups.running.records.length;
-      const review = gradeAndSearchRecords.filter(item => item.status === "待复盘").length;
       const delayed = statGroups.delayed.records.length;
       const completedInRange = statGroups.completed.records.length;
-      const filteredRecords = gradeAndSearchRecords.filter(record => {
-        const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘" && (record.scheduleStatus || record.status) !== "已取消") || (state.listFilter === "review" && record.status === "待复盘");
-        return statusMatched;
-      });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
       <section class="stats list-stats">
         <button class="stat stat-orange" data-list-stat="all" aria-label="查看${listRangeTitle()}专场信息"><div><strong>${rangeRecords.length}</strong><span>${listRangeTitle()}专场</span></div></button>
@@ -3244,24 +3238,7 @@
         <button class="stat stat-blue" data-list-stat="completed" aria-label="查看已直播专场信息"><div><strong>${completedInRange}</strong><span>已直播</span></div></button>
         <button class="stat stat-red" data-list-stat="delayed" aria-label="查看延期申请专场信息"><div><strong>${delayed}</strong><span>延期申请</span></div></button>
       </section>
-      ${monthCalendar(month, rangeRecords)}
-      <section class="panel list-panel">
-        <div class="panel-body">
-          <div class="list-toolbar">
-            <div class="list-controls">
-              ${listRangePicker()}
-              <label class="list-search"><span>⌕</span><input value="${state.listSearch}" placeholder="搜索达人、UID、产品、等级" data-list-search></label>
-              <label class="toolbar-field"><span>等级</span><select class="select" data-list-grade><option value="all">全部等级</option>${gradeOptions.map(grade => `<option value="${grade}" ${state.listGrade === grade ? "selected" : ""}>${grade}</option>`).join("")}</select></label>
-            </div>
-            <div class="seg-group">
-              ${listFilterButton("all", "全部", gradeAndSearchRecords.length)}
-              ${listFilterButton("running", "进行中", running)}
-              ${listFilterButton("review", "待复盘", review)}
-            </div>
-          </div>
-          ${filteredRecords.length ? `<div class="project-grid">${filteredRecords.map(record => projectCard(record)).join("")}</div>` : `<div class="upload"><div><strong>暂无匹配专场</strong></div></div>`}
-        </div>
-      </section>`;
+      ${monthCalendar(month, rangeRecords)}`;
     }
 
     function listBaseRecords() {
