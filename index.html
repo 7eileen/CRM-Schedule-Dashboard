@@ -1034,45 +1034,6 @@
     }
     .my-task-tools.task-filter-only { justify-content: flex-end; }
     .my-task-tools.task-filter-only .task-filter-right { flex: 0 1 auto; }
-    .task-status-board {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-      gap: 10px;
-      margin: -4px 0 18px;
-    }
-    .task-status-card {
-      min-height: 66px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
-      text-align: left;
-      display: grid;
-      gap: 4px;
-      cursor: pointer;
-      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-    }
-    .task-status-card:hover {
-      border-color: #ffc36f;
-      box-shadow: 0 8px 24px rgba(15, 35, 65, .08);
-      transform: translateY(-1px);
-    }
-    .task-status-card.active {
-      border-color: var(--orange);
-      background: #fff8f1;
-      box-shadow: 0 8px 22px rgba(255, 111, 0, .12);
-    }
-    .task-status-card strong {
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 400;
-    }
-    .task-status-card span {
-      color: var(--muted);
-      font-size: 20px;
-      font-weight: 600;
-      line-height: 1;
-    }
     .task-filter-field {
       display: flex;
       align-items: center;
@@ -4634,7 +4595,6 @@
           <input class="input task-search" value="${state.taskSearch}" placeholder="搜索专场名称" data-task-search>
         </div>
       </div>
-      ${taskStatusBoard(activeModuleItems, activeModule, selectedStatus)}
       <section class="stats">
         <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeItems.length}</strong><span>总量任务</span></div></button>
         <div class="stat stat-blue"><div><strong>${pending}</strong><span>待办任务</span></div></div>
@@ -4646,23 +4606,6 @@
         <div class="panel-body">
           ${myGroups.length ? `<div class="my-task-list">${myGroups.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
         </div>
-      </section>`;
-    }
-
-    function taskStatusBoard(items, moduleKey, selectedStatus) {
-      const options = [
-        { status: "all", label: "全部节点", count: items.length },
-        ...moduleWorkflowStatusOptions(moduleKey, items).map(status => ({
-          status,
-          label: status,
-          count: items.filter(item => taskWorkflowStatus(item) === status).length
-        }))
-      ];
-      return `<section class="task-status-board" aria-label="任务状态看板">
-        ${options.map(item => `<button class="task-status-card ${selectedStatus === item.status ? "active" : ""}" data-task-status-choice="${item.status}">
-          <strong>${item.label}</strong>
-          <span>${item.count}</span>
-        </button>`).join("")}
       </section>`;
     }
 
@@ -5905,10 +5848,6 @@
       }));
       document.querySelectorAll("[data-task-status-filter]").forEach(input => input.addEventListener("change", () => {
         state.taskStatusFilter = input.value;
-        render();
-      }));
-      document.querySelectorAll("[data-task-status-choice]").forEach(btn => btn.addEventListener("click", () => {
-        state.taskStatusFilter = btn.dataset.taskStatusChoice;
         render();
       }));
       document.querySelectorAll("[data-task-module-filter]").forEach(btn => btn.addEventListener("click", () => {
