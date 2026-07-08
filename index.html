@@ -1036,6 +1036,16 @@
       box-shadow: 0 0 0 3px #fff1f2;
       flex: 0 0 auto;
     }
+    .inline-notice-dot {
+      width: 8px;
+      height: 8px;
+      display: inline-block;
+      margin-right: 7px;
+      border-radius: 999px;
+      background: #ff4d4f;
+      box-shadow: 0 0 0 3px #fff1f2;
+      vertical-align: 1px;
+    }
     .task-field { display: grid; gap: 7px; }
     .task-field span { color: var(--muted); font-size: 12px; font-weight: 400; }
     .task-remove {
@@ -2573,6 +2583,7 @@
       entryDocs: [],
       entryText: "",
       entryFeishuLink: "",
+      feishuPushLog: [],
       calendarOpen: true,
       specialProgressOpen: true,
       calendarExpandedDay: "",
@@ -4454,11 +4465,11 @@
 
     function taskBusinessNotice(task) {
       const status = task.status || "";
-      if (status === "已取消") return "";
+      if (task.businessNotice) return task.businessNotice;
+      if (status === "已取消" && task.statusChangedAt) return "status";
       if (status === "已完成") return "done";
       if (status === "待审核") return "done";
       if ((task.files || []).length) return "uploaded";
-      if (task.businessNotice) return task.businessNotice;
       if (task.isNew) return "new";
       return "";
     }
@@ -4467,20 +4478,68 @@
       return taskList.filter(task => taskBusinessNotice(task)).length;
     }
 
+    function taskNoticeLabel(notice) {
+      return {
+        new: "新增任务，提醒商务关注",
+        uploaded: "子任务已上传附件，提醒商务查看",
+        submitted: "子任务已上传完成，提醒商务查看",
+        done: "子任务已完成，提醒商务查看",
+        status: "子任务状态已变更，提醒关联人员查看"
+      }[notice] || "子任务有更新，提醒商务查看";
+    }
+
     function summaryNoticeDot(count, label) {
       return count ? `<span class="summary-notice-dot" title="${label} ${count} 条" aria-label="${label} ${count} 条"></span>` : "";
     }
 
     function taskIndexNotice(index, task) {
       const notice = taskBusinessNotice(task);
-      const noticeLabels = {
-        new: "新增任务，提醒商务关注",
-        uploaded: "子任务已上传附件，提醒商务查看",
-        submitted: "子任务已上传完成，提醒商务查看",
-        done: "子任务已完成，提醒商务查看"
-      };
-      const label = noticeLabels[notice] || "子任务有更新，提醒商务查看";
+      const label = taskNoticeLabel(notice);
       return `<span class="task-index-wrap">${notice ? `<span class="business-notice-dot" title="${label}" aria-label="${label}"></span>` : ""}<span class="task-index">${index + 1}</span></span>`;
+    }
+
+    function notifyTaskStatusChange(item, previousStatus, nextStatus, reason = "状态变更") {
+      if (!item || !item.task || !item.record || !item.moduleKey || previousStatus === nextStatus) return;
+      const task = item.task;
+      task.businessNotice = "status";
+      task.noticeAt = actionDate;
+      task.statusChangedAt = actionDate;
+      task.statusHistory = [...(task.statusHistory || []), {
+        time: actionDate,
+        from: previousStatus || "未创建",
+        to: nextStatus || "待同步",
+        user: currentOperatorName(item),
+        reason
+      }];
+      pushFeishuBotStatusMessage(item, previousStatus, nextStatus, reason);
+    }
+
+    function currentOperatorName(item) {
+      return state.taskScope === "mine" ? state.taskUser : (item.task.owner || modules[item.moduleKey]?.owner || "系统");
+    }
+
+    function relatedTaskRecipients(item) {
+      return [...new Set([
+        item.record.business,
+        modules[item.moduleKey]?.owner,
+        item.task.owner,
+        assignmentFor(item.record.id, item.moduleKey).owner
+      ].filter(Boolean))];
+    }
+
+    function pushFeishuBotStatusMessage(item, previousStatus, nextStatus, reason) {
+      const recipients = relatedTaskRecipients(item);
+      const payload = {
+        id: `FS-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        time: actionDate,
+        recordId: item.record.id,
+        moduleKey: item.moduleKey,
+        taskTitle: item.task.title || "未命名任务",
+        recipients,
+        message: `【专场子任务状态变更】${item.record.title}｜${supportNeeds[item.moduleKey].title}｜${item.task.title || "未命名任务"}：${previousStatus || "未创建"} → ${nextStatus || "待同步"}。原因：${reason}。`
+      };
+      state.feishuPushLog = [payload, ...(state.feishuPushLog || [])].slice(0, 80);
+      item.task.feishuPushHistory = [...(item.task.feishuPushHistory || []), payload];
     }
 
     function moduleTaskDetailRow(recordId, moduleKey, task, index) {
@@ -4550,6 +4609,18 @@
       }
       if (task.reviewResult) {
         records.push({ meta: "完成记录", text: escapeHtml(task.reviewResult) });
+      }
+      if (task.statusHistory && task.statusHistory.length) {
+        task.statusHistory.slice().reverse().forEach(item => records.push({
+          meta: `${formatDate(item.time)} · 状态变更 · ${escapeHtml(item.user || "系统")}`,
+          text: `${escapeHtml(item.from)} → ${escapeHtml(item.to)}${item.reason ? `；${escapeHtml(item.reason)}` : ""}`
+        }));
+      }
+      if (task.feishuPushHistory && task.feishuPushHistory.length) {
+        task.feishuPushHistory.slice().reverse().forEach(item => records.push({
+          meta: `${formatDate(item.time)} · 飞书机器人`,
+          text: `已推送给 ${escapeHtml((item.recipients || []).join("、") || "关联人员")}：${escapeHtml(item.message || "")}`
+        }));
       }
       if (task.status === "待审核" && task.submittedAt) {
         records.push({ meta: `提交记录 · ${formatDate(task.submittedAt)}`, text: "已上传完成，任务自动闭环" });
@@ -4972,7 +5043,8 @@
       return "待办任务";
     }
 
-    function setTaskWorkflowStatus(task, moduleKey, status, record = null) {
+    function setTaskWorkflowStatus(task, moduleKey, status, record = null, options = {}) {
+      const beforeStatus = taskWorkflowStatus({ record, moduleKey, task });
       task.workflowStatus = status;
       if (status === "待办任务") task.status = "待处理";
       else if (status === "待审核") task.status = "待审核";
@@ -4987,6 +5059,21 @@
         task.status = "已完成";
         task.completedAt = task.completedAt || actionDate;
       }
+      const afterStatus = taskWorkflowStatus({ record, moduleKey, task });
+      if (!options.silent) {
+        notifyTaskStatusChange({
+          record,
+          moduleKey,
+          task,
+          index: taskIndexFor(record?.id, moduleKey, task),
+          key: `${record?.id || ""}:${moduleKey}:${taskIndexFor(record?.id, moduleKey, task)}`
+        }, beforeStatus, afterStatus, options.reason || "任务状态流转");
+      }
+    }
+
+    function taskIndexFor(recordId, moduleKey, task) {
+      if (!recordId || !moduleKey || !task) return -1;
+      return tasksFor(recordId, moduleKey).indexOf(task);
     }
 
     function isTaskWorkflowDone(status) {
@@ -5206,9 +5293,11 @@
         const submitted = task.submittedAt ? ` · 提交于 ${formatDate(task.submittedAt)}` : "";
         const delayed = task.delayReason ? ` · 延期原因：${escapeHtml(task.delayReason)}` : "";
         const canceled = task.cancelReason ? ` · 取消原因：${escapeHtml(task.cancelReason)}` : "";
+        const notice = taskBusinessNotice(task);
+        const noticeDot = notice ? `<span class="inline-notice-dot" title="${taskNoticeLabel(notice)}" aria-label="${taskNoticeLabel(notice)}"></span>` : "";
         return `<div class="my-task-subtask">
           <div>
-            <strong>${index + 1}. ${escapeHtml(task.title || "未命名任务")}</strong>
+            <strong>${noticeDot}${index + 1}. ${escapeHtml(task.title || "未命名任务")}</strong>
             <span>执行人：${escapeHtml(task.owner || "待分配")} · 需求时间：${formatDate(due)}${submitted}${delayed}${canceled}</span>
           </div>
           ${badge(taskWorkflowStatus(item), taskStatusClass(taskWorkflowStatus(item)))}
@@ -5371,10 +5460,12 @@
       const actionContent = myTaskActionContent(key, moduleKey, groupStatus);
       const owners = [...new Set(groupItems.map(item => item.task.owner || "待分配"))].join("、");
       const taskRecordName = groupItems.length > 1 ? `${supportNeeds[moduleKey].title}任务记录` : task.title;
+      const cardNotice = groupItems.map(item => taskBusinessNotice(item.task)).find(Boolean);
+      const cardNoticeDot = cardNotice ? `<span class="inline-notice-dot" title="${taskNoticeLabel(cardNotice)}" aria-label="${taskNoticeLabel(cardNotice)}"></span>` : "";
       return `<article class="my-task-card">
         <div class="my-task-head">
           <div>
-            <h3>${record.title}</h3>
+            <h3>${cardNoticeDot}${record.title}</h3>
             <div class="meta">${urgencyBadge(talentGrade(record))}<span>${record.talent}</span><span>${record.liveTime}</span><span>${record.product}</span>${badge(supportNeeds[moduleKey].title, module.cls)}${groupItems.length > 1 ? badge(`${groupItems.length} 条子任务`, "blue") : ""}</div>
           </div>
           ${badge(groupStatus, statusCls)}
@@ -6464,7 +6555,7 @@
       actionItems.filter(item => item.task.status !== "已取消").forEach(item => {
         const task = item.task;
         task.files = [...(task.files || []), ...names];
-        if (taskWorkflowStatus(item) === "待办任务") setTaskWorkflowStatus(task, moduleKey, workflowStartStatus(moduleKey), item.record);
+        if (taskWorkflowStatus(item) === "待办任务") setTaskWorkflowStatus(task, moduleKey, workflowStartStatus(moduleKey), item.record, { reason: "上传附件后进入处理" });
         task.businessNotice = "uploaded";
         task.noticeAt = actionDate;
         if (task.status !== "已完成") {
@@ -6679,7 +6770,8 @@
     }
 
     function saveCancelTask(key) {
-      const tasks = tasksByActionKey(key);
+      const actionItems = taskActionItems(key);
+      const tasks = actionItems.map(item => item.task);
       const task = tasks[0];
       if (!task) return;
       const reason = (task.cancelDraft || "").trim();
@@ -6687,17 +6779,18 @@
         toast("请填写取消原因");
         return;
       }
-      tasks.filter(item => item.status !== "已取消").forEach(item => {
-        item.status = "已取消";
-        item.cancelReason = reason;
-        item.canceledAt = actionDate;
-        delete item.businessNotice;
-        delete item.noticeAt;
-        delete item.cancelEditing;
-        delete item.cancelDraft;
-        delete item.delayEditing;
-        delete item.delayBackup;
-        item.reviewComment = "";
+      actionItems.filter(item => item.task.status !== "已取消").forEach(item => {
+        const beforeStatus = taskWorkflowStatus(item);
+        item.task.status = "已取消";
+        item.task.cancelReason = reason;
+        item.task.canceledAt = actionDate;
+        item.task.cancelEditing = false;
+        delete item.task.cancelEditing;
+        delete item.task.cancelDraft;
+        delete item.task.delayEditing;
+        delete item.task.delayBackup;
+        item.task.reviewComment = "";
+        notifyTaskStatusChange(item, beforeStatus, taskWorkflowStatus(item), "取消任务");
       });
       syncAssignmentStatusFromTaskKey(key);
       toast("已取消任务并留存原因");
@@ -6788,16 +6881,18 @@
       tasksFor(recordId, moduleKey).forEach((task, index) => {
         const item = { record, moduleKey, task, index, key: `${recordId}:${moduleKey}:${index}` };
         if (!predicate(item) || isTaskWorkflowAbnormal(taskWorkflowStatus(item))) return;
-        setTaskWorkflowStatus(task, moduleKey, status, record);
+        setTaskWorkflowStatus(task, moduleKey, status, record, { reason: "关联任务自动流转" });
         task.reviewResult = workflowActionResult(moduleKey, status);
       });
       syncAssignmentStatus(recordId, moduleKey);
     }
 
     function completeMyTask(key) {
-      const tasks = tasksByActionKey(key);
+      const actionItems = taskActionItems(key);
+      const tasks = actionItems.map(item => item.task);
       const moduleKey = moduleKeyFromTaskAction(key);
-      const activeTasks = tasks.filter(task => task.status !== "已取消" && task.status !== "已完成");
+      const activeItems = actionItems.filter(item => item.task.status !== "已取消" && item.task.status !== "已完成");
+      const activeTasks = activeItems.map(item => item.task);
       if (!tasks.length) return;
       if (!activeTasks.length && tasks.every(task => task.status === "已取消")) {
         toast("已取消任务不能提交完成");
@@ -6817,18 +6912,19 @@
           return;
         }
       }
-      activeTasks.forEach(task => {
+      activeItems.forEach(item => {
+        const beforeStatus = taskWorkflowStatus(item);
+        const task = item.task;
         task.status = "已完成";
         task.submittedAt = actionDate;
         task.completedAt = actionDate;
-        task.businessNotice = "done";
-        task.noticeAt = actionDate;
         task.reviewResult = moduleKey === "content" ? "内容文档已提交" : "完成文件已提交";
         delete task.reviewedAt;
         delete task.rejectedAt;
         delete task.rejectReason;
         delete task.delayEditing;
         task.reviewComment = "";
+        notifyTaskStatusChange(item, beforeStatus, taskWorkflowStatus(item), "提交完成");
       });
       syncAssignmentStatusFromTaskKey(key);
       toast(moduleKey === "content" ? "内容文档已提交并完成" : "完成文件已提交，任务已完成");
@@ -6865,13 +6961,16 @@
     }
 
     function startDelayTask(key) {
-      const tasks = tasksByActionKey(key).filter(task => task.status !== "已完成");
+      const actionItems = taskActionItems(key).filter(item => item.task.status !== "已完成");
+      const tasks = actionItems.map(item => item.task);
       if (!tasks.length) return;
       if (tasks.every(task => task.status === "已取消")) {
         toast("已取消任务不能延期");
         return;
       }
-      tasks.filter(task => task.status !== "已取消").forEach(task => {
+      actionItems.filter(item => item.task.status !== "已取消").forEach(item => {
+        const beforeStatus = taskWorkflowStatus(item);
+        const task = item.task;
         if (!task.delayEditing) {
           task.delayBackup = {
             status: task.status,
@@ -6886,15 +6985,18 @@
         task.originalDue = task.originalDue || task.due;
         task.delayDue = task.delayDue || task.due;
         task.delayReason = task.delayReason || "";
+        notifyTaskStatusChange(item, beforeStatus, taskWorkflowStatus(item), "进入延期编辑");
       });
       syncAssignmentStatusFromTaskKey(key);
       render();
     }
 
     function cancelDelayTask(key) {
-      const tasks = tasksByActionKey(key);
-      if (!tasks.length) return;
-      tasks.forEach(task => {
+      const actionItems = taskActionItems(key);
+      if (!actionItems.length) return;
+      actionItems.forEach(item => {
+        const task = item.task;
+        const beforeStatus = taskWorkflowStatus(item);
         if (task.delayBackup) {
           task.status = task.delayBackup.status;
           task.due = task.delayBackup.due;
@@ -6904,6 +7006,7 @@
         }
         delete task.delayEditing;
         delete task.delayBackup;
+        notifyTaskStatusChange(item, beforeStatus, taskWorkflowStatus(item), "取消延期编辑");
       });
       syncAssignmentStatusFromTaskKey(key);
       toast("已取消延期编辑");
@@ -6911,20 +7014,23 @@
     }
 
     function saveDelayTask(key) {
-      const tasks = tasksByActionKey(key).filter(task => task.delayEditing);
+      const actionItems = taskActionItems(key).filter(item => item.task.delayEditing);
+      const tasks = actionItems.map(item => item.task);
       const task = tasks[0];
       if (!task) return;
       if (!task.delayDue || !task.delayReason.trim()) {
         toast("请填写新的完成时间和延期原因");
         return;
       }
-      tasks.forEach(item => {
-        item.delayDue = task.delayDue;
-        item.delayReason = task.delayReason;
-        item.due = task.delayDue;
-        item.status = "延期中";
-        delete item.delayEditing;
-        delete item.delayBackup;
+      actionItems.forEach(item => {
+        const beforeStatus = taskWorkflowStatus(item);
+        item.task.delayDue = task.delayDue;
+        item.task.delayReason = task.delayReason;
+        item.task.due = task.delayDue;
+        item.task.status = "延期中";
+        delete item.task.delayEditing;
+        delete item.task.delayBackup;
+        notifyTaskStatusChange(item, beforeStatus, taskWorkflowStatus(item), "保存延期原因");
       });
       syncAssignmentStatusFromTaskKey(key);
       toast("延期信息已回填");
@@ -6943,7 +7049,7 @@
           task.noticeAt = actionDate;
         }
         if (firstPublish || task.isDraft || taskWorkflowStatus({ record, moduleKey, task }) === "待办任务") {
-          setTaskWorkflowStatus(task, moduleKey, workflowStartStatus(moduleKey), record);
+          setTaskWorkflowStatus(task, moduleKey, workflowStartStatus(moduleKey), record, { reason: firstPublish ? "发布派工" : "发布新增任务" });
         } else {
           task.status = task.status || "待处理";
         }
