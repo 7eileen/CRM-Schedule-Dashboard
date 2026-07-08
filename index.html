@@ -1896,6 +1896,10 @@
       gap: 14px;
       align-items: stretch;
     }
+    .entry-source-grid.is-single {
+      grid-template-columns: minmax(0, 760px);
+      justify-content: center;
+    }
     .entry-source-card {
       min-height: 236px;
       display: grid;
@@ -1910,6 +1914,10 @@
     .entry-source-card.is-primary {
       border-color: rgba(255, 122, 0, .32);
       background: linear-gradient(180deg, #fff8f1 0%, #ffffff 72%);
+    }
+    .entry-source-card.entry-link-card {
+      min-height: 204px;
+      grid-template-rows: auto auto auto auto;
     }
     .entry-source-head {
       display: flex;
@@ -1940,6 +1948,36 @@
       line-height: 1.55;
       font-size: 13px;
     }
+    .entry-link-field {
+      display: grid;
+      gap: 8px;
+    }
+    .entry-link-field span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .entry-link-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 12px;
+      border: 1px solid #d9e1eb;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      outline: 0;
+      font: inherit;
+    }
+    .entry-link-input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255, 122, 0, .12);
+    }
+    .entry-link-status {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .entry-link-status.is-ready { color: #0f8a4b; }
     .entry-upload-actions {
       display: flex;
       align-items: center;
@@ -2480,6 +2518,7 @@
       listRangePreset: "month",
       entryDocs: [],
       entryText: "",
+      entryFeishuLink: "",
       calendarOpen: true,
       specialProgressOpen: true,
       calendarExpandedDay: "",
@@ -3428,6 +3467,7 @@
     }
 
     function pageEntry() {
+      const feishuLink = String(state.entryFeishuLink || "").trim();
       return `<section class="panel">
         <div class="panel-head">
           <div><h2 class="panel-title">专场文档录入</h2></div>
@@ -3435,29 +3475,21 @@
         <div class="panel-body stack">
           <div class="upload entry-upload">
             <div class="entry-upload-content">
-              <div class="entry-source-grid">
-                <div class="entry-source-card is-primary">
+              <div class="entry-source-grid is-single">
+                <div class="entry-source-card is-primary entry-link-card">
                   <div class="entry-source-head">
-                    <strong>文档上传识别填写</strong>
-                    <span class="entry-source-kicker">本地文档</span>
+                    <strong>飞书链接识别填写</strong>
+                    <span class="entry-source-kicker">飞书文档</span>
                   </div>
-                  <div class="entry-source-copy">上传达人专场文档后，系统识别字段并回填到下方专场详情。</div>
-                  ${entryDocumentFiles()}
+                  <div class="entry-source-copy">粘贴飞书文档链接后，系统读取文档内容并回填到下方专场详情。</div>
+                  <label class="entry-link-field">
+                    <span>飞书文档链接</span>
+                    <input class="entry-link-input" type="url" inputmode="url" data-entry-feishu-link value="${escapeHtml(state.entryFeishuLink)}" placeholder="https://xxx.feishu.cn/docx/..." aria-label="飞书文档链接">
+                  </label>
+                  <div class="entry-link-status ${feishuLink ? "is-ready" : ""}">${feishuLink ? "已粘贴飞书链接，可识别并回填专场详情。" : "未粘贴飞书链接"}</div>
                   <div class="entry-upload-actions">
-                    <label class="btn primary entry-upload-btn">选择文档<input type="file" multiple data-entry-doc-upload accept=".doc,.docx,.pdf,.xls,.xlsx,.csv,.txt,.md,image/*"></label>
-                    <button class="btn ghost" data-action="recognizeDoc" ${state.entryDocs.length ? "" : "disabled"}>识别文档并填写</button>
-                  </div>
-                </div>
-                <div class="entry-source-card">
-                  <div class="entry-source-head">
-                    <strong>文本粘贴识别填写</strong>
-                    <span class="entry-source-kicker">文字识别</span>
-                  </div>
-                  <div class="entry-source-copy">从飞书、微信或表格复制整段专场信息，粘贴后点击识别即可自动填表。</div>
-                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万&#10;是否有试用：正装试用&#10;福袋需求：飞机盒礼盒（价值599元）">${escapeHtml(state.entryText)}</textarea>
-                  <div class="entry-upload-actions">
-                    <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
-                    <button class="btn ghost" data-clear-entry-text>清空文本</button>
+                    <button class="btn primary" data-action="recognizeFeishuLink">识别飞书链接并填写</button>
+                    <button class="btn ghost" data-action="clearFeishuLink">清空链接</button>
                   </div>
                 </div>
               </div>
@@ -3485,6 +3517,16 @@
       const fileText = (state.entryDocs || []).map(file => file.name).join("\n");
       const parsed = extractEntryFieldsFromText(fileText);
       return hasRecognizedFields(parsed) ? parsed : sampleEntryRecognition();
+    }
+
+    function recognizeFeishuLink() {
+      const link = String(state.entryFeishuLink || "").trim();
+      const parsed = extractEntryFieldsFromText(link);
+      return hasRecognizedFields(parsed) ? parsed : sampleEntryRecognition();
+    }
+
+    function isFeishuLink(value) {
+      return /(?:^https?:\/\/)?[\w.-]*(?:feishu\.cn|larksuite\.com)\//i.test(String(value || "").trim());
     }
 
     function sampleEntryRecognition() {
@@ -5988,6 +6030,7 @@
       document.querySelectorAll("[data-entry-doc-upload]").forEach(input => input.addEventListener("change", () => uploadEntryDocs(input.files)));
       document.querySelectorAll("[data-remove-entry-doc]").forEach(btn => btn.addEventListener("click", () => removeEntryDoc(btn.dataset.removeEntryDoc)));
       document.querySelectorAll("[data-entry-text]").forEach(input => input.addEventListener("input", () => { state.entryText = input.value; }));
+      document.querySelectorAll("[data-entry-feishu-link]").forEach(input => input.addEventListener("input", () => { state.entryFeishuLink = input.value; }));
       document.querySelectorAll("[data-clear-entry-text]").forEach(btn => btn.addEventListener("click", () => {
         state.entryText = "";
         render();
@@ -6645,6 +6688,25 @@
           return;
         }
         applyEntryRecognition(extractEntryFieldsFromText(state.entryText), "文本");
+        return;
+      }
+      if (name === "recognizeFeishuLink") {
+        const link = String(state.entryFeishuLink || "").trim();
+        if (!link) {
+          toast("请先粘贴飞书文档链接");
+          return;
+        }
+        if (!isFeishuLink(link)) {
+          toast("请粘贴有效的飞书文档链接");
+          return;
+        }
+        applyEntryRecognition(recognizeFeishuLink(), "飞书链接");
+        return;
+      }
+      if (name === "clearFeishuLink") {
+        state.entryFeishuLink = "";
+        toast("已清空飞书链接");
+        render();
         return;
       }
       if (name === "createProjectFromEntry") {
