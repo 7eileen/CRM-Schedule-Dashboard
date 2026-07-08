@@ -5045,9 +5045,10 @@
       const selectedStatus = normalizedTaskStatusFilter(activeModule, activeModuleItems);
       const myItems = filteredMyTaskItems(scopeItems);
       const myGroups = groupedMyTaskItems(myItems);
-      const done = scopeItems.filter(item => isTaskWorkflowDone(taskWorkflowStatus(item))).length;
-      const abnormal = scopeItems.filter(item => isTaskWorkflowAbnormal(taskWorkflowStatus(item))).length;
-      const pending = scopeItems.filter(item => taskWorkflowStatus(item) === "待办任务").length;
+      const scopeGroups = groupedMyTaskItems(scopeItems);
+      const done = scopeGroups.filter(item => isTaskWorkflowDone(myTaskGroupStatus(item.groupItems))).length;
+      const abnormal = scopeGroups.filter(item => isTaskWorkflowAbnormal(myTaskGroupStatus(item.groupItems))).length;
+      const pending = scopeGroups.filter(item => myTaskGroupStatus(item.groupItems) === "待办任务").length;
       const priorityOptions = ["all:全部优先级", "S+:S+ 级", "S:S 级", "A:A 级", "B:B 级", "C:C 级"];
       const nodeOptions = [`all:全部节点 ${activeModuleItems.length}`, ...moduleWorkflowStatusOptions(activeModule, activeModuleItems).map(status => `${status}:${status} ${activeModuleItems.filter(item => taskWorkflowStatus(item) === status).length}`)];
       return `<div class="my-task-tools task-filter-only">
@@ -5064,7 +5065,7 @@
         </div>
       </div>
       <section class="stats">
-        <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeItems.length}</strong><span>总量任务</span></div></button>
+        <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeGroups.length}</strong><span>总量任务</span></div></button>
         <div class="stat stat-blue"><div><strong>${pending}</strong><span>待办任务</span></div></div>
         <div class="stat stat-green"><div><strong>${done}</strong><span>已发布/已投放</span></div></div>
         <div class="stat stat-red"><div><strong>${abnormal}</strong><span>延期/取消</span></div></div>
@@ -5081,7 +5082,7 @@
       const order = taskModuleFilterOptions();
       const active = activeTaskModuleFilter(items);
       return `<div class="task-module-tabs" aria-label="需求池切换">${order.map(item => {
-        const count = items.filter(taskItem => taskItem.moduleKey === item.key).length;
+        const count = new Set(items.filter(taskItem => taskItem.moduleKey === item.key).map(taskItem => taskItem.record.id)).size;
         return `<button class="task-module-tab ${active === item.key ? "active" : ""}" data-task-module-filter="${item.key}">${item.label}<i>${count}</i></button>`;
       }).join("")}</div>`;
     }
@@ -5145,20 +5146,19 @@
     function groupedMyTaskItems(items) {
       const groups = new Map();
       items.forEach(item => {
-        const owner = item.task.owner || "待分配";
-        const groupId = `${item.record.id}|${item.moduleKey}|${owner}`;
+        const groupId = `${item.record.id}|${item.moduleKey}`;
         if (!groups.has(groupId)) {
           groups.set(groupId, {
             ...item,
-            groupKey: myTaskGroupKey(item.record.id, item.moduleKey, owner),
+            groupKey: myTaskGroupKey(item.record.id, item.moduleKey),
             groupItems: []
           });
         }
         groups.get(groupId).groupItems.push(item);
       });
       return Array.from(groups.values()).map(group => {
-        group.groupItems.sort((a, b) => taskDemandCompare(a, b) || a.index - b.index);
-        const primary = primaryGroupTaskItem(group.groupItems);
+        group.groupItems.sort(taskRecordSubtaskCompare);
+        const primary = taskSortAnchorItem(group.groupItems);
         return {
           ...group,
           record: primary.record,
@@ -5167,11 +5167,11 @@
           index: primary.index,
           key: group.groupItems.length > 1 ? group.groupKey : primary.key
         };
-      });
+      }).sort(taskUrgencyCompare);
     }
 
-    function myTaskGroupKey(recordId, moduleKey, owner) {
-      return `group|${recordId}|${moduleKey}|${encodeURIComponent(owner || "待分配")}`;
+    function myTaskGroupKey(recordId, moduleKey) {
+      return `group|${recordId}|${moduleKey}`;
     }
 
     function primaryGroupTaskItem(items) {
@@ -5179,6 +5179,14 @@
         || items.find(item => taskWorkflowStatus(item) === "延期中")
         || items.slice().sort((a, b) => taskWorkflowRank(a) - taskWorkflowRank(b) || taskDemandCompare(a, b) || a.index - b.index)[0]
         || items[0];
+    }
+
+    function taskSortAnchorItem(items) {
+      return items.slice().sort(taskRecordSubtaskCompare)[0] || items[0];
+    }
+
+    function taskRecordSubtaskCompare(a, b) {
+      return taskDemandCompare(a, b) || taskGradeCompare(a, b) || a.index - b.index;
     }
 
     function myTaskGroupStatus(items) {
@@ -5201,7 +5209,7 @@
         return `<div class="my-task-subtask">
           <div>
             <strong>${index + 1}. ${escapeHtml(task.title || "未命名任务")}</strong>
-            <span>需求时间：${formatDate(due)}${submitted}${delayed}${canceled}</span>
+            <span>执行人：${escapeHtml(task.owner || "待分配")} · 需求时间：${formatDate(due)}${submitted}${delayed}${canceled}</span>
           </div>
           ${badge(taskWorkflowStatus(item), taskStatusClass(taskWorkflowStatus(item)))}
         </div>`;
@@ -5211,11 +5219,11 @@
     function taskActionItems(key) {
       if (String(key || "").startsWith("group|")) {
         const [, recordId, moduleKey, ownerValue = ""] = String(key).split("|");
-        const owner = decodeURIComponent(ownerValue) || "待分配";
+        const owner = decodeURIComponent(ownerValue || "");
         return allDispatchTaskItems().filter(item =>
           item.record.id === recordId
           && item.moduleKey === moduleKey
-          && (item.task.owner || "待分配") === owner
+          && (!owner || (item.task.owner || "待分配") === owner)
         );
       }
       const [recordId, moduleKey, indexValue] = String(key || "").split(":");
@@ -5351,6 +5359,7 @@
     function myTaskCard(item) {
       const groupItems = item.groupItems || [item];
       const primary = primaryGroupTaskItem(groupItems);
+      const sortAnchor = taskSortAnchorItem(groupItems);
       const { record, moduleKey } = primary;
       const task = primary.task;
       const key = groupItems.length > 1 ? item.groupKey : primary.key;
@@ -5360,6 +5369,8 @@
       const isCanceled = groupStatus === "已取消";
       const statusCls = taskStatusClass(groupStatus);
       const actionContent = myTaskActionContent(key, moduleKey, groupStatus);
+      const owners = [...new Set(groupItems.map(item => item.task.owner || "待分配"))].join("、");
+      const taskRecordName = groupItems.length > 1 ? `${supportNeeds[moduleKey].title}任务记录` : task.title;
       return `<article class="my-task-card">
         <div class="my-task-head">
           <div>
@@ -5372,8 +5383,8 @@
           ${myTaskSpecialInfo(record)}
           <div class="row">
             <div>
-              <div class="task-name">${groupItems.length > 1 ? `${escapeHtml(task.owner || "待分配")}的${supportNeeds[moduleKey].title}任务` : escapeHtml(task.title)}</div>
-              <div class="meta"><span>执行人：${task.owner}</span><span>组长：${module.owner}</span><span>最早需求：${formatDate(taskDemandDate(primary))}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}</div>
+              <div class="task-name">${escapeHtml(taskRecordName)}</div>
+              <div class="meta"><span>执行人：${escapeHtml(owners)}</span><span>组长：${module.owner}</span><span>最早需求：${formatDate(taskDemandDate(sortAnchor))}</span>${task.submittedAt ? `<span>提交于：${formatDate(task.submittedAt)}</span>` : ""}</div>
             </div>
           </div>
           ${groupItems.length > 1 ? myTaskSubtaskList(groupItems) : ""}
@@ -5447,17 +5458,25 @@
     }
 
     function openMyTaskTotalDrawer() {
-      const items = scopedTaskItems().sort(taskUrgencyCompare);
-      const rows = items.map(item => `<div class="task-total-row">
-        <div><strong>${escapeHtml(item.record.title)}</strong><span>${escapeHtml(item.record.talent)} · ${escapeHtml(item.record.product)}</span></div>
-        <div><strong>${escapeHtml(item.task.title || "")}</strong><span>${supportNeeds[item.moduleKey].title}</span></div>
-        <div><span>执行人</span><strong>${escapeHtml(item.task.owner || "待分配")}</strong></div>
-        <div>${badge(taskWorkflowStatus(item), taskStatusClass(taskWorkflowStatus(item)))}</div>
-        <div><span>需求时间</span><strong>${formatDate(taskDemandDate(item))}</strong></div>
-      </div>`).join("");
+      const groups = groupedMyTaskItems(scopedTaskItems());
+      const rows = groups.map(item => {
+        const groupItems = item.groupItems || [item];
+        const primary = primaryGroupTaskItem(groupItems);
+        const sortAnchor = taskSortAnchorItem(groupItems);
+        const owners = [...new Set(groupItems.map(taskItem => taskItem.task.owner || "待分配"))].join("、");
+        const taskNames = groupItems.map((taskItem, index) => `${index + 1}. ${taskItem.task.title || "未命名任务"}`).join(" / ");
+        const groupStatus = myTaskGroupStatus(groupItems);
+        return `<div class="task-total-row">
+        <div><strong>${escapeHtml(primary.record.title)}</strong><span>${escapeHtml(primary.record.talent)} · ${escapeHtml(primary.record.product)}</span></div>
+        <div><strong>${supportNeeds[primary.moduleKey].title}</strong><span>${escapeHtml(taskNames)}</span></div>
+        <div><span>执行人</span><strong>${escapeHtml(owners)}</strong></div>
+        <div>${badge(groupStatus, taskStatusClass(groupStatus))}</div>
+        <div><span>最早需求</span><strong>${formatDate(taskDemandDate(sortAnchor))}</strong></div>
+      </div>`;
+      }).join("");
       openDrawer(
         `${taskScopeTitle()}的总量任务`,
-        `<div class="stack"><div class="meta">${badge(`${items.length} 条任务`, "orange")}<span>当前本人任务池</span></div><div class="task-total-list">${rows || `<div class="upload"><div><strong>暂无任务</strong></div></div>`}</div></div>`,
+        `<div class="stack"><div class="meta">${badge(`${groups.length} 条任务记录`, "orange")}<span>同一专场同一需求池合并展示，子任务按需求时间排序</span></div><div class="task-total-list">${rows || `<div class="upload"><div><strong>暂无任务</strong></div></div>`}</div></div>`,
         `<button class="btn primary" data-close>关闭</button>`,
         true,
         true
