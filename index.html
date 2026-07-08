@@ -168,6 +168,21 @@
     .stat strong { display: block; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; color: #00152e; }
     .stat span { color: var(--muted); font-size: 14px; }
     .list-stats .stat { min-height: 112px; padding: 22px 28px; align-items: flex-start; }
+    .list-stats button.stat::after {
+      content: "查看专场";
+      position: absolute;
+      right: 22px;
+      bottom: 18px;
+      color: #9aa5b4;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity .16s ease, transform .16s ease;
+    }
+    .list-stats button.stat:hover::after,
+    .list-stats button.stat:focus-visible::after {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
     .stat.stat-orange strong { color: var(--orange); }
     .stat.stat-green strong { color: var(--green); }
     .stat.stat-blue strong { color: var(--blue); }
@@ -180,6 +195,75 @@
     }
     button.stat:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(15, 35, 65, .1); }
     button.stat:focus-visible { outline: 3px solid rgba(255, 122, 0, .28); outline-offset: 3px; }
+    .list-stat-detail {
+      display: grid;
+      gap: 12px;
+    }
+    .list-stat-empty {
+      min-height: 180px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed #dce5ef;
+      border-radius: 14px;
+      color: var(--muted);
+      background: #fbfdff;
+    }
+    .list-stat-item {
+      display: grid;
+      grid-template-columns: minmax(260px, 1.35fr) minmax(0, 2fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid #e5ebf3;
+      border-radius: 14px;
+      background: #fff;
+    }
+    .list-stat-item-main {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+    .list-stat-item-title {
+      color: #00152e;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+    .list-stat-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .list-stat-field-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+    .list-stat-field {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+    .list-stat-field span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .list-stat-field strong {
+      color: #00152e;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
     .panel {
       border: 0;
       border-radius: var(--radius);
@@ -2247,6 +2331,8 @@
     @media (max-width: 1180px) {
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .list-stat-item { grid-template-columns: 1fr; align-items: stretch; }
+      .list-stat-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .data-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .monthly-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2266,7 +2352,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid, .list-stat-field-grid { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -3016,28 +3102,23 @@
 
     function pageList() {
       const month = state.listMonth || "2026-06";
-      const rangeRecords = records.filter(record => record.liveTime && inDateRange(record.liveTime.slice(0, 10), state.listStart, state.listEnd));
-      const keyword = state.listSearch.trim().toLowerCase();
+      const { rangeRecords, gradeAndSearchRecords } = listBaseRecords();
       const gradeOptions = ["S+", "S", "A", "B", "C"];
-      const gradeAndSearchRecords = rangeRecords.filter(record => {
-        const gradeMatched = state.listGrade === "all" || talentGrade(record) === state.listGrade;
-        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, record.scheduleStatus, talentGrade(record)].join(" ").toLowerCase();
-        return gradeMatched && (!keyword || searchText.includes(keyword));
-      });
-      const running = gradeAndSearchRecords.filter(item => item.status !== "待复盘" && (item.scheduleStatus || item.status) !== "已取消").length;
+      const statGroups = listStatGroups({ rangeRecords, gradeAndSearchRecords });
+      const running = statGroups.running.records.length;
       const review = gradeAndSearchRecords.filter(item => item.status === "待复盘").length;
-      const delayed = rangeRecords.filter(item => (item.scheduleStatus || item.status || "").includes("延期") || recordDelayedTask(item)).length;
-      const completedInRange = rangeRecords.filter(item => item.status === "待复盘" || item.progress >= 90).length;
+      const delayed = statGroups.delayed.records.length;
+      const completedInRange = statGroups.completed.records.length;
       const filteredRecords = gradeAndSearchRecords.filter(record => {
         const statusMatched = state.listFilter === "all" || (state.listFilter === "running" && record.status !== "待复盘" && (record.scheduleStatus || record.status) !== "已取消") || (state.listFilter === "review" && record.status === "待复盘");
         return statusMatched;
       });
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
       <section class="stats list-stats">
-        <div class="stat stat-orange"><div><strong>${rangeRecords.length}</strong><span>${listRangeTitle()}专场</span></div></div>
-        <div class="stat stat-green"><div><strong>${running}</strong><span>进行中</span></div></div>
-        <div class="stat stat-blue"><div><strong>${completedInRange}</strong><span>已直播</span></div></div>
-        <div class="stat stat-red"><div><strong>${delayed}</strong><span>延期申请</span></div></div>
+        <button class="stat stat-orange" data-list-stat="all" aria-label="查看${listRangeTitle()}专场信息"><div><strong>${rangeRecords.length}</strong><span>${listRangeTitle()}专场</span></div></button>
+        <button class="stat stat-green" data-list-stat="running" aria-label="查看进行中专场信息"><div><strong>${running}</strong><span>进行中</span></div></button>
+        <button class="stat stat-blue" data-list-stat="completed" aria-label="查看已直播专场信息"><div><strong>${completedInRange}</strong><span>已直播</span></div></button>
+        <button class="stat stat-red" data-list-stat="delayed" aria-label="查看延期申请专场信息"><div><strong>${delayed}</strong><span>延期申请</span></div></button>
       </section>
       ${monthCalendar(month, rangeRecords)}
       <section class="panel list-panel">
@@ -3057,6 +3138,85 @@
           ${filteredRecords.length ? `<div class="project-grid">${filteredRecords.map(record => projectCard(record)).join("")}</div>` : `<div class="upload"><div><strong>暂无匹配专场</strong></div></div>`}
         </div>
       </section>`;
+    }
+
+    function listBaseRecords() {
+      const rangeRecords = records.filter(record => record.liveTime && inDateRange(record.liveTime.slice(0, 10), state.listStart, state.listEnd));
+      const keyword = state.listSearch.trim().toLowerCase();
+      const gradeAndSearchRecords = rangeRecords.filter(record => {
+        const gradeMatched = state.listGrade === "all" || talentGrade(record) === state.listGrade;
+        const searchText = [record.title, record.talent, record.uid, record.liveTime, record.product, record.status, record.scheduleStatus, talentGrade(record)].join(" ").toLowerCase();
+        return gradeMatched && (!keyword || searchText.includes(keyword));
+      });
+      return { rangeRecords, gradeAndSearchRecords };
+    }
+
+    function listStatGroups(base = listBaseRecords()) {
+      const { rangeRecords, gradeAndSearchRecords } = base;
+      return {
+        all: {
+          title: `${listRangeTitle()}专场信息`,
+          records: rangeRecords,
+          cls: "orange"
+        },
+        running: {
+          title: "进行中专场信息",
+          records: gradeAndSearchRecords.filter(item => item.status !== "待复盘" && (item.scheduleStatus || item.status) !== "已取消"),
+          cls: "green"
+        },
+        completed: {
+          title: "已直播专场信息",
+          records: rangeRecords.filter(item => item.status === "待复盘" || item.progress >= 90),
+          cls: "blue"
+        },
+        delayed: {
+          title: "延期申请专场信息",
+          records: rangeRecords.filter(item => (item.scheduleStatus || item.status || "").includes("延期") || recordDelayedTask(item)),
+          cls: "red"
+        }
+      };
+    }
+
+    function openListStatDetail(type) {
+      const groups = listStatGroups();
+      const group = groups[type] || groups.all;
+      const sortedRecords = group.records.slice().sort((a, b) => a.liveTime.localeCompare(b.liveTime));
+      const body = sortedRecords.length
+        ? `<div class="list-stat-detail">${sortedRecords.map(listStatRecordItem).join("")}</div>`
+        : `<div class="list-stat-empty">暂无对应专场</div>`;
+      openDrawer(group.title, body, `<button class="btn primary" data-close>关闭</button>`, true, true);
+    }
+
+    function listStatRecordItem(record) {
+      const displayStatus = record.scheduleStatus || record.status;
+      const statusCls = displayStatus === "待复盘" || record.progress >= 90 ? "green" : displayStatus.includes("延期") || displayStatus.includes("取消") ? "red" : "orange";
+      const liveRoom = recordLiveRoom(record);
+      const expectedGmv = record.expectedGmv || record.sales || "待填写";
+      return `<article class="list-stat-item">
+        <div class="list-stat-item-main">
+          <div class="list-stat-item-title">${escapeHtml(record.title)}</div>
+          <div class="list-stat-item-meta">
+            ${urgencyBadge(talentGrade(record))}
+            ${badge(displayStatus, statusCls)}
+            <span>进度 ${record.progress}%</span>
+          </div>
+        </div>
+        <div class="list-stat-field-grid">
+          ${listStatField("达人", record.talent)}
+          ${listStatField("专场排期", record.liveTime)}
+          ${listStatField("直播间", liveRoom)}
+          ${listStatField("负责商务", record.business || "待填写")}
+          ${listStatField("主推产品", record.product)}
+          ${listStatField("目标销售额", expectedGmv)}
+          ${listStatField("类型", record.type || "专场")}
+          ${listStatField("达人 UID", record.uid)}
+        </div>
+        <button class="btn ghost" data-open-project="${record.id}">查看详情</button>
+      </article>`;
+    }
+
+    function listStatField(label, value) {
+      return `<div class="list-stat-field"><span>${label}</span><strong>${escapeHtml(value || "待填写")}</strong></div>`;
     }
 
     function monthCalendar(month, monthRecords) {
@@ -5694,6 +5854,7 @@
       document.querySelectorAll("[data-view]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.view; render(); }));
       document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.go; render(); }));
       document.querySelectorAll("[data-open-project]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.openProject; state.view = "detail"; render(); }));
+      document.querySelectorAll("[data-list-stat]").forEach(btn => btn.addEventListener("click", () => openListStatDetail(btn.dataset.listStat)));
       document.querySelectorAll("[data-record]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.record; render(); }));
       document.querySelectorAll("[data-list-filter]").forEach(btn => btn.addEventListener("click", () => { state.listFilter = btn.dataset.listFilter; render(); }));
       document.querySelectorAll("[data-list-month]").forEach(input => input.addEventListener("change", () => {
@@ -6771,6 +6932,12 @@
     function bindDrawer() {
       document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", closeDrawer));
       document.querySelectorAll("#drawer [data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
+      document.querySelectorAll("#drawer [data-open-project]").forEach(btn => btn.addEventListener("click", () => {
+        state.selected = btn.dataset.openProject;
+        state.view = "detail";
+        closeDrawer();
+        render();
+      }));
       document.querySelectorAll("[data-jump-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.jumpModule; state.view = "dispatch"; closeDrawer(); render(); }));
       document.querySelectorAll("[data-complete]").forEach(btn => btn.addEventListener("click", () => { const task = tasks.find(item => item.id === btn.dataset.complete); task.done = !task.done; task.status = task.done ? "已完成" : "进行中"; closeDrawer(); toast(task.done ? "任务已完成" : "任务已恢复"); render(); }));
       document.querySelectorAll("[data-toggle-module-task-log]").forEach(btn => btn.addEventListener("click", () => toggleModuleTaskLog(btn.dataset.toggleModuleTaskLog)));
