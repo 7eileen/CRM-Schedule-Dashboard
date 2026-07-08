@@ -290,6 +290,43 @@
     .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(170px, 1fr)); gap: 14px; }
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .stack { display: grid; gap: 12px; }
+    .special-sync-panel {
+      display: grid;
+      grid-template-columns: minmax(220px, .9fr) minmax(0, 1.6fr);
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid #dce8f5;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #f7fbff 0%, #fffaf6 100%);
+    }
+    .special-sync-copy { display: grid; gap: 6px; }
+    .special-sync-copy strong { color: #00152e; font-weight: 600; }
+    .special-sync-copy span { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .special-sync-people { display: flex; align-items: center; align-content: flex-start; flex-wrap: wrap; gap: 8px; }
+    .sync-person-chip {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: #eef6ff;
+      color: var(--blue);
+      padding: 0 10px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .sync-person-chip.is-business { background: var(--orange-soft); color: var(--orange); }
+    .info-editor-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .info-editor-note {
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px;
+      border: 1px solid #ffd5ab;
+      border-radius: 10px;
+      background: #fff8f0;
+      color: #5f3308;
+      line-height: 1.5;
+    }
+    .info-editor-note strong { color: var(--orange); }
 
     .list-panel { overflow: visible; }
     .list-toolbar {
@@ -2392,6 +2429,7 @@
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .special-sync-panel { grid-template-columns: 1fr; }
       .task-total-row { grid-template-columns: minmax(220px, 1fr) minmax(180px, 1fr) 110px; }
       .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
       .my-task-tools, .task-filter-right { flex-wrap: wrap; }
@@ -2406,7 +2444,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid, .list-stat-field-grid { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .info-editor-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid, .list-stat-field-grid { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -2684,6 +2722,25 @@
       "马年礼盒（价值1499元）",
       "卡皮巴拉礼盒（价值999元）",
       "其他"
+    ];
+    const specialStatusOptions = ["已排期", "派工中", "待复盘", "已延期", "已取消"];
+    const specialTypeOptions = ["专场", "新闻号", "单品直播间"];
+    const businessEditableFields = [
+      { key: "specialName", label: "专场名称", required: true, wide: true, placeholder: "例：河北卫视中华好诗词 6/01 防晒素颜霜专场" },
+      { key: "uid", label: "达人 UID", required: true },
+      { key: "talent", label: "达人昵称", required: true },
+      { key: "liveTime", label: "专场排期", type: "datetime-local", required: true },
+      { key: "business", label: "负责商务", required: true },
+      { key: "scheduleStatus", label: "状态", type: "select", options: specialStatusOptions, required: true },
+      { key: "type", label: "类型", type: "select", options: specialTypeOptions, required: true },
+      { key: "liveRoom", label: "直播间", type: "select", options: liveRoomOptions, required: true },
+      { key: "product", label: "主推产品", type: "select", options: productOptions, required: true, wide: true },
+      { key: "mechanism", label: "主推机制", type: "textarea", wide: true },
+      { key: "expectedGmv", label: "目标销售额", required: true },
+      { key: "trial", label: "是否有试用", type: "select", options: trialOptions },
+      { key: "luckyBag", label: "福袋需求", type: "select", options: luckyBagOptions },
+      { key: "luckyBagOther", label: "其他福袋说明", placeholder: "选择其他时填写" },
+      { key: "cooperation", label: "达人配合度", type: "textarea", wide: true }
     ];
 
     const specialDetailGroups = [
@@ -3931,11 +3988,187 @@
       </section>`;
     }
 
+    function recordStakeholders(record) {
+      const people = new Map();
+      const addPerson = (name, role, primary = false) => {
+        const normalized = String(name || "").trim();
+        if (!normalized || ["待分配", "待填写", "暂无", "无"].includes(normalized)) return;
+        if (!people.has(normalized)) {
+          people.set(normalized, { name: normalized, roles: [], primary });
+        }
+        const item = people.get(normalized);
+        if (!item.roles.includes(role)) item.roles.push(role);
+        item.primary = item.primary || primary;
+      };
+      addPerson(record.business, "负责商务", true);
+      moduleOrder.forEach(moduleKey => {
+        const supportName = supportNeeds[moduleKey].title;
+        addPerson(modules[moduleKey].owner, `${supportName}负责人`);
+        addPerson(dispatchAssignments[record.id]?.[moduleKey]?.owner || defaultOwnerFor(record.id, moduleKey), `${supportName}派发负责人`);
+        (dispatchTasks[record.id]?.[moduleKey] || []).forEach(task => addPerson(task.owner, `${supportName}执行人`));
+      });
+      return Array.from(people.values()).map(item => ({
+        name: item.name,
+        role: item.roles.join(" / "),
+        primary: item.primary
+      }));
+    }
+
+    function specialInfoSyncPanel(record) {
+      const stakeholders = recordStakeholders(record);
+      const synced = record.infoSync;
+      const summary = synced
+        ? `${synced.actor || "商务"} 于 ${formatDate(synced.time)} 提交编辑，已同步 ${stakeholders.length} 位关联人员。`
+        : `提交后自动同步负责商务、四类需求负责人、派发负责人和执行组员，共 ${stakeholders.length} 位关联人员。`;
+      const chips = stakeholders.map(person => `<span class="sync-person-chip ${person.primary ? "is-business" : ""}" title="${escapeHtml(person.role)}">${escapeHtml(person.name)}</span>`).join("");
+      return `<div class="special-sync-panel">
+        <div class="special-sync-copy">
+          <strong>信息同步</strong>
+          <span>${summary}</span>
+        </div>
+        <div class="special-sync-people">${chips}</div>
+      </div>`;
+    }
+
+    function specialInfoValue(record, key) {
+      const fallback = {
+        specialName: record.specialName || record.title,
+        liveRoom: recordLiveRoom(record),
+        scheduleStatus: record.scheduleStatus || record.status || "已排期",
+        type: record.type || "专场",
+        mechanism: record.mechanism || "按商务文档机制执行",
+        expectedGmv: record.expectedGmv || record.sales || "",
+        trial: record.trial || "不支持试用",
+        luckyBag: record.luckyBag || "飞机盒礼盒（价值599元）",
+        luckyBagOther: record.luckyBagOther || "",
+        cooperation: record.cooperation || "高，可配合提前预热、直播口播和短视频确认"
+      };
+      return fallback[key] ?? record[key] ?? "";
+    }
+
+    function infoEditorOptions(item, value) {
+      const options = [...(item.options || [])];
+      if (value && !options.includes(value)) options.unshift(value);
+      return options;
+    }
+
+    function specialInfoEditorField(record, item) {
+      const value = specialInfoValue(record, item.key);
+      const cls = item.wide ? " long" : "";
+      const required = item.required ? `<em class="required">*</em>` : "";
+      const placeholder = item.placeholder ? ` placeholder="${escapeHtml(item.placeholder)}"` : "";
+      const label = `<span class="detail-field-label">${escapeHtml(item.label)}${required}</span>`;
+      if (item.type === "select") {
+        return `<label class="detail-field${cls}">${label}
+          <select class="select" data-info-edit="${item.key}">${infoEditorOptions(item, value).map(option => `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select>
+        </label>`;
+      }
+      if (item.type === "datetime-local") {
+        return `<label class="detail-field${cls}">${label}
+          <input class="input" type="datetime-local" value="${escapeHtml(normalizedDateTimeValue(value))}" data-info-edit="${item.key}">
+        </label>`;
+      }
+      if (item.type === "textarea") {
+        return `<label class="detail-field${cls}">${label}
+          <textarea class="input" data-info-edit="${item.key}"${placeholder}>${escapeHtml(value)}</textarea>
+        </label>`;
+      }
+      return `<label class="detail-field${cls}">${label}
+        <input class="input" type="text" value="${escapeHtml(value)}" data-info-edit="${item.key}"${placeholder}>
+      </label>`;
+    }
+
+    function openSpecialInfoEditor(recordId) {
+      const record = records.find(item => item.id === recordId) || selectedRecord();
+      const stakeholders = recordStakeholders(record);
+      const body = `<div class="stack">
+        <div class="info-editor-note">
+          <strong>商务角色可编辑</strong>
+          <span>提交后会同步更新专场列表、日历、我的任务、需求派工和数据中心中的同一条专场信息，并通知 ${stakeholders.length} 位关联人员。</span>
+        </div>
+        <div class="detail-fields info-editor-fields">${businessEditableFields.map(item => specialInfoEditorField(record, item)).join("")}</div>
+      </div>`;
+      openDrawer(
+        "商务编辑专场信息",
+        body,
+        `<button class="btn ghost" data-close>取消</button><button class="btn primary" data-save-info-editor="${record.id}">提交并同步</button>`,
+        true,
+        true
+      );
+    }
+
+    function currentSyncTime() {
+      return new Date().toLocaleString("zh-CN", { hour12: false }).replace(/\//g, "-");
+    }
+
+    function saveSpecialInfoEditor(recordId) {
+      const record = records.find(item => item.id === recordId);
+      if (!record) return;
+      const values = {};
+      document.querySelectorAll("#drawer [data-info-edit]").forEach(input => {
+        values[input.dataset.infoEdit] = input.type === "datetime-local" ? input.value.replace("T", " ") : input.value.trim();
+      });
+      const missing = businessEditableFields.find(item => item.required && !values[item.key]);
+      if (missing) {
+        const target = document.querySelector(`#drawer [data-info-edit="${missing.key}"]`);
+        if (target) target.focus();
+        toast(`请填写${missing.label}`);
+        return;
+      }
+
+      record.specialName = values.specialName;
+      record.title = values.specialName;
+      record.uid = values.uid;
+      record.talent = values.talent;
+      record.liveTime = values.liveTime;
+      record.business = values.business;
+      record.scheduleStatus = values.scheduleStatus;
+      record.status = values.scheduleStatus;
+      record.type = values.type;
+      record.liveRoom = values.liveRoom;
+      record.product = values.product;
+      record.mechanism = values.mechanism;
+      record.expectedGmv = values.expectedGmv;
+      record.sales = values.expectedGmv;
+      record.trial = values.trial;
+      record.luckyBag = values.luckyBag;
+      record.luckyBagOther = values.luckyBagOther;
+      record.cooperation = values.cooperation;
+      record.urgency = talentGrade(record);
+
+      const stakeholders = recordStakeholders(record);
+      const syncTime = currentSyncTime();
+      record.infoSync = {
+        time: syncTime,
+        actor: record.business || "商务",
+        people: stakeholders.map(person => person.name)
+      };
+      Object.values(dispatchTasks[record.id] || {}).flat().forEach(task => {
+        task.specialInfoSyncedAt = syncTime;
+      });
+      logs.push({
+        time: syncTime,
+        user: record.business || "商务",
+        action: `编辑了 ${record.title} 专场信息，并同步 ${stakeholders.length} 位关联人员`,
+        color: "green"
+      });
+      closeDrawer();
+      toast(`已提交编辑，并同步 ${stakeholders.length} 位关联人员`);
+      render();
+    }
+
     function projectDetailPanel(record) {
       return `<section class="panel" style="margin-bottom:18px">
-        <div class="panel-head"><h2 class="panel-title">项目详情</h2><button class="btn ghost" data-drawer="record">原始记录</button></div>
+        <div class="panel-head">
+          <h2 class="panel-title">项目详情</h2>
+          <div class="actions">
+            <button class="btn ghost" data-drawer="record">原始记录</button>
+            <button class="btn primary" data-open-info-editor="${record.id}">商务编辑专场信息</button>
+          </div>
+        </div>
         <div class="panel-body stack">
-          <div class="field-grid">${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}</div>
+          <div class="field-grid">${field("专场名称", escapeHtml(record.specialName || record.title))}${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}${field("主推机制", escapeHtml(record.mechanism || "按商务文档机制执行"))}</div>
+          ${specialInfoSyncPanel(record)}
           <div class="stack">
             <h3 class="panel-title" style="font-size:16px">需求识别梗概</h3>
             <div class="grid-4">${Object.entries(modules).map(([key, module]) => moduleNeedSummary(key, module, record)).join("")}</div>
@@ -5929,6 +6162,7 @@
       document.querySelectorAll("[data-view]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.view; render(); }));
       document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.go; render(); }));
       document.querySelectorAll("[data-open-project]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.openProject; state.view = "detail"; render(); }));
+      document.querySelectorAll("[data-open-info-editor]").forEach(btn => btn.addEventListener("click", () => openSpecialInfoEditor(btn.dataset.openInfoEditor)));
       document.querySelectorAll("[data-list-stat]").forEach(btn => btn.addEventListener("click", () => openListStatDetail(btn.dataset.listStat)));
       document.querySelectorAll("[data-record]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.record; render(); }));
       document.querySelectorAll("[data-list-filter]").forEach(btn => btn.addEventListener("click", () => { state.listFilter = btn.dataset.listFilter; render(); }));
@@ -7043,6 +7277,7 @@
       document.querySelectorAll("#drawer [data-task-memo-draft]").forEach(input => input.addEventListener("input", () => updateTaskMemoDraft(input.dataset.taskMemoDraft, input.value)));
       document.querySelectorAll("#drawer [data-save-task-memo]").forEach(btn => btn.addEventListener("click", () => saveTaskMemo(btn.dataset.saveTaskMemo)));
       document.querySelectorAll("#drawer [data-close-task-memo]").forEach(btn => btn.addEventListener("click", () => closeTaskMemo(btn.dataset.closeTaskMemo)));
+      document.querySelectorAll("#drawer [data-save-info-editor]").forEach(btn => btn.addEventListener("click", () => saveSpecialInfoEditor(btn.dataset.saveInfoEditor)));
     }
 
     function toast(message) {
