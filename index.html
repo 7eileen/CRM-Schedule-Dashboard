@@ -2690,6 +2690,7 @@
       {
         title: "专场信息",
         fields: [
+          { label: "专场名称", value: "", type: "text", required: true, wide: "long", placeholder: "例：河北卫视中华好诗词 6/01 防晒素颜霜专场" },
           { label: "达人 UID", value: "dy26060102" },
           { label: "达人昵称", value: "憨憨金和帅帅银" },
           { label: "专场排期（时间）", value: "2026-06-01T20:00", type: "datetime-local" },
@@ -3421,8 +3422,9 @@
       const liveRoom = recordLiveRoom(record);
       const liveAt = calendarDateTime(record.liveTime);
       const business = record.business || "待填写";
+      const displayTitle = record.specialName || record.title;
       return `<button class="calendar-event ${done ? "done" : ""} ${delay ? "delay" : ""}" data-open-project="${record.id}">
-        <strong title="${escapeHtml(record.title)}">${escapeHtml(record.title)}</strong>
+        <strong title="${escapeHtml(displayTitle)}">${escapeHtml(displayTitle)}</strong>
         <div class="calendar-event-meta">
           <span class="calendar-pill">${escapeHtml(liveAt)}</span>
           <span class="calendar-pill">${escapeHtml(liveRoom)}</span>
@@ -3849,6 +3851,12 @@
         return `<label class="detail-field${cls}">
           ${detailFieldLabel(item)}
           <select class="select" data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.options.map(option => `<option ${option === item.value ? "selected" : ""}>${option}</option>`).join("")}</select>
+        </label>`;
+      }
+      if (item.type === "text") {
+        return `<label class="detail-field${cls}">
+          ${detailFieldLabel(item)}
+          <input class="input" type="text" value="${escapeHtml(item.value)}" placeholder="${escapeHtml(item.placeholder || "")}" data-special-detail="${key}" ${disabled ? "disabled" : ""}>
         </label>`;
       }
       if (item.type === "datetime-local") {
@@ -6751,13 +6759,16 @@
         const liveRoom = specialValue("直播间", "直播间A");
         const product = specialValue("主推产品", "油皮气垫pro");
         const sales = specialValue("目标销售额", specialValue("预估销售额", "¥180万"));
+        const generatedTitle = `${talent} ${liveAt.slice(5, 10).replace("-", "/")} ${product}${type}`;
+        const specialName = String(specialValue("专场名称", "") || "").trim() || generatedTitle;
         const trial = specialValue("是否有试用", "正装试用");
         const luckyBag = specialValue("福袋需求", "飞机盒礼盒（价值599元）");
         const luckyBagOther = specialValue("其他福袋需求", "");
         const cooperation = specialValue("达人配合度", "高，可配合提前预热、直播口播和短视频确认");
         records.unshift({
           id: newId,
-          title: `${talent} ${liveAt.slice(5, 10).replace("-", "/")} ${product}${type}`,
+          title: specialName,
+          specialName,
           talent,
           uid,
           urgency: entryUrgency(),
