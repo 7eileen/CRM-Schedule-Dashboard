@@ -2494,6 +2494,13 @@
     ];
     const liveRoomOptions = ["直播间A", "直播间B", "直播间C", "直播间D"];
     const trialOptions = ["正装试用", "替换装试用", "小样试用", "60ml试用", "不支持试用"];
+    const luckyBagOptions = [
+      "飞机盒礼盒（价值599元）",
+      "满天星礼盒（价值999元）",
+      "马年礼盒（价值1499元）",
+      "卡皮巴拉礼盒（价值999元）",
+      "其他"
+    ];
 
     const specialDetailGroups = [
       {
@@ -2509,7 +2516,8 @@
           { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions, wide: "full" },
           { label: "目标销售额", value: "¥180万" },
           { label: "是否有试用", value: "正装试用", type: "select", options: trialOptions },
-          { label: "福袋需求", value: "有，开场福袋 1 轮，整点福袋 2 轮", wide: "long" },
+          { label: "福袋需求", value: "飞机盒礼盒（价值599元）", type: "select", options: luckyBagOptions, wide: "long" },
+          { label: "其他福袋需求", value: "", showWhen: { label: "福袋需求", value: "其他" }, wide: "long" },
           { label: "福利品（即秒杀品）", value: "9.9 元洁面小样 200 单" },
           { label: "达人配合度", value: "高，可配合提前预热、直播口播和短视频确认", wide: "long" }
         ]
@@ -3243,7 +3251,7 @@
                     <span class="entry-source-kicker">文字识别</span>
                   </div>
                   <div class="entry-source-copy">从飞书、微信或表格复制整段专场信息，粘贴后点击识别即可自动填表。</div>
-                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万&#10;是否有试用：正装试用">${escapeHtml(state.entryText)}</textarea>
+                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万&#10;是否有试用：正装试用&#10;福袋需求：飞机盒礼盒（价值599元）">${escapeHtml(state.entryText)}</textarea>
                   <div class="entry-upload-actions">
                     <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
                     <button class="btn ghost" data-clear-entry-text>清空文本</button>
@@ -3287,7 +3295,8 @@
         liveRoom: "直播间C",
         product: "防晒素颜霜（化学款-老）",
         targetSales: "¥180万",
-        trial: "正装试用"
+        trial: "正装试用",
+        luckyBag: "飞机盒礼盒（价值599元）"
       };
     }
 
@@ -3308,7 +3317,8 @@
         liveRoom: pickRecognizedLine(text, ["直播间"]) || inferEntryLiveRoom(compact),
         product: standardProductName(pickRecognizedLine(text, ["主推产品", "商品", "产品"]) || inferEntryProduct(compact)),
         targetSales: pickRecognizedLine(text, ["目标销售额", "预估销售额", "预计销售额", "目标GMV", "GMV"]) || inferEntrySales(compact),
-        trial: standardTrialOption(pickRecognizedLine(text, ["是否有试用", "试用类型", "试用"]) || inferEntryTrial(compact))
+        trial: standardTrialOption(pickRecognizedLine(text, ["是否有试用", "试用类型", "试用"]) || inferEntryTrial(compact)),
+        luckyBag: pickRecognizedLine(text, ["福袋需求", "福袋礼盒", "福利礼盒", "礼盒"]) || inferEntryLuckyBag(compact)
       };
       const uidMatch = compact.match(/\bdy\d{5,}\b/i);
       if (!fields.uid && uidMatch) fields.uid = uidMatch[0];
@@ -3387,6 +3397,25 @@
         || "";
     }
 
+    function inferEntryLuckyBag(text) {
+      const source = String(text || "");
+      const normalizedSource = normalizeProductText(source);
+      return luckyBagOptions.find(option => {
+        if (option === "其他") return false;
+        const normalizedOption = normalizeProductText(option);
+        const optionAlias = normalizedOption.replace(/价值\d+元/g, "");
+        return source.includes(option) || normalizedSource.includes(normalizedOption) || normalizedSource.includes(optionAlias);
+      }) || "";
+    }
+
+    function standardLuckyBagOption(value) {
+      const normalizedValue = normalizeProductText(value);
+      if (!normalizedValue) return "";
+      return luckyBagOptions.find(option => option !== "其他" && normalizeProductText(option) === normalizedValue)
+        || luckyBagOptions.find(option => option !== "其他" && (normalizeProductText(option).includes(normalizedValue) || normalizedValue.includes(normalizeProductText(option))))
+        || "其他";
+    }
+
     function normalizeProductText(value) {
       return String(value || "").toLowerCase().replace(/[()\s（）\-—_、，,]/g, "");
     }
@@ -3420,6 +3449,8 @@
       assign("主推产品", fields.product, standardProductName);
       assign("目标销售额", fields.targetSales, normalizeGmvText);
       assign("是否有试用", fields.trial, standardTrialOption);
+      assign("福袋需求", fields.luckyBag, standardLuckyBagOption);
+      if (standardLuckyBagOption(fields.luckyBag) === "其他") assign("其他福袋需求", fields.luckyBag);
       toast(applied.length ? `${sourceLabel}已识别并回填 ${applied.length} 项` : `未从${sourceLabel}中识别到可回填字段`);
       render();
     }
@@ -4563,13 +4594,8 @@
     }
 
     function recordLuckyBagText(record) {
-      const options = [
-        "开场福袋 1 轮，整点福袋 2 轮",
-        "9.9 元洁面小样 200 单，直播间整点释放",
-        "开播福袋 1 轮，转化节点补 1 轮",
-        "不设置福袋，按主推机制承接"
-      ];
-      return record.luckyBag || options[stableRecordIndex(record, options.length)];
+      if (record.luckyBag === "其他") return record.luckyBagOther || "其他";
+      return record.luckyBag || luckyBagOptions[stableRecordIndex(record, luckyBagOptions.length - 1)] || "飞机盒礼盒（价值599元）";
     }
 
     function recordCooperationText(record) {
@@ -5500,7 +5526,7 @@
             if (params && field.value === "否") params.value = "无";
             if (params && field.value === "是" && params.value === "无") params.value = "";
           }
-          if (["是否需要拍剪", "是否有达人美颜参数习惯？", "有无种草星图单"].includes(field.label) || (field.label === "目标销售额" && event.type === "change")) {
+          if (["是否需要拍剪", "是否有达人美颜参数习惯？", "有无种草星图单", "福袋需求"].includes(field.label) || (field.label === "目标销售额" && event.type === "change")) {
             render();
           }
         };
@@ -6076,7 +6102,8 @@
         const product = specialValue("主推产品", "油皮气垫pro");
         const sales = specialValue("目标销售额", specialValue("预估销售额", "¥180万"));
         const trial = specialValue("是否有试用", "正装试用");
-        const luckyBag = specialValue("福袋需求", "有，开场福袋 1 轮，整点福袋 2 轮");
+        const luckyBag = specialValue("福袋需求", "飞机盒礼盒（价值599元）");
+        const luckyBagOther = specialValue("其他福袋需求", "");
         const cooperation = specialValue("达人配合度", "高，可配合提前预热、直播口播和短视频确认");
         records.unshift({
           id: newId,
@@ -6098,6 +6125,7 @@
           mechanism: "按商务文档机制执行",
           trial,
           luckyBag,
+          luckyBagOther,
           cooperation,
           source: "商务通过文档录入发布专场需求，待各支持组负责人派工。",
           progress: 25,
