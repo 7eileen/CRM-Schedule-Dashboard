@@ -1193,6 +1193,34 @@
     }
     .my-task-head h3 { margin: 0 0 7px; font-size: 17px; font-weight: 400; line-height: 1.35; }
     .my-task-body { padding: 16px 18px; display: grid; gap: 14px; }
+    .my-task-basic {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+      padding: 12px 14px;
+      border: 1px solid #e7edf5;
+      border-radius: 12px;
+      background: #fbfdff;
+    }
+    .my-task-basic-item {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+      align-content: start;
+    }
+    .my-task-basic-item.wide { grid-column: span 2; }
+    .my-task-basic-item span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .my-task-basic-item strong {
+      color: #00152e;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
     .task-name { font-size: 16px; font-weight: 400; color: #00152e; }
     .task-note {
       padding: 12px 14px;
@@ -2226,6 +2254,7 @@
         height: calc(100vh - 48px);
       }
       .detail-field.long { grid-column: auto; }
+      .my-task-basic-item.wide { grid-column: auto; }
       .list-toolbar { align-items: stretch; flex-direction: column; }
       .list-toolbar .seg-group { margin-left: 0; }
       .list-search { width: 100%; }
@@ -2464,6 +2493,7 @@
       "联名粉底霜"
     ];
     const liveRoomOptions = ["直播间A", "直播间B", "直播间C", "直播间D"];
+    const trialOptions = ["正装试用", "替换装试用", "小样试用", "60ml试用", "不支持试用"];
 
     const specialDetailGroups = [
       {
@@ -2478,7 +2508,7 @@
           { label: "直播间", value: "直播间A", type: "select", options: liveRoomOptions },
           { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions, wide: "full" },
           { label: "目标销售额", value: "¥180万" },
-          { label: "是否有试用", value: "有，达人及助播试用 20 份" },
+          { label: "是否有试用", value: "正装试用", type: "select", options: trialOptions },
           { label: "福袋需求", value: "有，开场福袋 1 轮，整点福袋 2 轮", wide: "long" },
           { label: "福利品（即秒杀品）", value: "9.9 元洁面小样 200 单" },
           { label: "达人配合度", value: "高，可配合提前预热、直播口播和短视频确认", wide: "long" }
@@ -3213,7 +3243,7 @@
                     <span class="entry-source-kicker">文字识别</span>
                   </div>
                   <div class="entry-source-copy">从飞书、微信或表格复制整段专场信息，粘贴后点击识别即可自动填表。</div>
-                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万">${escapeHtml(state.entryText)}</textarea>
+                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万&#10;是否有试用：正装试用">${escapeHtml(state.entryText)}</textarea>
                   <div class="entry-upload-actions">
                     <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
                     <button class="btn ghost" data-clear-entry-text>清空文本</button>
@@ -3256,7 +3286,8 @@
         type: "专场",
         liveRoom: "直播间C",
         product: "防晒素颜霜（化学款-老）",
-        targetSales: "¥180万"
+        targetSales: "¥180万",
+        trial: "正装试用"
       };
     }
 
@@ -3276,7 +3307,8 @@
         type: pickRecognizedLine(text, ["类型"]) || inferEntryType(compact),
         liveRoom: pickRecognizedLine(text, ["直播间"]) || inferEntryLiveRoom(compact),
         product: standardProductName(pickRecognizedLine(text, ["主推产品", "商品", "产品"]) || inferEntryProduct(compact)),
-        targetSales: pickRecognizedLine(text, ["目标销售额", "预估销售额", "预计销售额", "目标GMV", "GMV"]) || inferEntrySales(compact)
+        targetSales: pickRecognizedLine(text, ["目标销售额", "预估销售额", "预计销售额", "目标GMV", "GMV"]) || inferEntrySales(compact),
+        trial: standardTrialOption(pickRecognizedLine(text, ["是否有试用", "试用类型", "试用"]) || inferEntryTrial(compact))
       };
       const uidMatch = compact.match(/\bdy\d{5,}\b/i);
       if (!fields.uid && uidMatch) fields.uid = uidMatch[0];
@@ -3343,6 +3375,18 @@
         || value;
     }
 
+    function inferEntryTrial(text) {
+      return trialOptions.find(option => String(text || "").includes(option)) || "";
+    }
+
+    function standardTrialOption(value) {
+      const normalizedValue = normalizeProductText(value);
+      if (!normalizedValue) return "";
+      return trialOptions.find(option => normalizeProductText(option) === normalizedValue)
+        || trialOptions.find(option => normalizeProductText(option).includes(normalizedValue) || normalizedValue.includes(normalizeProductText(option)))
+        || "";
+    }
+
     function normalizeProductText(value) {
       return String(value || "").toLowerCase().replace(/[()\s（）\-—_、，,]/g, "");
     }
@@ -3375,6 +3419,7 @@
       assign("直播间", fields.liveRoom, value => liveRoomOptions.includes(value) ? value : "");
       assign("主推产品", fields.product, standardProductName);
       assign("目标销售额", fields.targetSales, normalizeGmvText);
+      assign("是否有试用", fields.trial, standardTrialOption);
       toast(applied.length ? `${sourceLabel}已识别并回填 ${applied.length} 项` : `未从${sourceLabel}中识别到可回填字段`);
       render();
     }
@@ -4507,6 +4552,53 @@
       return item.task.delayDue || item.task.due || item.record.liveTime.slice(0, 10);
     }
 
+    function stableRecordIndex(record, modulo) {
+      const source = `${record.id || ""}${record.uid || ""}${record.talent || ""}`;
+      const seed = Array.from(source).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      return modulo ? seed % modulo : seed;
+    }
+
+    function recordTrialText(record) {
+      return record.trial || trialOptions[stableRecordIndex(record, trialOptions.length)] || "正装试用";
+    }
+
+    function recordLuckyBagText(record) {
+      const options = [
+        "开场福袋 1 轮，整点福袋 2 轮",
+        "9.9 元洁面小样 200 单，直播间整点释放",
+        "开播福袋 1 轮，转化节点补 1 轮",
+        "不设置福袋，按主推机制承接"
+      ];
+      return record.luckyBag || options[stableRecordIndex(record, options.length)];
+    }
+
+    function recordCooperationText(record) {
+      const options = [
+        "高，可配合提前预热、直播口播和短视频确认",
+        "中，需提前锁定脚本和拍摄时间",
+        "高，可配合样品试用和直播间口播",
+        "一般，需商务提前确认禁忌与素材边界"
+      ];
+      return record.cooperation || options[stableRecordIndex(record, options.length)];
+    }
+
+    function myTaskSpecialInfo(record) {
+      const items = [
+        { label: "达人UID", value: record.uid },
+        { label: "达人昵称", value: record.talent },
+        { label: "专场排期", value: record.liveTime },
+        { label: "负责商务", value: record.business || "待填写" },
+        { label: "状态", value: record.scheduleStatus || record.status || "待同步" },
+        { label: "主推产品", value: record.product },
+        { label: "主推机制", value: record.mechanism || "按商务文档机制执行", wide: true },
+        { label: "目标销售额", value: record.expectedGmv || record.sales || "待填写" },
+        { label: "是否有试用", value: recordTrialText(record) },
+        { label: "福袋需求", value: recordLuckyBagText(record), wide: true },
+        { label: "达人配合度", value: recordCooperationText(record), wide: true }
+      ];
+      return `<div class="my-task-basic">${items.map(item => `<div class="my-task-basic-item${item.wide ? " wide" : ""}"><span>${item.label}</span><strong>${escapeHtml(item.value || "待填写")}</strong></div>`).join("")}</div>`;
+    }
+
     function myTaskCard(item) {
       const { record, moduleKey, task, key } = item;
       const module = modules[moduleKey];
@@ -4527,6 +4619,7 @@
           ${badge(task.status, statusCls)}
         </div>
         <div class="my-task-body">
+          ${myTaskSpecialInfo(record)}
           <div class="row">
             <div>
               <div class="task-name">${task.title}</div>
@@ -5982,6 +6075,9 @@
         const liveRoom = specialValue("直播间", "直播间A");
         const product = specialValue("主推产品", "油皮气垫pro");
         const sales = specialValue("目标销售额", specialValue("预估销售额", "¥180万"));
+        const trial = specialValue("是否有试用", "正装试用");
+        const luckyBag = specialValue("福袋需求", "有，开场福袋 1 轮，整点福袋 2 轮");
+        const cooperation = specialValue("达人配合度", "高，可配合提前预热、直播口播和短视频确认");
         records.unshift({
           id: newId,
           title: `${talent} ${liveAt.slice(5, 10).replace("-", "/")} ${product}${type}`,
@@ -6000,6 +6096,9 @@
           sales,
           product,
           mechanism: "按商务文档机制执行",
+          trial,
+          luckyBag,
+          cooperation,
           source: "商务通过文档录入发布专场需求，待各支持组负责人派工。",
           progress: 25,
           nodesDone: 1,
