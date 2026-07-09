@@ -2880,7 +2880,7 @@
           { label: "取消原因", value: "", showWhen: { label: "状态", value: "已取消" }, wide: "long" },
           { label: "类型", value: "专场", type: "select", options: ["专场", "新闻号", "单品直播间"] },
           { label: "直播间", value: "直播间A", type: "select", options: liveRoomOptions },
-          { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions, wide: "full" },
+          { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions },
           { label: "主推机制", value: "按商务文档机制执行", wide: "long" },
           { label: "目标销售额", value: "¥180万" },
           { label: "是否有试用", value: "正装试用", type: "select", options: trialOptions },
@@ -3731,7 +3731,7 @@
                     <span class="entry-source-kicker">文字识别</span>
                   </div>
                   <div class="entry-source-copy">从飞书、微信或表格复制整段专场信息，粘贴后点击识别即可自动填表。</div>
-                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;目标销售额：180万&#10;是否有试用：正装试用&#10;福袋需求：飞机盒礼盒（价值599元）">${escapeHtml(state.entryText)}</textarea>
+                  <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;主推机制：买二送一，前20分钟加赠旅行装&#10;目标销售额：180万&#10;是否有试用：正装试用&#10;福袋需求：飞机盒礼盒（价值599元）">${escapeHtml(state.entryText)}</textarea>
                   <div class="entry-upload-actions">
                     <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
                     <button class="btn ghost" data-clear-entry-text>清空文本</button>
@@ -3778,6 +3778,7 @@
         type: "专场",
         liveRoom: "直播间C",
         product: "防晒素颜霜（化学款-老）",
+        mechanism: "买二送一，前20分钟加赠旅行装",
         targetSales: "¥180万",
         trial: "正装试用",
         luckyBag: "飞机盒礼盒（价值599元）"
@@ -3800,6 +3801,7 @@
         type: pickRecognizedLine(text, ["类型"]) || inferEntryType(compact),
         liveRoom: pickRecognizedLine(text, ["直播间"]) || inferEntryLiveRoom(compact),
         product: standardProductName(pickRecognizedLine(text, ["主推产品", "商品", "产品"]) || inferEntryProduct(compact)),
+        mechanism: pickRecognizedLine(text, ["主推机制", "活动机制", "专场机制", "机制"]),
         targetSales: pickRecognizedLine(text, ["目标销售额", "预估销售额", "预计销售额", "目标GMV", "GMV"]) || inferEntrySales(compact),
         trial: standardTrialOption(pickRecognizedLine(text, ["是否有试用", "试用类型", "试用"]) || inferEntryTrial(compact)),
         luckyBag: pickRecognizedLine(text, ["福袋需求", "福袋礼盒", "福利礼盒", "礼盒"]) || inferEntryLuckyBag(compact)
@@ -3931,6 +3933,7 @@
       assign("类型", fields.type, value => ["专场", "新闻号", "单品直播间"].includes(value) ? value : "");
       assign("直播间", fields.liveRoom, value => liveRoomOptions.includes(value) ? value : "");
       assign("主推产品", fields.product, standardProductName);
+      assign("主推机制", fields.mechanism);
       assign("目标销售额", fields.targetSales, normalizeGmvText);
       assign("是否有试用", fields.trial, standardTrialOption);
       assign("福袋需求", fields.luckyBag, standardLuckyBagOption);
