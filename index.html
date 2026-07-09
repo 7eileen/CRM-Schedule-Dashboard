@@ -168,8 +168,9 @@
     .stat strong { display: block; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; color: #00152e; }
     .stat span { color: var(--muted); font-size: 14px; }
     .list-stats .stat { min-height: 112px; padding: 22px 28px; align-items: flex-start; }
+    .list-stats { grid-template-columns: repeat(5, minmax(128px, 1fr)); }
     .list-stats button.stat::after {
-      content: "查看专场";
+      content: "筛选日历";
       position: absolute;
       right: 22px;
       bottom: 18px;
@@ -183,10 +184,15 @@
       opacity: 1;
       transform: translateY(-2px);
     }
+    .list-stats button.stat.active {
+      outline: 2px solid rgba(240, 130, 0, .24);
+      box-shadow: 0 10px 24px rgba(15, 35, 65, .08);
+    }
     .stat.stat-orange strong { color: var(--orange); }
     .stat.stat-green strong { color: var(--green); }
     .stat.stat-blue strong { color: var(--blue); }
     .stat.stat-red strong { color: var(--red); }
+    .stat.stat-gray strong { color: #6d7889; }
     button.stat {
       width: 100%;
       text-align: left;
@@ -753,6 +759,7 @@
     .badge.red { color: #f04444; background: var(--red-soft); }
     .badge.blue { color: var(--blue); background: var(--blue-soft); }
     .badge.purple { color: var(--purple); background: var(--purple-soft); }
+    .badge.gray { color: #6d7889; background: #eef2f6; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; }
     .progress { height: 6px; border-radius: 999px; background: #efeeeb; overflow: hidden; }
     .progress span { display: block; height: 100%; border-radius: 999px; background: var(--orange); }
@@ -2848,6 +2855,7 @@
       { key: "liveTime", label: "专场排期", type: "datetime-local", required: true },
       { key: "business", label: "负责商务", required: true },
       { key: "scheduleStatus", label: "状态", type: "select", options: specialStatusOptions, required: true },
+      { key: "cancelReason", label: "取消原因", type: "textarea", wide: true, placeholder: "状态改为已取消时必填" },
       { key: "type", label: "类型", type: "select", options: specialTypeOptions, required: true },
       { key: "liveRoom", label: "直播间", type: "select", options: liveRoomOptions, required: true },
       { key: "product", label: "主推产品", type: "select", options: productOptions, required: true, wide: true },
@@ -3333,17 +3341,12 @@
       const month = state.listMonth || "2026-06";
       const { rangeRecords } = listBaseRecords();
       const statGroups = listStatGroups({ rangeRecords, gradeAndSearchRecords: rangeRecords });
-      const running = statGroups.running.records.length;
-      const delayed = statGroups.delayed.records.length;
-      const completedInRange = statGroups.completed.records.length;
+      const selectedGroup = statGroups[state.listFilter] || statGroups.all;
       return `${head("专场列表", `<button class="btn primary" data-action="newRecord">+ 发起新专场</button>`)}
       <section class="stats list-stats">
-        <button class="stat stat-orange" data-list-stat="all" aria-label="查看${listRangeTitle()}专场信息"><div><strong>${rangeRecords.length}</strong><span>${listRangeTitle()}专场</span></div></button>
-        <button class="stat stat-green" data-list-stat="running" aria-label="查看进行中专场信息"><div><strong>${running}</strong><span>进行中</span></div></button>
-        <button class="stat stat-blue" data-list-stat="completed" aria-label="查看已直播专场信息"><div><strong>${completedInRange}</strong><span>已直播</span></div></button>
-        <button class="stat stat-red" data-list-stat="delayed" aria-label="查看延期申请专场信息"><div><strong>${delayed}</strong><span>延期申请</span></div></button>
+        ${Object.values(statGroups).map(group => `<button class="stat stat-${group.cls} ${state.listFilter === group.key ? "active" : ""}" data-list-stat="${group.key}" aria-label="筛选${group.label}日历"><div><strong>${group.records.length}</strong><span>${group.label}</span></div></button>`).join("")}
       </section>
-      ${monthCalendar(month, rangeRecords)}`;
+      ${monthCalendar(month, selectedGroup.records, selectedGroup)}`;
     }
 
     function listBaseRecords() {
@@ -3361,26 +3364,58 @@
       const { rangeRecords, gradeAndSearchRecords } = base;
       return {
         all: {
-          title: `${listRangeTitle()}专场信息`,
+          key: "all",
+          label: "本月专场",
+          title: "本月专场日历",
           records: rangeRecords,
           cls: "orange"
         },
         running: {
-          title: "进行中专场信息",
-          records: gradeAndSearchRecords.filter(item => item.status !== "待复盘" && (item.scheduleStatus || item.status) !== "已取消"),
+          key: "running",
+          label: "进行中",
+          title: "进行中专场日历",
+          records: gradeAndSearchRecords.filter(item => specialCalendarStatus(item) === "running"),
           cls: "green"
         },
         completed: {
-          title: "已直播专场信息",
-          records: rangeRecords.filter(item => item.status === "待复盘" || item.progress >= 90),
+          key: "completed",
+          label: "已直播",
+          title: "已直播专场日历",
+          records: rangeRecords.filter(item => specialCalendarStatus(item) === "completed"),
           cls: "blue"
         },
         delayed: {
-          title: "延期申请专场信息",
-          records: rangeRecords.filter(item => (item.scheduleStatus || item.status || "").includes("延期") || recordDelayedTask(item)),
+          key: "delayed",
+          label: "已延期",
+          title: "已延期专场日历",
+          records: rangeRecords.filter(item => specialCalendarStatus(item) === "delayed"),
           cls: "red"
+        },
+        canceled: {
+          key: "canceled",
+          label: "已取消",
+          title: "已取消专场日历",
+          records: rangeRecords.filter(item => specialCalendarStatus(item) === "canceled"),
+          cls: "gray"
         }
       };
+    }
+
+    function specialCalendarStatus(record) {
+      const rawStatus = record.scheduleStatus || record.status || "";
+      if (rawStatus.includes("取消")) return "canceled";
+      if (rawStatus.includes("延期") || recordDelayedTask(record)) return "delayed";
+      if (isSpecialLiveEnded(record)) return "completed";
+      return "running";
+    }
+
+    function isSpecialLiveEnded(record) {
+      if (record.completedDate) return true;
+      const rawStatus = record.scheduleStatus || record.status || "";
+      if (rawStatus === "待复盘" || rawStatus === "已完成") return true;
+      const liveAt = new Date(String(record.liveTime || "").replace(/-/g, "/"));
+      if (Number.isNaN(liveAt.getTime())) return false;
+      return liveAt.getTime() <= Date.now();
     }
 
     function openListStatDetail(type) {
@@ -3425,7 +3460,7 @@
       return `<div class="list-stat-field"><span>${label}</span><strong>${escapeHtml(value || "待填写")}</strong></div>`;
     }
 
-    function monthCalendar(month, monthRecords) {
+    function monthCalendar(month, monthRecords, group = null) {
       const [year, rawMonth] = month.split("-").map(Number);
       const first = new Date(year, rawMonth - 1, 1);
       const last = new Date(year, rawMonth, 0);
@@ -3454,7 +3489,7 @@
         </div>`;
       });
       return `<section class="panel month-calendar">
-        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">专场日历</h2>${badge(`${monthRecords.length} 个专场`, "blue")}</div><div class="calendar-head-actions"><label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-list-month></label><button class="calendar-toggle" data-calendar-toggle>${state.calendarOpen ? "收起日历" : "展开日历"}</button></div></div>
+        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">专场日历</h2>${badge(`${group?.label || "本月专场"} ${monthRecords.length} 个`, group?.cls || "blue")}</div><div class="calendar-head-actions"><label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-list-month></label><button class="calendar-toggle" data-calendar-toggle>${state.calendarOpen ? "收起日历" : "展开日历"}</button></div></div>
         ${state.calendarOpen ? `<div class="panel-body">
           <div class="calendar-grid">
             ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
@@ -4153,6 +4188,7 @@
         specialName: record.specialName || record.title,
         liveRoom: recordLiveRoom(record),
         scheduleStatus: record.scheduleStatus || record.status || "已排期",
+        cancelReason: record.cancelReason || "",
         type: record.type || "专场",
         mechanism: record.mechanism || "按商务文档机制执行",
         expectedGmv: record.expectedGmv || record.sales || "",
@@ -4233,6 +4269,12 @@
         toast(`请填写${missing.label}`);
         return;
       }
+      if (values.scheduleStatus === "已取消" && !values.cancelReason) {
+        const target = document.querySelector(`#drawer [data-info-edit="cancelReason"]`);
+        if (target) target.focus();
+        toast("状态改为已取消时，请填写取消原因");
+        return;
+      }
 
       record.specialName = values.specialName;
       record.title = values.specialName;
@@ -4242,6 +4284,8 @@
       record.business = values.business;
       record.scheduleStatus = values.scheduleStatus;
       record.status = values.scheduleStatus;
+      record.cancelReason = values.cancelReason;
+      if (values.scheduleStatus === "已取消") record.canceledAt = currentSyncTime();
       record.type = values.type;
       record.liveRoom = values.liveRoom;
       record.product = values.product;
@@ -4276,12 +4320,16 @@
     }
 
     function projectDetailPanel(record) {
+      const canceled = specialCalendarStatus(record) === "canceled";
+      const editAction = canceled
+        ? badge("已取消不可编辑", "red")
+        : `<button class="btn primary" data-open-info-editor="${record.id}">商务编辑专场信息</button>`;
       return `<section class="panel" style="margin-bottom:18px">
         <div class="panel-head">
           <h2 class="panel-title">项目详情</h2>
           <div class="actions">
             <button class="btn ghost" data-drawer="record">原始记录</button>
-            <button class="btn primary" data-open-info-editor="${record.id}">商务编辑专场信息</button>
+            ${editAction}
           </div>
         </div>
         <div class="panel-body stack">
@@ -6380,7 +6428,11 @@
       document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.go; render(); }));
       document.querySelectorAll("[data-open-project]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.openProject; state.view = "detail"; render(); }));
       document.querySelectorAll("[data-open-info-editor]").forEach(btn => btn.addEventListener("click", () => openSpecialInfoEditor(btn.dataset.openInfoEditor)));
-      document.querySelectorAll("[data-list-stat]").forEach(btn => btn.addEventListener("click", () => openListStatDetail(btn.dataset.listStat)));
+      document.querySelectorAll("[data-list-stat]").forEach(btn => btn.addEventListener("click", () => {
+        state.listFilter = btn.dataset.listStat;
+        state.calendarExpandedDay = "";
+        render();
+      }));
       document.querySelectorAll("[data-record]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.record; render(); }));
       document.querySelectorAll("[data-list-filter]").forEach(btn => btn.addEventListener("click", () => { state.listFilter = btn.dataset.listFilter; render(); }));
       document.querySelectorAll("[data-list-month]").forEach(input => input.addEventListener("change", () => {
@@ -6391,7 +6443,6 @@
         const option = listRangeOptions().find(item => item.start === range.start && item.end === range.end);
         state.listRangePreset = option ? option.key : "custom";
         state.listRangeOpen = false;
-        state.listFilter = "all";
         state.calendarExpandedDay = "";
         render();
       }));
@@ -6407,7 +6458,6 @@
         state.listRangePreset = option.key;
         state.listMonth = option.start.slice(0, 7);
         state.listRangeOpen = false;
-        state.listFilter = "all";
         state.calendarExpandedDay = "";
         render();
       }));
