@@ -167,6 +167,11 @@
     .stat-icon { display: none; }
     .stat strong { display: block; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; color: #00152e; }
     .stat span { color: var(--muted); font-size: 14px; }
+    .my-task-stats { grid-template-columns: repeat(5, minmax(128px, 1fr)); }
+    .my-task-stats button.stat.active {
+      box-shadow: 0 0 0 1px #ff8200 inset, 0 10px 28px rgba(255, 130, 0, .16);
+      background: #fff8ef;
+    }
     .list-stats .stat { min-height: 112px; padding: 22px 28px; align-items: flex-start; }
     .list-stats { grid-template-columns: repeat(5, minmax(128px, 1fr)); }
     .list-stats button.stat::after {
@@ -2623,15 +2628,14 @@
     const tabs = [
       { id: "list", name: "专场列表" },
       { id: "entry", name: "达人专场录入" },
-      { id: "dispatch", name: "需求派工" },
       { id: "myTasks", name: "我的任务" },
       { id: "dataCenter", name: "数据中心" }
     ];
 
     const modules = {
-      content: { name: "内容需求", owner: "毛毛", cls: "blue", scope: "脚本、预热内容、话题点、出镜人员" },
-      edit: { name: "剪辑需求", owner: "陈响", cls: "purple", scope: "素材收集、剪辑排期、视频版本、审核修改" },
-      ads: { name: "投放需求", owner: "吕歆", cls: "orange", scope: "达人画像、千川合作码、人群包、预算费比" },
+      content: { name: "内容需求", owner: "小颖", cls: "blue", scope: "脚本、预热内容、话题点、出镜人员" },
+      edit: { name: "剪辑需求", owner: "雯一", cls: "purple", scope: "素材收集、剪辑排期、视频版本、审核修改" },
+      ads: { name: "投放需求", owner: "建新", cls: "orange", scope: "达人画像、千川合作码、人群包、预算费比" },
       ops: { name: "运营需求", owner: "刘曼曼", cls: "green", scope: "设备、镜像、化妆、样品、福利品、开播检查" }
     };
 
@@ -3285,15 +3289,28 @@
     const field = (label, value) => `<div class="field"><label>${label}</label><strong>${value}</strong></div>`;
 
     function render() {
+      normalizeMergedDispatchView();
       renderNav();
       const app = $("#app");
       if (state.view === "list") app.innerHTML = pageList();
       if (state.view === "entry") app.innerHTML = pageEntry();
-      if (state.view === "dispatch") app.innerHTML = pageDispatch();
       if (state.view === "myTasks") app.innerHTML = pageMyTasks();
       if (state.view === "dataCenter") app.innerHTML = pageDataCenter();
       if (state.view === "detail") app.innerHTML = pageDetail();
       bind();
+    }
+
+    function normalizeMergedDispatchView() {
+      if (state.view !== "dispatch") return;
+      state.view = "myTasks";
+      state.taskStatusFilter = "dispatch";
+    }
+
+    function enterDispatchWorkspace(moduleKey = state.module, recordId = "") {
+      state.view = "myTasks";
+      state.taskStatusFilter = "dispatch";
+      if (moduleKey) state.module = moduleKey;
+      if (recordId && moduleKey) state.dispatchOpen = `${recordId}:${moduleKey}`;
     }
 
     function openProject(id) {
@@ -4243,7 +4260,7 @@
       const body = `<div class="stack">
         <div class="info-editor-note">
           <strong>商务角色可编辑</strong>
-          <span>提交后会同步更新专场列表、日历、我的任务、需求派工和数据中心中的同一条专场信息，并通知 ${stakeholders.length} 位关联人员。</span>
+          <span>提交后会同步更新专场列表、日历、我的任务、需求派发和数据中心中的同一条专场信息，并通知 ${stakeholders.length} 位关联人员。</span>
         </div>
         <div class="detail-fields info-editor-fields">${businessEditableFields.map(item => specialInfoEditorField(record, item)).join("")}</div>
       </div>`;
@@ -4590,7 +4607,7 @@
     }
 
     function pageAnalysis() {
-      return `${head("需求识别", `<button class="btn primary" data-action="runAnalysis">重新识别字段</button><button class="btn ghost" data-go="dispatch">进入任务派工</button>`)}
+      return `${head("需求识别", `<button class="btn primary" data-action="runAnalysis">重新识别字段</button><button class="btn ghost" data-go="dispatch">进入需求派发</button>`)}
       <section class="grid-main">
         <div class="panel">
           <div class="panel-head"><div><h2 class="panel-title">需求识别结果</h2></div>${badge("7 条需求", "blue")}</div>
@@ -5339,7 +5356,10 @@
       const scopeItems = scopedTaskItems();
       const activeModule = activeTaskModuleFilter(scopeItems);
       const activeModuleItems = scopeItems.filter(item => item.moduleKey === activeModule);
-      const selectedStatus = normalizedTaskStatusFilter(activeModule, activeModuleItems);
+      const dispatchMode = state.taskStatusFilter === "dispatch";
+      const dispatchModule = dispatchMode ? state.module : activeModule;
+      const dispatchPending = dispatchPendingTotal(dispatchModule);
+      const selectedStatus = dispatchMode ? "dispatch" : normalizedTaskStatusFilter(activeModule, activeModuleItems);
       const myItems = filteredMyTaskItems(scopeItems);
       const myGroups = groupedMyTaskItems(myItems);
       const scopeGroups = groupedMyTaskItems(scopeItems);
@@ -5347,7 +5367,7 @@
       const abnormal = scopeGroups.filter(item => isTaskWorkflowAbnormal(myTaskGroupStatus(item.groupItems))).length;
       const pending = scopeGroups.filter(item => myTaskGroupStatus(item.groupItems) === "待办任务").length;
       const priorityOptions = ["all:全部优先级", "S+:S+ 级", "S:S 级", "A:A 级", "B:B 级", "C:C 级"];
-      const nodeOptions = [`all:全部节点 ${activeModuleItems.length}`, ...moduleWorkflowStatusOptions(activeModule, activeModuleItems).map(status => `${status}:${status} ${activeModuleItems.filter(item => taskWorkflowStatus(item) === status).length}`)];
+      const nodeOptions = [`dispatch:需求派发 ${dispatchPending}`, `all:全部节点 ${activeModuleItems.length}`, ...moduleWorkflowStatusOptions(activeModule, activeModuleItems).map(status => `${status}:${status} ${activeModuleItems.filter(item => taskWorkflowStatus(item) === status).length}`)];
       return `<div class="my-task-tools task-filter-only">
         <div class="task-filter-right">
           <label class="task-filter-field">
@@ -5361,18 +5381,30 @@
           <input class="input task-search" value="${state.taskSearch}" placeholder="搜索专场名称" data-task-search>
         </div>
       </div>
-      <section class="stats">
+      <section class="stats my-task-stats">
+        <button class="stat stat-orange ${dispatchMode ? "active" : ""}" data-task-status-card="dispatch" data-task-dispatch-module="${dispatchModule}"><div><strong>${dispatchPending}</strong><span>需求派发</span></div></button>
         <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeGroups.length}</strong><span>总量任务</span></div></button>
         <div class="stat stat-blue"><div><strong>${pending}</strong><span>待办任务</span></div></div>
         <div class="stat stat-green"><div><strong>${done}</strong><span>已发布/已投放</span></div></div>
         <div class="stat stat-red"><div><strong>${abnormal}</strong><span>延期/取消</span></div></div>
       </section>
-      <section class="panel">
+      ${dispatchMode ? myTaskDispatchWorkspace() : `<section class="panel">
         <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2></div>${taskModulePoolTabs(scopeItems)}</div>
         <div class="panel-body">
           ${myGroups.length ? `<div class="my-task-list">${myGroups.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
         </div>
-      </section>`;
+      </section>`}`;
+    }
+
+    function dispatchPendingTotal(moduleKey = state.module) {
+      const keys = moduleOrder.includes(moduleKey) ? [moduleKey] : moduleOrder;
+      return records.reduce((sum, record) => (
+        sum + keys.filter(key => assignmentFor(record.id, key).status === "待派发").length
+      ), 0);
+    }
+
+    function myTaskDispatchWorkspace() {
+      return `<section class="my-task-dispatch">${pageDispatch()}</section>`;
     }
 
     function taskModulePoolTabs(items) {
@@ -6480,7 +6512,11 @@
 
     function bind() {
       document.querySelectorAll("[data-view]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.view; render(); }));
-      document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => { state.view = btn.dataset.go; render(); }));
+      document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => {
+        if (btn.dataset.go === "dispatch") enterDispatchWorkspace();
+        else state.view = btn.dataset.go;
+        render();
+      }));
       document.querySelectorAll("[data-open-project]").forEach(btn => btn.addEventListener("click", () => { state.selected = btn.dataset.openProject; state.view = "detail"; render(); }));
       document.querySelectorAll("[data-open-info-editor]").forEach(btn => btn.addEventListener("click", () => openSpecialInfoEditor(btn.dataset.openInfoEditor)));
       document.querySelectorAll("[data-list-stat]").forEach(btn => btn.addEventListener("click", () => {
@@ -6641,6 +6677,12 @@
       }));
       document.querySelectorAll("[data-task-status-filter]").forEach(input => input.addEventListener("change", () => {
         state.taskStatusFilter = input.value;
+        if (input.value === "dispatch") state.module = activeTaskModuleFilter(scopedTaskItems());
+        render();
+      }));
+      document.querySelectorAll("[data-task-status-card]").forEach(btn => btn.addEventListener("click", () => {
+        state.taskStatusFilter = btn.dataset.taskStatusCard;
+        if (btn.dataset.taskDispatchModule) state.module = btn.dataset.taskDispatchModule;
         render();
       }));
       document.querySelectorAll("[data-task-module-filter]").forEach(btn => btn.addEventListener("click", () => {
@@ -6751,9 +6793,7 @@
 
     function focusDispatchTask(key) {
       const [recordId, moduleKey] = key.split(":");
-      state.module = moduleKey;
-      state.dispatchOpen = `${recordId}:${moduleKey}`;
-      state.view = "dispatch";
+      enterDispatchWorkspace(moduleKey, recordId);
       render();
     }
 
@@ -7376,8 +7416,7 @@
           nodesTotal: 4
         });
         state.selected = newId;
-        state.module = "content";
-        state.view = "dispatch";
+        enterDispatchWorkspace("content", newId);
         toast("需求已发布，进入支持组派工");
         render();
         return;
@@ -7681,7 +7720,7 @@
         closeDrawer();
         render();
       }));
-      document.querySelectorAll("[data-jump-module]").forEach(btn => btn.addEventListener("click", () => { state.module = btn.dataset.jumpModule; state.view = "dispatch"; closeDrawer(); render(); }));
+      document.querySelectorAll("[data-jump-module]").forEach(btn => btn.addEventListener("click", () => { enterDispatchWorkspace(btn.dataset.jumpModule); closeDrawer(); render(); }));
       document.querySelectorAll("[data-complete]").forEach(btn => btn.addEventListener("click", () => { const task = tasks.find(item => item.id === btn.dataset.complete); task.done = !task.done; task.status = task.done ? "已完成" : "进行中"; closeDrawer(); toast(task.done ? "任务已完成" : "任务已恢复"); render(); }));
       document.querySelectorAll("[data-toggle-module-task-log]").forEach(btn => btn.addEventListener("click", () => toggleModuleTaskLog(btn.dataset.toggleModuleTaskLog)));
       document.querySelectorAll("#drawer [data-task-memo-draft]").forEach(input => input.addEventListener("input", () => updateTaskMemoDraft(input.dataset.taskMemoDraft, input.value)));
