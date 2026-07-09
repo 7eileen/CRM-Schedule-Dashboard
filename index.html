@@ -2545,6 +2545,80 @@
       font-weight: 600;
     }
     .calendar-more:hover { border-color: #f08200; color: #f08200; background: #fffaf3; }
+    .my-task-calendar .calendar-cell { min-height: 190px; }
+    .my-task-calendar .panel-head { align-items: center; }
+    .task-calendar-event {
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+    .task-calendar-event:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(15, 35, 65, .12);
+      border-color: #ffb45f;
+    }
+    .task-calendar-line {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: inherit;
+      font-weight: 800;
+      line-height: 1.4;
+      font-size: 13px;
+    }
+    .task-calendar-deadline {
+      color: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      opacity: .86;
+    }
+    .task-calendar-empty {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed #d9e1eb;
+      border-radius: 12px;
+      color: var(--muted);
+      background: #fbfcfe;
+      font-weight: 600;
+    }
+    .task-calendar-detail-list { display: grid; gap: 10px; }
+    .task-calendar-detail-row {
+      display: grid;
+      grid-template-columns: 32px minmax(180px, 1fr) 110px 120px 120px minmax(120px, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #e4eaf2;
+      border-radius: 12px;
+      background: #fbfcfe;
+    }
+    .task-calendar-detail-index {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #f08200;
+      background: #fff4e8;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .task-calendar-detail-main { display: grid; gap: 4px; min-width: 0; }
+    .task-calendar-detail-main strong { color: #00152e; }
+    .task-calendar-detail-main span,
+    .task-calendar-detail-cell span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .task-calendar-detail-cell { display: grid; gap: 4px; min-width: 0; }
+    .task-calendar-detail-cell strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #00152e;
+    }
 
     @media (max-width: 1180px) {
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2688,6 +2762,8 @@
       taskStatusFilter: "all",
       taskModuleFilter: "all",
       taskSearch: "",
+      taskMonth: "2026-06",
+      taskCalendarExpandedDay: "",
       listFilter: "all",
       listSearch: "",
       listGrade: "all",
@@ -5388,12 +5464,7 @@
         <div class="stat stat-green"><div><strong>${done}</strong><span>已发布/已投放</span></div></div>
         <div class="stat stat-red"><div><strong>${abnormal}</strong><span>延期/取消</span></div></div>
       </section>
-      ${dispatchMode ? myTaskDispatchWorkspace() : `<section class="panel">
-        <div class="panel-head"><div><h2 class="panel-title">${taskScopeTitle()}的达人专场任务</h2></div>${taskModulePoolTabs(scopeItems)}</div>
-        <div class="panel-body">
-          ${myGroups.length ? `<div class="my-task-list">${myGroups.map(myTaskCard).join("")}</div>` : `<div class="upload"><div><strong>暂无任务</strong></div></div>`}
-        </div>
-      </section>`}`;
+      ${dispatchMode ? myTaskDispatchWorkspace() : myTaskCalendar(state.taskMonth, myGroups, activeModule, scopeItems)}`;
     }
 
     function dispatchPendingTotal(moduleKey = state.module) {
@@ -5405,6 +5476,134 @@
 
     function myTaskDispatchWorkspace() {
       return `<section class="my-task-dispatch">${pageDispatch()}</section>`;
+    }
+
+    function myTaskCalendar(month, groups, activeModule, scopeItems) {
+      const [year, rawMonth] = month.split("-").map(Number);
+      const first = new Date(year, rawMonth - 1, 1);
+      const last = new Date(year, rawMonth, 0);
+      const startOffset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+      const totalCells = Math.ceil((startOffset + last.getDate()) / 7) * 7;
+      const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+      const monthGroups = groups.filter(group => myTaskCalendarDate(group).slice(0, 7) === month);
+      const cells = Array.from({ length: totalCells }, (_, index) => {
+        const day = index - startOffset + 1;
+        const inMonth = day >= 1 && day <= last.getDate();
+        const dateText = inMonth ? `${month}-${String(day).padStart(2, "0")}` : "";
+        const dayGroups = inMonth
+          ? monthGroups.filter(group => myTaskCalendarDate(group) === dateText).sort(taskUrgencyCompare)
+          : [];
+        const expanded = state.taskCalendarExpandedDay === dateText;
+        const visibleGroups = expanded ? dayGroups : dayGroups.slice(0, 3);
+        const hiddenCount = dayGroups.length - visibleGroups.length;
+        const moreButton = hiddenCount > 0
+          ? `<button class="calendar-more" data-task-calendar-day-toggle="${dateText}">还有 ${hiddenCount} 条</button>`
+          : expanded && dayGroups.length > 3
+            ? `<button class="calendar-more" data-task-calendar-day-toggle="${dateText}">收起</button>`
+            : "";
+        return `<div class="calendar-cell ${inMonth ? "" : "is-muted"} ${dayGroups.length > 3 ? "has-many" : ""} ${expanded ? "is-expanded" : ""}">
+          <div class="calendar-day"><span>${inMonth ? day : ""}</span>${dayGroups.length ? badge(`${dayGroups.length}条`, "orange") : ""}</div>
+          ${visibleGroups.map(taskCalendarEvent).join("")}
+          ${moreButton}
+        </div>`;
+      });
+      return `<section class="panel month-calendar my-task-calendar">
+        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">${taskScopeTitle()}的任务日历</h2>${badge(`${supportNeeds[activeModule].title} ${monthGroups.length} 条`, modules[activeModule].cls)}</div><div class="calendar-head-actions">${taskModulePoolTabs(scopeItems)}<label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label></div></div>
+        <div class="panel-body">
+          ${monthGroups.length ? `<div class="calendar-grid">
+            ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
+            ${cells.join("")}
+          </div>` : `<div class="task-calendar-empty">当前筛选下暂无任务</div>`}
+        </div>
+      </section>`;
+    }
+
+    function myTaskCalendarDate(group) {
+      const groupItems = group.groupItems || [group];
+      const primary = primaryGroupTaskItem(groupItems);
+      if (primary.moduleKey === "content") return taskDemandDate(taskSortAnchorItem(groupItems));
+      return primary.record.liveTime.slice(0, 10);
+    }
+
+    function taskCalendarEvent(group) {
+      const groupItems = group.groupItems || [group];
+      const primary = primaryGroupTaskItem(groupItems);
+      const anchor = taskSortAnchorItem(groupItems);
+      const status = myTaskGroupStatus(groupItems);
+      const eventCls = isTaskWorkflowDone(status) ? "done" : isTaskWorkflowAbnormal(status) ? "delay" : "";
+      return `<button class="calendar-event task-calendar-event ${eventCls}" data-open-my-task-calendar="${group.key}">
+        <span class="task-calendar-line">${escapeHtml(primary.record.talent)} ${shortLiveDate(primary.record.liveTime)} ${escapeHtml(primary.record.product)}</span>
+        <span class="task-calendar-deadline">${taskCalendarDateLabel(primary.moduleKey)}：${formatMonthDay(primary.moduleKey === "content" ? taskDemandDate(anchor) : primary.record.liveTime.slice(0, 10))}</span>
+      </button>`;
+    }
+
+    function taskCalendarDateLabel(moduleKey) {
+      return moduleKey === "content" ? "内容需求截止时间" : "专场排期";
+    }
+
+    function shortLiveDate(liveTime) {
+      const [date, time = ""] = String(liveTime || "").split(" ");
+      return `${formatMonthDay(date)}${time ? ` ${time}` : ""}`;
+    }
+
+    function formatMonthDay(dateText) {
+      const date = String(dateText || "").replaceAll("/", "-").slice(0, 10);
+      const [, month = "", day = ""] = date.split("-");
+      return month && day ? `${Number(month)}月${Number(day)}日` : "待定";
+    }
+
+    function openMyTaskCalendarDetail(key) {
+      const groupItems = taskActionItems(key).sort(taskRecordSubtaskCompare);
+      if (!groupItems.length) return;
+      const primary = primaryGroupTaskItem(groupItems);
+      const record = primary.record;
+      const moduleKey = primary.moduleKey;
+      const title = `${record.talent} ${shortLiveDate(record.liveTime)} ${record.product}`;
+      openDrawer(
+        "任务详情",
+        myTaskCalendarDetailBody(groupItems),
+        `<button class="btn primary" data-close>关闭</button>`,
+        true,
+        true
+      );
+      $("#drawerTitle").textContent = title;
+    }
+
+    function myTaskCalendarDetailBody(groupItems) {
+      const primary = primaryGroupTaskItem(groupItems);
+      const record = primary.record;
+      const moduleKey = primary.moduleKey;
+      const groupStatus = myTaskGroupStatus(groupItems);
+      const rows = groupItems.map((item, index) => {
+        const task = item.task;
+        const status = taskWorkflowStatus(item);
+        const files = (task.files || []).length ? (task.files || []).join("、") : "暂无附件";
+        return `<div class="task-calendar-detail-row">
+          <span class="task-calendar-detail-index">${index + 1}</span>
+          <div class="task-calendar-detail-main">
+            <strong>${escapeHtml(task.title || "未命名任务")}</strong>
+            <span>${supportNeeds[moduleKey].title}</span>
+          </div>
+          <div class="task-calendar-detail-cell"><span>执行人</span><strong>${escapeHtml(task.owner || "待分配")}</strong></div>
+          <div class="task-calendar-detail-cell"><span>${taskCalendarDateLabel(moduleKey)}</span><strong>${formatMonthDay(moduleKey === "content" ? taskDemandDate(item) : record.liveTime.slice(0, 10))}</strong></div>
+          <div class="task-calendar-detail-cell"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
+          <div class="task-calendar-detail-cell"><span>附件</span><strong title="${escapeHtml(files)}">${escapeHtml(files)}</strong></div>
+        </div>`;
+      }).join("");
+      return `<div class="stack my-task-calendar-detail">
+        <div class="field-grid">
+          ${field("达人 UID", escapeHtml(record.uid))}
+          ${field("达人昵称", escapeHtml(record.talent))}
+          ${field("专场排期", escapeHtml(record.liveTime))}
+          ${field("负责商务", escapeHtml(record.business || "待填写"))}
+          ${field("状态", badge(groupStatus, taskStatusClass(groupStatus)))}
+          ${field("主推产品", escapeHtml(record.product))}
+          ${field("主推机制", escapeHtml(record.mechanism || "按商务文档机制执行"))}
+          ${field("目标销售额", escapeHtml(record.expectedGmv || record.sales || "待填写"))}
+        </div>
+        <div class="task-note">${demandText(record, moduleKey)}</div>
+        <div class="task-calendar-detail-list">${rows}</div>
+      </div>`;
     }
 
     function taskModulePoolTabs(items) {
@@ -6561,6 +6760,16 @@
         state.calendarExpandedDay = state.calendarExpandedDay === btn.dataset.calendarDayToggle ? "" : btn.dataset.calendarDayToggle;
         render();
       }));
+      document.querySelectorAll("[data-task-month]").forEach(input => input.addEventListener("change", () => {
+        state.taskMonth = input.value;
+        state.taskCalendarExpandedDay = "";
+        render();
+      }));
+      document.querySelectorAll("[data-task-calendar-day-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.taskCalendarExpandedDay = state.taskCalendarExpandedDay === btn.dataset.taskCalendarDayToggle ? "" : btn.dataset.taskCalendarDayToggle;
+        render();
+      }));
+      document.querySelectorAll("[data-open-my-task-calendar]").forEach(btn => btn.addEventListener("click", () => openMyTaskCalendarDetail(btn.dataset.openMyTaskCalendar)));
       document.querySelectorAll("[data-special-progress-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.specialProgressOpen = !state.specialProgressOpen;
         render();
