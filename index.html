@@ -915,6 +915,55 @@
     .module-tab.active .muted { color: #c46b00; }
     .module-tab strong { font-size: 17px; font-weight: 400; line-height: 1.3; }
     .dispatch-list { display: grid; gap: 14px; }
+    .dispatch-calendar .calendar-cell { min-height: 168px; }
+    .dispatch-calendar .calendar-cell.has-many { min-height: 238px; }
+    .dispatch-calendar-event {
+      border-color: #ffd8ae;
+      background: #fff4e8;
+      gap: 7px;
+      cursor: pointer;
+    }
+    .dispatch-calendar-event.is-active {
+      border-color: var(--orange);
+      box-shadow: inset 0 0 0 1px var(--orange), 0 8px 18px rgba(255, 111, 0, .12);
+    }
+    .dispatch-calendar-event .dispatch-calendar-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 800;
+      color: #7a3f00;
+    }
+    .dispatch-calendar-event .dispatch-calendar-title span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dispatch-calendar-event .dispatch-calendar-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #8a4a00;
+      font-weight: 700;
+    }
+    .dispatch-calendar-event .dispatch-calendar-sub {
+      color: #8a6a43;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dispatch-calendar-detail {
+      margin-top: 16px;
+      border: 1px solid #ffd8ae;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #fffaf5 0%, #fff 70%);
+      overflow: hidden;
+    }
+    .dispatch-calendar-detail .dispatch-detail { padding: 16px; }
     .dispatch-card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -2781,6 +2830,7 @@
       taskSearch: "",
       taskMonth: "2026-06",
       taskCalendarExpandedDay: "",
+      dispatchCalendarExpandedDay: "",
       listFilter: "all",
       listSearch: "",
       listGrade: "all",
@@ -4974,6 +5024,8 @@
       if (!visibleModules.includes(state.module)) state.module = visibleModules[0];
       const poolRecords = dispatchPoolRecords(state.module);
       const pending = poolRecords.length;
+      const [openRecordId = "", openModuleKey = ""] = String(state.dispatchOpen || "").split(":");
+      const openRecord = openModuleKey === state.module ? poolRecords.find(record => record.id === openRecordId) : null;
       const standaloneTabs = embedded ? "" : `<section class="module-tabs">${visibleModules.map(moduleTab).join("")}</section>`;
       const headActions = embedded
         ? dispatchModuleSwitcher(visibleModules)
@@ -4985,7 +5037,8 @@
           <div class="dispatch-head-actions">${headActions}</div>
         </div>
         <div class="panel-body">
-          <div class="dispatch-list">${poolRecords.map(record => dispatchCard(record, state.module)).join("")}</div>
+          ${dispatchCalendar(poolRecords, state.module)}
+          ${openRecord ? dispatchDetailPanel(openRecord, state.module) : ""}
         </div>
       </section>`;
     }
@@ -4999,6 +5052,101 @@
         const pending = dispatchPoolRecords(key).length;
         return `<button class="task-module-tab ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">${labelMap[key] || supportNeeds[key].title}<i>${pending}</i></button>`;
       }).join("")}</div>`;
+    }
+
+    function dispatchCalendar(poolRecords, moduleKey) {
+      const month = state.taskMonth || "2026-06";
+      const [year, rawMonth] = month.split("-").map(Number);
+      const first = new Date(year, rawMonth - 1, 1);
+      const last = new Date(year, rawMonth, 0);
+      const startOffset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+      const totalCells = Math.ceil((startOffset + last.getDate()) / 7) * 7;
+      const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+      const monthRecords = poolRecords
+        .filter(record => dispatchCalendarDate(record, moduleKey).slice(0, 7) === month)
+        .sort((a, b) => dispatchCalendarDate(a, moduleKey).localeCompare(dispatchCalendarDate(b, moduleKey)) || gradeRank(a.grade) - gradeRank(b.grade));
+      const cells = Array.from({ length: totalCells }, (_, index) => {
+        const day = index - startOffset + 1;
+        const inMonth = day >= 1 && day <= last.getDate();
+        const dateText = inMonth ? `${month}-${String(day).padStart(2, "0")}` : "";
+        const dayRecords = inMonth
+          ? monthRecords.filter(record => dispatchCalendarDate(record, moduleKey) === dateText)
+          : [];
+        const expanded = state.dispatchCalendarExpandedDay === dateText;
+        const visibleRecords = expanded ? dayRecords : dayRecords.slice(0, 3);
+        const hiddenCount = dayRecords.length - visibleRecords.length;
+        const moreButton = hiddenCount > 0
+          ? `<button class="calendar-more" data-dispatch-calendar-day-toggle="${dateText}">还有 ${hiddenCount} 条</button>`
+          : expanded && dayRecords.length > 3
+            ? `<button class="calendar-more" data-dispatch-calendar-day-toggle="${dateText}">收起</button>`
+            : "";
+        return `<div class="calendar-cell ${inMonth ? "" : "is-muted"} ${dayRecords.length > 3 ? "has-many" : ""} ${expanded ? "is-expanded" : ""}">
+          <div class="calendar-day"><span>${inMonth ? day : ""}</span>${dayRecords.length ? badge(`${dayRecords.length}条`, "orange") : ""}</div>
+          ${visibleRecords.map(record => dispatchCalendarEvent(record, moduleKey)).join("")}
+          ${moreButton}
+        </div>`;
+      });
+      return `<div class="dispatch-calendar">
+        <div class="calendar-head-actions" style="margin-bottom:12px;">
+          <label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label>
+        </div>
+        ${monthRecords.length ? `<div class="calendar-grid">
+          ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
+          ${cells.join("")}
+        </div>` : `<div class="task-calendar-empty">当前需求池暂无待派发任务</div>`}
+      </div>`;
+    }
+
+    function dispatchCalendarDate(record, moduleKey) {
+      return String(dispatchDue(record.id, moduleKey) || record.liveTime || "").replaceAll("/", "-").slice(0, 10);
+    }
+
+    function dispatchCalendarEvent(record, moduleKey) {
+      const dispatchKey = `${record.id}:${moduleKey}`;
+      const taskList = tasksFor(record.id, moduleKey);
+      const noticeCount = taskNoticeCount(taskList);
+      const active = state.dispatchOpen === dispatchKey;
+      return `<button class="calendar-event dispatch-calendar-event ${active ? "is-active" : ""}" data-toggle-dispatch="${dispatchKey}">
+        <span class="dispatch-calendar-title"><span>${escapeHtml(record.talent)} ${shortLiveDate(record.liveTime)}</span>${summaryNoticeDot(noticeCount, "该专场有新增子任务提醒")}</span>
+        <span class="dispatch-calendar-sub">${escapeHtml(record.product)} · ${supportNeeds[moduleKey].title}</span>
+        <span class="dispatch-calendar-meta"><span>预计完成 ${formatMonthDay(dispatchCalendarDate(record, moduleKey))}</span><span>${taskList.length} 子任务</span></span>
+      </button>`;
+    }
+
+    function dispatchDetailPanel(record, moduleKey) {
+      const assignment = assignmentFor(record.id, moduleKey);
+      const module = modules[moduleKey];
+      const taskList = tasksFor(record.id, moduleKey);
+      const statusCls = taskStatusClass(assignment.status);
+      const published = assignment.status !== "待派发";
+      const draftCount = taskList.filter(task => task.isDraft).length;
+      return `<div class="dispatch-calendar-detail">
+        <div class="dispatch-detail">
+          <div class="dispatch-main">
+            ${myTaskSpecialInfo(record)}
+            <div class="demand-text">
+              <strong>${supportNeeds[moduleKey].title}需求内容</strong>
+              ${demandText(record, moduleKey)}
+            </div>
+            <div class="task-builder">
+              <div class="task-builder-head">
+                <div><strong>${published ? "任务观察" : "新建任务"}</strong></div>
+                <div class="task-builder-head-actions">
+                  ${published ? `<button class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新增任务">+</button>` : ""}
+                  ${published ? badge(assignment.status, statusCls) : ""}
+                  ${badge(`${taskList.length} 条子任务`, module.cls)}
+                </div>
+              </div>
+              ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
+              ${!published || draftCount ? `<div class="task-actions">
+                ${badge(assignment.status, statusCls)}
+                ${published ? badge(`${draftCount} 条待发布`, "orange") : `<button class="btn ghost" data-add-subtask="${record.id}:${moduleKey}">+ 新建任务</button>`}
+                <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "发布新增任务"}</button>
+              </div>` : ""}
+            </div>
+          </div>
+        </div>
+      </div>`;
     }
 
     function moduleTab(key) {
@@ -6842,10 +6990,15 @@
       document.querySelectorAll("[data-task-month]").forEach(input => input.addEventListener("change", () => {
         state.taskMonth = input.value;
         state.taskCalendarExpandedDay = "";
+        state.dispatchCalendarExpandedDay = "";
         render();
       }));
       document.querySelectorAll("[data-task-calendar-day-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.taskCalendarExpandedDay = state.taskCalendarExpandedDay === btn.dataset.taskCalendarDayToggle ? "" : btn.dataset.taskCalendarDayToggle;
+        render();
+      }));
+      document.querySelectorAll("[data-dispatch-calendar-day-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        state.dispatchCalendarExpandedDay = state.dispatchCalendarExpandedDay === btn.dataset.dispatchCalendarDayToggle ? "" : btn.dataset.dispatchCalendarDayToggle;
         render();
       }));
       document.querySelectorAll("[data-open-my-task-calendar]").forEach(btn => btn.addEventListener("click", () => openMyTaskCalendarDetail(btn.dataset.openMyTaskCalendar)));
@@ -6867,6 +7020,7 @@
       document.querySelectorAll("[data-module]").forEach(btn => btn.addEventListener("click", () => {
         state.module = btn.dataset.module;
         state.dispatchOpen = btn.dataset.moduleRecord ? `${btn.dataset.moduleRecord}:${btn.dataset.module}` : "";
+        state.dispatchCalendarExpandedDay = "";
         if (btn.dataset.go === "dispatch") {
           state.view = "myTasks";
           state.taskWorkspace = "dispatch";
