@@ -840,6 +840,71 @@
       background: linear-gradient(135deg, rgba(255, 247, 241, .98) 0%, rgba(255, 252, 248, .96) 56%, rgba(246, 251, 255, .96) 100%);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
     }
+    .entry-detail-panel .special-info-card {
+      border-color: #ffbe84;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(255, 221, 185, .58) 0%, rgba(255, 221, 185, 0) 34%),
+        linear-gradient(135deg, #fff2e8 0%, #fff8f1 48%, #fffdf9 100%);
+      box-shadow: 0 14px 34px rgba(204, 111, 32, .08), inset 0 1px 0 rgba(255, 255, 255, .88);
+    }
+    .special-info-card .detail-card-head {
+      padding-bottom: 2px;
+    }
+    .special-info-card h3 {
+      color: #5a2f0b;
+      font-weight: 650;
+    }
+    .special-info-layout {
+      display: grid;
+      gap: 14px;
+    }
+    .special-info-section {
+      border: 1px solid rgba(255, 190, 132, .72);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .58);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .special-info-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #6f3908;
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .special-info-section-title::before {
+      content: "";
+      width: 6px;
+      height: 18px;
+      border-radius: 99px;
+      background: #ff7a00;
+      box-shadow: 0 0 0 4px rgba(255, 122, 0, .1);
+    }
+    .special-info-fields {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .special-info-card .detail-field span,
+    .special-info-card .detail-field-label {
+      color: #7b5d48;
+      font-weight: 600;
+    }
+    .special-info-card .input,
+    .special-info-card .select,
+    .special-info-card textarea {
+      border-color: #edd1bb;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, .9);
+    }
+    .special-info-card .input:focus,
+    .special-info-card .select:focus,
+    .special-info-card textarea:focus {
+      border-color: #ff8a1f;
+      box-shadow: 0 0 0 3px rgba(255, 122, 0, .12);
+    }
     .entry-detail-panel .detail-card.is-collapsed {
       border-color: #e6edf5;
       background: linear-gradient(135deg, #fbfcfe 0%, #fff9f4 100%);
@@ -2688,6 +2753,7 @@
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .special-info-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .special-sync-panel { grid-template-columns: 1fr; }
       .task-total-row { grid-template-columns: minmax(220px, 1fr) minmax(180px, 1fr) 110px; }
       .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
@@ -2703,7 +2769,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .info-editor-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid, .list-stat-field-grid { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .special-info-fields, .info-editor-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid, .list-stat-field-grid { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -4113,13 +4179,33 @@
 
     function detailCard(group, groupIndex) {
       const enabled = !group.supportKey || entrySupportEnabled[group.supportKey] !== false;
-      return `<div class="detail-card ${enabled ? "" : "is-collapsed"}">
+      const isSpecialInfo = group.title === "专场信息";
+      return `<div class="detail-card ${isSpecialInfo ? "special-info-card " : ""}${enabled ? "" : "is-collapsed"}">
         <div class="detail-card-head">
           <h3>${group.title}</h3>
           ${group.supportKey ? supportSwitch(group.supportKey, group.switchLabel) : ""}
         </div>
-        ${enabled ? `<div class="detail-fields">${group.fields.map((item, fieldIndex) => detailField(groupIndex, fieldIndex, item)).join("")}</div>` : ""}
+        ${enabled ? (isSpecialInfo ? specialInfoFields(group, groupIndex) : `<div class="detail-fields">${group.fields.map((item, fieldIndex) => detailField(groupIndex, fieldIndex, item)).join("")}</div>`) : ""}
       </div>`;
+    }
+
+    function specialInfoFields(group, groupIndex) {
+      const sections = [
+        { title: "基础信息", labels: ["专场名称", "达人 UID", "达人昵称"] },
+        { title: "排期与归属", labels: ["专场排期（时间）", "负责商务", "类型", "直播间"] },
+        { title: "商品与销售", labels: ["主推产品", "主推机制", "目标销售额"] },
+        { title: "配合与福利", labels: ["是否有试用", "福袋需求", "其他福袋需求", "福利品（即秒杀品）", "达人配合度"] }
+      ];
+      return `<div class="special-info-layout">${sections.map(section => {
+        const fields = section.labels.map(label => {
+          const fieldIndex = group.fields.findIndex(item => item.label === label);
+          return fieldIndex >= 0 ? detailField(groupIndex, fieldIndex, group.fields[fieldIndex]) : "";
+        }).join("");
+        return `<section class="special-info-section">
+          <div class="special-info-section-title">${section.title}</div>
+          <div class="special-info-fields">${fields}</div>
+        </section>`;
+      }).join("")}</div>`;
     }
 
     function supportSwitch(key, label) {
