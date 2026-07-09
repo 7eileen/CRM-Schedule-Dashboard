@@ -5739,7 +5739,7 @@
       const eventCls = isTaskWorkflowDone(status) ? "done" : isTaskWorkflowAbnormal(status) ? "delay" : "";
       return `<button class="calendar-event task-calendar-event ${eventCls}" data-open-my-task-calendar="${group.key}">
         <span class="task-calendar-line">${escapeHtml(primary.record.talent)} ${shortLiveDate(primary.record.liveTime)} ${escapeHtml(primary.record.product)}</span>
-        <span class="task-calendar-deadline">${taskCalendarDateLabel(primary.moduleKey)}：${formatMonthDay(primary.moduleKey === "content" ? taskDemandDate(anchor) : primary.record.liveTime.slice(0, 10))}</span>
+        <span class="task-calendar-deadline">内容需求截止时间：${formatMonthDay(taskDemandDate(anchor))}</span>
       </button>`;
     }
 
