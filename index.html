@@ -5146,6 +5146,7 @@
         </button>
         ${open ? `<div class="dispatch-detail">
           <div class="dispatch-main">
+            ${myTaskSpecialInfo(record)}
             <div class="demand-text">
               <strong>${supportNeeds[moduleKey].title}需求内容</strong>
               ${demandText(record, moduleKey)}
@@ -5227,6 +5228,7 @@
         ? `<span class="task-observe-files">${files.map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("")}</span>`
         : `<span class="muted">暂无上传附件</span>`;
       const body = `<div class="stack">
+        ${myTaskSpecialInfo(record)}
         <div class="field-grid">
           ${field("所属专场", escapeHtml(record.title))}
           ${field("支持模块", supportNeeds[moduleKey].title)}
@@ -5591,15 +5593,9 @@
         </div>`;
       }).join("");
       return `<div class="stack my-task-calendar-detail">
+        ${myTaskSpecialInfo(record)}
         <div class="field-grid">
-          ${field("达人 UID", escapeHtml(record.uid))}
-          ${field("达人昵称", escapeHtml(record.talent))}
-          ${field("专场排期", escapeHtml(record.liveTime))}
-          ${field("负责商务", escapeHtml(record.business || "待填写"))}
-          ${field("状态", badge(groupStatus, taskStatusClass(groupStatus)))}
-          ${field("主推产品", escapeHtml(record.product))}
-          ${field("主推机制", escapeHtml(record.mechanism || "按商务文档机制执行"))}
-          ${field("目标销售额", escapeHtml(record.expectedGmv || record.sales || "待填写"))}
+          ${field("当前任务状态", badge(groupStatus, taskStatusClass(groupStatus)))}
         </div>
         <div class="task-note">${demandText(record, moduleKey)}</div>
         <div class="task-calendar-detail-list">${rows}</div>
@@ -5788,19 +5784,35 @@
     }
 
     function taskUrgencyCompare(a, b) {
-      const dateDelta = taskDemandCompare(a, b);
+      const dateDelta = taskSortDate(a).localeCompare(taskSortDate(b));
       if (dateDelta) return dateDelta;
       const gradeDelta = taskGradeCompare(a, b);
       if (gradeDelta) return gradeDelta;
-      return a.record.liveTime.localeCompare(b.record.liveTime);
+      return taskLiveTime(a).localeCompare(taskLiveTime(b));
     }
 
     function taskGradeCompare(a, b) {
-      return gradeRank(talentGrade(a.record)) - gradeRank(talentGrade(b.record));
+      return gradeRank(talentGrade(taskRecord(a))) - gradeRank(talentGrade(taskRecord(b)));
     }
 
     function taskDemandCompare(a, b) {
       return taskDemandDate(a).localeCompare(taskDemandDate(b));
+    }
+
+    function taskSortDate(item) {
+      const groupItems = item.groupItems || [item];
+      const primary = primaryGroupTaskItem(groupItems);
+      if (primary?.moduleKey === "content") return taskDemandDate(taskSortAnchorItem(groupItems));
+      return primary?.record?.liveTime?.slice(0, 10) || taskDemandDate(primary || item);
+    }
+
+    function taskRecord(item) {
+      const groupItems = item.groupItems || [item];
+      return primaryGroupTaskItem(groupItems)?.record || item.record || {};
+    }
+
+    function taskLiveTime(item) {
+      return taskRecord(item).liveTime || "";
     }
 
     function taskDemandDate(item) {
