@@ -5714,7 +5714,7 @@
         </div>`;
       });
       return `<section class="panel month-calendar my-task-calendar">
-        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">${taskScopeTitle()}的任务日历</h2>${badge(`${supportNeeds[activeModule].title} ${monthGroups.length} 条`, modules[activeModule].cls)}</div><div class="calendar-head-actions">${taskModulePoolTabs(scopeItems)}<label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label></div></div>
+        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">${taskScopeTitle()}的任务日历</h2>${badge(`${supportNeeds[activeModule].title} ${monthGroups.length} 条`, modules[activeModule].cls)}</div><div class="calendar-head-actions"><label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label></div></div>
         <div class="panel-body">
           ${monthGroups.length ? `<div class="calendar-grid">
             ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
