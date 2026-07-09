@@ -613,7 +613,7 @@
     .module-task-dialog { display: grid; gap: 16px; }
     .module-task-summary {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
     }
     .module-task-summary .field { min-height: 64px; }
@@ -4379,7 +4379,7 @@
       const canceled = specialCalendarStatus(record) === "canceled";
       const editAction = canceled
         ? badge("已取消不可编辑", "red")
-        : `<button class="btn primary" data-open-info-editor="${record.id}">商务编辑专场信息</button>`;
+        : `<button class="btn primary" data-open-info-editor="${record.id}">编辑</button>`;
       return `<section class="panel" style="margin-bottom:18px">
         <div class="panel-head">
           <h2 class="panel-title">项目详情</h2>
@@ -4664,7 +4664,6 @@
             ${field("达人专场", record.title)}
             ${field("需求负责人", module.owner)}
             ${field("完成情况", summary.label)}
-            ${field("支持范围", module.scope || support.title)}
           </div>
           <div class="module-task-detail-list">${rows || `<div class="upload"><div><strong>暂无子任务</strong></div></div>`}</div>
         </div>`,
