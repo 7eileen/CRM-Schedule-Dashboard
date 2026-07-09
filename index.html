@@ -288,7 +288,7 @@
     }
     .panel-title { margin: 0; font-size: 18px; font-weight: 500; line-height: 1.35; color: #00152e; }
     .panel-body { padding: 18px 20px; }
-    .panel-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
+    .panel-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 
     .grid-2 { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 18px; align-items: start; }
     .grid-main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
@@ -2877,9 +2877,11 @@
           { label: "专场排期（时间）", value: "2026-06-01T20:00", type: "datetime-local" },
           { label: "负责商务", value: "池维杞" },
           { label: "状态", value: "已排期", type: "select", options: ["已排期", "已延期", "已取消"] },
+          { label: "取消原因", value: "", showWhen: { label: "状态", value: "已取消" }, wide: "long" },
           { label: "类型", value: "专场", type: "select", options: ["专场", "新闻号", "单品直播间"] },
           { label: "直播间", value: "直播间A", type: "select", options: liveRoomOptions },
           { label: "主推产品", value: "油皮气垫pro", type: "product", options: productOptions, wide: "full" },
+          { label: "主推机制", value: "按商务文档机制执行", wide: "long" },
           { label: "目标销售额", value: "¥180万" },
           { label: "是否有试用", value: "正装试用", type: "select", options: trialOptions },
           { label: "福袋需求", value: "飞机盒礼盒（价值599元）", type: "select", options: luckyBagOptions, wide: "long" },
@@ -3944,7 +3946,7 @@
         </div>
         <div class="panel-body">
           <div class="detail-groups">${specialDetailGroups.map((group, groupIndex) => detailCard(group, groupIndex)).join("")}</div>
-          <div class="panel-actions"><button class="btn primary" data-action="createProjectFromEntry">发布需求</button></div>
+          <div class="panel-actions"><button class="btn ghost" data-action="saveEntrySpecialInfo">提交修改并通知支持人员</button><button class="btn primary" data-action="createProjectFromEntry">发布需求</button></div>
         </div>
       </section>`;
     }
@@ -4255,6 +4257,94 @@
       return new Date().toLocaleString("zh-CN", { hour12: false }).replace(/\//g, "-");
     }
 
+    function normalizeSpecialInfoValues(values) {
+      const liveTime = String(values.liveTime || "").replace("T", " ").trim();
+      const type = String(values.type || "专场").trim() || "专场";
+      const product = String(values.product || "").trim();
+      const talent = String(values.talent || "").trim();
+      const generatedTitle = `${talent || "待填写达人"} ${liveTime.slice(5, 10).replace("-", "/")} ${product || "待填写产品"}${type}`;
+      return {
+        specialName: String(values.specialName || "").trim() || generatedTitle,
+        uid: String(values.uid || "").trim(),
+        talent,
+        liveTime,
+        business: String(values.business || "").trim(),
+        scheduleStatus: String(values.scheduleStatus || "已排期").trim() || "已排期",
+        cancelReason: String(values.cancelReason || "").trim(),
+        type,
+        liveRoom: String(values.liveRoom || liveRoomOptions[0]).trim(),
+        product,
+        mechanism: String(values.mechanism || "按商务文档机制执行").trim(),
+        expectedGmv: normalizeGmvText(values.expectedGmv || values.sales || ""),
+        trial: String(values.trial || "不支持试用").trim(),
+        luckyBag: String(values.luckyBag || "").trim(),
+        luckyBagOther: String(values.luckyBagOther || "").trim(),
+        cooperation: String(values.cooperation || "").trim()
+      };
+    }
+
+    function applySpecialInfoValues(record, rawValues, actorLabel = "商务") {
+      const values = normalizeSpecialInfoValues(rawValues);
+      const syncTime = currentSyncTime();
+      record.specialName = values.specialName;
+      record.title = values.specialName;
+      record.uid = values.uid;
+      record.talent = values.talent;
+      record.liveTime = values.liveTime;
+      record.business = values.business;
+      record.scheduleStatus = values.scheduleStatus;
+      record.status = values.scheduleStatus;
+      record.cancelReason = values.cancelReason;
+      if (values.scheduleStatus === "已取消") {
+        record.canceledAt = record.canceledAt || syncTime;
+      } else {
+        delete record.canceledAt;
+      }
+      record.type = values.type;
+      record.liveRoom = values.liveRoom;
+      record.product = values.product;
+      record.mechanism = values.mechanism;
+      record.expectedGmv = values.expectedGmv;
+      record.sales = values.expectedGmv;
+      record.trial = values.trial;
+      record.luckyBag = values.luckyBag;
+      record.luckyBagOther = values.luckyBagOther;
+      record.cooperation = values.cooperation;
+      record.urgency = talentGrade(record);
+
+      const stakeholders = recordStakeholders(record);
+      record.infoSync = {
+        time: syncTime,
+        actor: record.business || actorLabel,
+        people: stakeholders.map(person => person.name)
+      };
+      Object.values(dispatchTasks[record.id] || {}).flat().forEach(task => {
+        task.specialInfoSyncedAt = syncTime;
+      });
+      pushFeishuSpecialInfoMessage(record, stakeholders, syncTime, actorLabel);
+      logs.push({
+        time: syncTime,
+        user: record.business || actorLabel,
+        action: `编辑了 ${record.title} 专场信息，并同步 ${stakeholders.length} 位关联人员`,
+        color: "green"
+      });
+      return { stakeholders, syncTime };
+    }
+
+    function pushFeishuSpecialInfoMessage(record, stakeholders, syncTime, actorLabel) {
+      const recipients = stakeholders.map(person => person.name);
+      const payload = {
+        id: `FS-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        time: syncTime,
+        recordId: record.id,
+        moduleKey: "specialInfo",
+        taskTitle: "专场信息修改",
+        recipients,
+        message: `【专场信息变更】${record.title} 的专场信息已由${record.business || actorLabel}提交修改，请对应支持人员同步查看。`
+      };
+      state.feishuPushLog = [payload, ...(state.feishuPushLog || [])].slice(0, 80);
+    }
+
     function saveSpecialInfoEditor(recordId) {
       const record = records.find(item => item.id === recordId);
       if (!record) return;
@@ -4276,44 +4366,7 @@
         return;
       }
 
-      record.specialName = values.specialName;
-      record.title = values.specialName;
-      record.uid = values.uid;
-      record.talent = values.talent;
-      record.liveTime = values.liveTime;
-      record.business = values.business;
-      record.scheduleStatus = values.scheduleStatus;
-      record.status = values.scheduleStatus;
-      record.cancelReason = values.cancelReason;
-      if (values.scheduleStatus === "已取消") record.canceledAt = currentSyncTime();
-      record.type = values.type;
-      record.liveRoom = values.liveRoom;
-      record.product = values.product;
-      record.mechanism = values.mechanism;
-      record.expectedGmv = values.expectedGmv;
-      record.sales = values.expectedGmv;
-      record.trial = values.trial;
-      record.luckyBag = values.luckyBag;
-      record.luckyBagOther = values.luckyBagOther;
-      record.cooperation = values.cooperation;
-      record.urgency = talentGrade(record);
-
-      const stakeholders = recordStakeholders(record);
-      const syncTime = currentSyncTime();
-      record.infoSync = {
-        time: syncTime,
-        actor: record.business || "商务",
-        people: stakeholders.map(person => person.name)
-      };
-      Object.values(dispatchTasks[record.id] || {}).flat().forEach(task => {
-        task.specialInfoSyncedAt = syncTime;
-      });
-      logs.push({
-        time: syncTime,
-        user: record.business || "商务",
-        action: `编辑了 ${record.title} 专场信息，并同步 ${stakeholders.length} 位关联人员`,
-        color: "green"
-      });
+      const { stakeholders } = applySpecialInfoValues(record, values);
       closeDrawer();
       toast(`已提交编辑，并同步 ${stakeholders.length} 位关联人员`);
       render();
@@ -6543,7 +6596,7 @@
             if (params && field.value === "否") params.value = "无";
             if (params && field.value === "是" && params.value === "无") params.value = "";
           }
-          if (["是否需要拍剪", "是否有达人美颜参数习惯？", "有无种草星图单", "福袋需求"].includes(field.label) || (field.label === "目标销售额" && event.type === "change")) {
+          if (["是否需要拍剪", "是否有达人美颜参数习惯？", "有无种草星图单", "福袋需求", "状态"].includes(field.label) || (field.label === "目标销售额" && event.type === "change")) {
             render();
           }
         };
@@ -7259,28 +7312,37 @@
         render();
         return;
       }
+      if (name === "saveEntrySpecialInfo") {
+        saveEntrySpecialInfo();
+        return;
+      }
       if (name === "createProjectFromEntry") {
         const requiredErrors = entryRequiredErrors();
         if (requiredErrors.length) {
           toast(`请完善：${requiredErrors[0]}`);
           return;
         }
+        const entryValues = entrySpecialInfoValues();
+        if (entryValues.scheduleStatus === "已取消" && !entryValues.cancelReason) {
+          toast("状态改为已取消时，请填写取消原因");
+          return;
+        }
         const newId = `ZC-${Date.now()}`;
-        const talent = specialValue("达人昵称", "憨憨金和帅帅银");
-        const uid = specialValue("达人 UID", "dy26060102");
-        const liveAt = specialValue("专场排期（时间）", "2026-06-01T20:00").replace("T", " ");
-        const business = specialValue("负责商务", "商务");
-        const scheduleStatus = specialValue("状态", "已排期");
-        const type = specialValue("类型", "专场");
-        const liveRoom = specialValue("直播间", "直播间A");
-        const product = specialValue("主推产品", "油皮气垫pro");
-        const sales = specialValue("目标销售额", specialValue("预估销售额", "¥180万"));
+        const talent = entryValues.talent || "憨憨金和帅帅银";
+        const uid = entryValues.uid || "dy26060102";
+        const liveAt = entryValues.liveTime || "2026-06-01 20:00";
+        const business = entryValues.business || "商务";
+        const scheduleStatus = entryValues.scheduleStatus || "已排期";
+        const type = entryValues.type || "专场";
+        const liveRoom = entryValues.liveRoom || "直播间A";
+        const product = entryValues.product || "油皮气垫pro";
+        const sales = entryValues.expectedGmv || "¥180万";
         const generatedTitle = `${talent} ${liveAt.slice(5, 10).replace("-", "/")} ${product}${type}`;
-        const specialName = String(specialValue("专场名称", "") || "").trim() || generatedTitle;
-        const trial = specialValue("是否有试用", "正装试用");
-        const luckyBag = specialValue("福袋需求", "飞机盒礼盒（价值599元）");
-        const luckyBagOther = specialValue("其他福袋需求", "");
-        const cooperation = specialValue("达人配合度", "高，可配合提前预热、直播口播和短视频确认");
+        const specialName = entryValues.specialName || generatedTitle;
+        const trial = entryValues.trial || "正装试用";
+        const luckyBag = entryValues.luckyBag || "飞机盒礼盒（价值599元）";
+        const luckyBagOther = entryValues.luckyBagOther || "";
+        const cooperation = entryValues.cooperation || "高，可配合提前预热、直播口播和短视频确认";
         records.unshift({
           id: newId,
           title: specialName,
@@ -7299,11 +7361,13 @@
           adsForecastGmv: "待预估",
           sales,
           product,
-          mechanism: "按商务文档机制执行",
+          mechanism: entryValues.mechanism || "按商务文档机制执行",
           trial,
           luckyBag,
           luckyBagOther,
           cooperation,
+          cancelReason: entryValues.cancelReason,
+          canceledAt: scheduleStatus === "已取消" ? currentSyncTime() : "",
           source: "商务通过文档录入发布专场需求，待各支持组负责人派工。",
           progress: 25,
           nodesDone: 1,
@@ -7453,6 +7517,68 @@
       const group = specialDetailGroups.find(item => item.title === groupTitle);
       const field = group ? group.fields.find(item => item.label === label) : null;
       return field ? field.value : fallback;
+    }
+
+    function entrySpecialInfoValues() {
+      return {
+        specialName: specialValue("专场名称", ""),
+        uid: specialValue("达人 UID", ""),
+        talent: specialValue("达人昵称", ""),
+        liveTime: specialValue("专场排期（时间）", "").replace("T", " "),
+        business: specialValue("负责商务", ""),
+        scheduleStatus: specialValue("状态", "已排期"),
+        cancelReason: specialValue("取消原因", ""),
+        type: specialValue("类型", "专场"),
+        liveRoom: specialValue("直播间", liveRoomOptions[0]),
+        product: specialValue("主推产品", ""),
+        mechanism: specialValue("主推机制", "按商务文档机制执行"),
+        expectedGmv: specialValue("目标销售额", specialValue("预估销售额", "")),
+        trial: specialValue("是否有试用", "不支持试用"),
+        luckyBag: specialValue("福袋需求", ""),
+        luckyBagOther: specialValue("其他福袋需求", ""),
+        cooperation: specialValue("达人配合度", "")
+      };
+    }
+
+    function entrySpecialRequiredErrors(values = entrySpecialInfoValues()) {
+      const group = specialDetailGroups.find(item => item.title === "专场信息");
+      if (!group) return [];
+      const errors = [];
+      group.fields.forEach((field, fieldIndex) => {
+        if (!field.required || !shouldShowDetailField(specialDetailGroups.indexOf(group), field)) return;
+        if (!String(field.value ?? "").trim()) errors.push(field.label);
+      });
+      if (values.scheduleStatus === "已取消" && !values.cancelReason) errors.push("取消原因");
+      return errors;
+    }
+
+    function findEntryLinkedRecord(values) {
+      const uid = String(values.uid || "").trim();
+      const specialName = String(values.specialName || "").trim();
+      const talent = String(values.talent || "").trim();
+      const liveAt = formatDate(values.liveTime);
+      return records.find(record => uid && record.uid === uid)
+        || records.find(record => specialName && (record.specialName || record.title) === specialName)
+        || records.find(record => talent && record.talent === talent && formatDate(record.liveTime) === liveAt)
+        || null;
+    }
+
+    function saveEntrySpecialInfo() {
+      const values = entrySpecialInfoValues();
+      const requiredErrors = entrySpecialRequiredErrors(values);
+      if (requiredErrors.length) {
+        toast(`请完善：${requiredErrors[0]}`);
+        return;
+      }
+      const record = findEntryLinkedRecord(values);
+      if (!record) {
+        toast("未找到匹配的已发布专场，请先发布需求后再提交修改");
+        return;
+      }
+      const { stakeholders } = applySpecialInfoValues(record, values, "商务");
+      state.selected = record.id;
+      toast(`已提交修改，并通知 ${stakeholders.length} 位支持人员`);
+      render();
     }
 
     function entryRequiredErrors() {
