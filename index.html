@@ -3957,7 +3957,6 @@
                   <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;主推机制：买二送一，前20分钟加赠旅行装&#10;目标销售额：180万&#10;是否有试用：正装试用&#10;福袋需求：飞机盒礼盒（价值599元）">${escapeHtml(state.entryText)}</textarea>
                   <div class="entry-upload-actions">
                     <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
-                    <button class="btn ghost" data-clear-entry-text>清空文本</button>
                   </div>
                 </div>
               </div>
@@ -7229,10 +7228,6 @@
       document.querySelectorAll("[data-remove-entry-doc]").forEach(btn => btn.addEventListener("click", () => removeEntryDoc(btn.dataset.removeEntryDoc)));
       document.querySelectorAll("[data-entry-text]").forEach(input => input.addEventListener("input", () => { state.entryText = input.value; }));
       document.querySelectorAll("[data-entry-feishu-link]").forEach(input => input.addEventListener("input", () => { state.entryFeishuLink = input.value; }));
-      document.querySelectorAll("[data-clear-entry-text]").forEach(btn => btn.addEventListener("click", () => {
-        state.entryText = "";
-        render();
-      }));
       document.querySelectorAll("[data-product-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.productPanelOpen = !state.productPanelOpen;
         render();
