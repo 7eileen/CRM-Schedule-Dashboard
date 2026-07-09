@@ -5492,7 +5492,7 @@
         </div>
       </div>
       <section class="stats my-task-stats">
-        <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeGroups.length}</strong><span>总量任务</span></div></button>
+        <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeGroups.length}</strong><span>我的任务</span></div></button>
         <div class="stat stat-blue"><div><strong>${pending}</strong><span>待办任务</span></div></div>
         <div class="stat stat-green"><div><strong>${done}</strong><span>已发布/已投放</span></div></div>
         <div class="stat stat-red"><div><strong>${abnormal}</strong><span>延期/取消</span></div></div>
@@ -6084,7 +6084,7 @@
       </div>`;
       }).join("");
       openDrawer(
-        `${taskScopeTitle()}的总量任务`,
+        `${taskScopeTitle()}的任务明细`,
         `<div class="stack"><div class="meta">${badge(`${groups.length} 条任务记录`, "orange")}<span>同一专场同一需求池合并展示，子任务按需求时间排序</span></div><div class="task-total-list">${rows || `<div class="upload"><div><strong>暂无任务</strong></div></div>`}</div></div>`,
         `<button class="btn primary" data-close>关闭</button>`,
         true,
