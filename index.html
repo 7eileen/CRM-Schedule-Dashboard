@@ -7937,7 +7937,12 @@
     }
 
     function action(name) {
-      if (name === "newRecord") toast("已创建一条待填写的专场记录");
+      if (name === "newRecord") {
+        state.view = "entry";
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
       if (name === "recognizeDoc") {
         if (!state.entryDocs.length) {
           toast("请先选择本地文档");
