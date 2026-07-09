@@ -5491,7 +5491,8 @@
         <div class="stat stat-green"><div><strong>${done}</strong><span>已发布/已投放</span></div></div>
         <div class="stat stat-red"><div><strong>${abnormal}</strong><span>延期/取消</span></div></div>
       </section>`;
-      const taskBoard = `<div class="my-task-tools task-filter-only">
+      const taskBoard = `${statsRow}
+      <div class="my-task-tools task-filter-only">
         <div class="task-filter-right">
           <label class="task-filter-field">
             <span>任务优先级</span>
@@ -5504,7 +5505,6 @@
           <input class="input task-search" value="${state.taskSearch}" placeholder="搜索专场名称" data-task-search>
         </div>
       </div>
-      ${statsRow}
       ${myTaskCalendar(state.taskMonth, myGroups, activeModule, scopeItems)}`;
       return dispatchMode ? `${statsRow}${myTaskDispatchWorkspace()}` : taskBoard;
     }
