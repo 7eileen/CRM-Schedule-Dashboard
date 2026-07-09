@@ -2474,21 +2474,12 @@
     .calendar-progress-title {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 8px;
       margin-bottom: 9px;
       color: #00152e;
       font-size: 13px;
       font-weight: 800;
-    }
-    .calendar-progress-title span {
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: #8a97a9;
-      font-size: 12px;
-      font-weight: 600;
     }
     .calendar-progress-list {
       display: grid;
@@ -3595,9 +3586,8 @@
     }
 
     function calendarProgressPopover(record) {
-      const title = record.specialName || record.title;
       return `<div class="calendar-progress-popover" role="tooltip">
-        <div class="calendar-progress-title"><strong>需求进度</strong><span title="${escapeHtml(title)}">${escapeHtml(title)}</span></div>
+        <div class="calendar-progress-title"><strong>需求进度</strong></div>
         <div class="calendar-progress-list">
           ${moduleOrder.map(moduleKey => calendarProgressRow(record, moduleKey)).join("")}
         </div>
