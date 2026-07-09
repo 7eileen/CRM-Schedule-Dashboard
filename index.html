@@ -2823,11 +2823,11 @@
       ads: ["千川合作码核验", "达人画像与人群包", "投放计划配置"],
       ops: ["直播设备确认", "样品与福利品确认", "开播前检查"]
     };
-    const workflowStatusList = ["待办任务", "编写中", "待审核", "待拍摄", "剪辑中", "千川审核中", "审核通过", "待发布", "已发布", "待投放", "已投放"];
+    const workflowStatusList = ["待办任务", "编写中", "待审核", "待拍摄", "剪辑中", "千川待审核", "审核通过", "待发布", "已发布", "待投放", "已投放"];
     const moduleWorkflowStatuses = {
-      content: ["待办任务", "编写中", "待审核", "待拍摄", "千川审核中", "待发布", "已发布"],
-      edit: ["待办任务", "剪辑中", "千川审核中", "审核通过", "已发布"],
-      ads: ["待办任务", "待投放", "已投放"],
+      content: ["编写中", "待审核", "待拍摄", "千川待审核", "待发布", "已发布"],
+      edit: ["待办任务", "剪辑中", "千川待审核", "审核通过", "已发布"],
+      ads: ["待办任务", "千川待审核", "待投放", "已投放"],
       ops: ["待办任务", "编写中", "已发布"]
     };
     const abnormalWorkflowStatuses = ["延期中", "已取消"];
@@ -3323,7 +3323,7 @@
 
     applySeedMemberOverrides();
     seedSpecialNoticeTasks();
-    normalizeUploadCompleteTasks();
+    normalizeLegacyTaskFields();
 
     const projectNodes = [
       { id: "record", name: "专场记录表填写", owner: "商务", status: "已完成", date: "06/10", type: "record", note: "商务填写专场记录表" },
@@ -4598,7 +4598,7 @@
     function taskStatusClass(status) {
       if (status === "已完成" || status === "已发布" || status === "已投放" || status === "审核通过") return "green";
       if (status === "延期中" || status === "已取消") return "red";
-      if (status === "待审核" || status === "千川审核中") return "purple";
+      if (status === "待审核" || status === "千川待审核" || status === "千川审核中") return "purple";
       if (status === "进行中" || status === "执行中" || status === "已派发" || status === "编写中" || status === "待拍摄" || status === "剪辑中" || status === "待发布" || status === "待投放") return "blue";
       if (status === "待处理" || status === "待派发" || status === "待执行" || status === "待办任务") return "orange";
       return "gray";
@@ -5080,29 +5080,16 @@
       });
     }
 
-    function normalizeUploadCompleteTasks() {
+    function normalizeLegacyTaskFields() {
       Object.entries(dispatchTasks).forEach(([recordId, moduleMap]) => {
         Object.entries(moduleMap).forEach(([moduleKey, taskList]) => {
           taskList.forEach(task => {
-            if (task.status !== "待审核") return;
-            task.status = "已完成";
-            task.submittedAt = task.submittedAt || actionDate;
-            task.completedAt = task.completedAt || task.submittedAt;
-            task.businessNotice = "done";
-            task.noticeAt = task.noticeAt || actionDate;
-            task.reviewResult = task.reviewResult || (moduleKey === "content" ? "内容文档已提交" : "完成文件已提交");
-            delete task.reviewedAt;
-            delete task.rejectedAt;
-            delete task.rejectReason;
-            task.reviewComment = "";
+            if (task.workflowStatus === "千川审核中") task.workflowStatus = "千川待审核";
           });
         });
         Object.entries(dispatchAssignments[recordId] || {}).forEach(([moduleKey, assignment]) => {
-          if (!assignment || assignment.status !== "待审核") return;
-          const taskList = dispatchTasks[recordId]?.[moduleKey] || [];
-          assignment.status = taskList.length && taskList.every(task => task.status === "已完成")
-            ? "已完成"
-            : "已派发";
+          if (!assignment || assignment.status !== "千川审核中") return;
+          assignment.status = "千川待审核";
         });
       });
     }
@@ -5328,13 +5315,16 @@
       const record = item.record || null;
       const rawStatus = task.status || "待处理";
       if (rawStatus === "已取消" || rawStatus === "延期中") return rawStatus;
-      const status = task.workflowStatus || legacyWorkflowStatus(rawStatus, moduleKey);
+      const status = task.workflowStatus === "千川审核中"
+        ? "千川待审核"
+        : task.workflowStatus || legacyWorkflowStatus(rawStatus, moduleKey);
       if (moduleKey === "ads" && status === "待投放" && record && record.liveTime.slice(0, 10) <= todayDate()) return "已投放";
       return status;
     }
 
     function legacyWorkflowStatus(status, moduleKey) {
       if (workflowStatusList.includes(status)) return status;
+      if (status === "千川审核中") return "千川待审核";
       if (status === "待审核") return "待审核";
       if (status === "已完成") return moduleKey === "ads" ? "已投放" : "已发布";
       if (status === "进行中" || status === "执行中" || status === "已派发") return workflowStartStatus(moduleKey);
@@ -5343,7 +5333,6 @@
 
     function workflowStartStatus(moduleKey) {
       if (moduleKey === "content") return "编写中";
-      if (moduleKey === "edit") return "剪辑中";
       if (moduleKey === "ops") return "编写中";
       return "待办任务";
     }
@@ -5576,6 +5565,14 @@
       const record = primary.record;
       const moduleKey = primary.moduleKey;
       const groupStatus = myTaskGroupStatus(groupItems);
+      const actionKey = groupItems.length > 1 ? myTaskGroupKey(record.id, moduleKey) : primary.key;
+      const nextAction = workflowNextAction(moduleKey, groupStatus);
+      const actionPanel = isTaskWorkflowAbnormal(groupStatus)
+        ? ""
+        : `<div class="my-task-actions task-calendar-detail-actions">
+          <button class="btn ghost" data-toggle-task-memo="${actionKey}">${taskMemoButtonTextForItems(groupItems)}</button>
+          ${nextAction ? `<button class="btn primary" data-advance-task="${actionKey}" data-next-status="${nextAction.next}">${nextAction.label}</button>` : isTaskWorkflowDone(groupStatus) ? `<span class="muted">任务已进入${groupStatus}</span>` : ""}
+        </div>`;
       const rows = groupItems.map((item, index) => {
         const task = item.task;
         const status = taskWorkflowStatus(item);
@@ -5599,6 +5596,7 @@
         </div>
         <div class="task-note">${demandText(record, moduleKey)}</div>
         <div class="task-calendar-detail-list">${rows}</div>
+        ${actionPanel}
       </div>`;
     }
 
@@ -5867,17 +5865,19 @@
           "待办任务": { next: "编写中", label: "开始编写" },
           "编写中": { next: "待审核", label: "提交脚本文档" },
           "待审核": { next: "待拍摄", label: "审核通过" },
-          "千川审核中": { next: "待发布", label: "千川审核已通过" },
+          "待拍摄": { next: "千川待审核", label: "已同步投放审核" },
+          "千川待审核": { next: "待发布", label: "千川审核已通过" },
           "待发布": { next: "已发布", label: "已发布" }
         },
         edit: {
           "待办任务": { next: "剪辑中", label: "开始剪辑" },
-          "剪辑中": { next: "千川审核中", label: "已同步" },
-          "千川审核中": { next: "审核通过", label: "千川审核已通过" },
+          "剪辑中": { next: "千川待审核", label: "已同步" },
+          "千川待审核": { next: "审核通过", label: "千川审核已通过" },
           "审核通过": { next: "已发布", label: "已发布" }
         },
         ads: {
           "待办任务": { next: "待投放", label: "千川审核已通过" },
+          "千川待审核": { next: "待投放", label: "千川审核已通过" },
           "待投放": { next: "已投放", label: "标记已投放" }
         },
         ops: {
@@ -6036,7 +6036,7 @@
       if (status === "待拍摄") {
         return `<div class="task-review-result is-approved">内容审核已通过，等待拍摄排期和素材回传。</div>`;
       }
-      if (status === "千川审核中") {
+      if (status === "千川待审核") {
         return `<div class="task-review-result is-reviewing">剪辑已同步飞书群，等待投放侧千川审核结果。</div>`;
       }
       if (status === "待发布") {
@@ -7291,14 +7291,14 @@
           return;
         }
       }
-      if (moduleKey === "edit" && nextStatus === "千川审核中" && activeItems.some(item => !(item.task.files || []).length)) {
+      if (moduleKey === "edit" && nextStatus === "千川待审核" && activeItems.some(item => !(item.task.files || []).length)) {
         toast("请先上传剪辑完成文件");
         return;
       }
       activeItems.forEach(item => {
         setTaskWorkflowStatus(item.task, moduleKey, nextStatus, item.record);
-        item.task.submittedAt = nextStatus === "待审核" || nextStatus === "千川审核中" ? actionDate : item.task.submittedAt;
-        item.task.businessNotice = isTaskWorkflowDone(nextStatus) || nextStatus === "待审核" || nextStatus === "千川审核中" ? "done" : item.task.businessNotice;
+        item.task.submittedAt = nextStatus === "待审核" || nextStatus === "千川待审核" ? actionDate : item.task.submittedAt;
+        item.task.businessNotice = isTaskWorkflowDone(nextStatus) || nextStatus === "待审核" || nextStatus === "千川待审核" ? "done" : item.task.businessNotice;
         item.task.noticeAt = item.task.businessNotice ? actionDate : item.task.noticeAt;
         item.task.reviewResult = workflowActionResult(moduleKey, nextStatus);
         delete item.task.delayEditing;
@@ -7313,7 +7313,8 @@
     function workflowActionResult(moduleKey, nextStatus) {
       if (moduleKey === "content" && nextStatus === "待审核") return "脚本文档已提交，等待内容组长审核";
       if (moduleKey === "content" && nextStatus === "待拍摄") return "内容组长已通过审核，等待拍摄";
-      if (moduleKey === "edit" && nextStatus === "千川审核中") return "剪辑完成文件已同步给内容和投放审核";
+      if (moduleKey === "content" && nextStatus === "千川待审核") return "视频已同步给投放审核";
+      if (moduleKey === "edit" && nextStatus === "千川待审核") return "剪辑完成文件已同步给内容和投放审核";
       if (nextStatus === "待投放") return "千川审核已通过，等待直播当天投放";
       if (nextStatus === "已发布") return "视频已发布主页";
       if (nextStatus === "已投放") return "直播排期已到达，任务已投放";
@@ -7323,7 +7324,8 @@
     function workflowActionToast(moduleKey, nextStatus) {
       if (moduleKey === "content" && nextStatus === "待审核") return "脚本文档已提交，任务进入待审核";
       if (moduleKey === "content" && nextStatus === "待拍摄") return "内容审核已通过，剪辑任务已同步进入剪辑中";
-      if (moduleKey === "edit" && nextStatus === "千川审核中") return "已同步投放和内容审核，任务进入千川审核中";
+      if (moduleKey === "content" && nextStatus === "千川待审核") return "已同步投放审核，任务进入千川待审核";
+      if (moduleKey === "edit" && nextStatus === "千川待审核") return "已同步投放和内容审核，任务进入千川待审核";
       if (nextStatus === "待投放") return "千川审核已通过，投放任务进入待投放";
       if (nextStatus === "审核通过") return "千川审核已通过，剪辑任务进入审核通过";
       if (nextStatus === "已发布") return "已标记视频发布";
@@ -7335,23 +7337,36 @@
       if (!recordId) return;
       if (sourceModule === "content" && nextStatus === "待拍摄") {
         setModuleTasksWorkflow(recordId, "edit", "剪辑中", item => taskWorkflowStatus(item) === "待办任务");
+        if (!hasModuleTasks(recordId, "edit")) {
+          setModuleTasksWorkflow(recordId, "ads", "千川待审核", item => taskWorkflowStatus(item) === "待办任务");
+        }
       }
-      if (sourceModule === "edit" && nextStatus === "千川审核中") {
-        setModuleTasksWorkflow(recordId, "content", "千川审核中", item => taskWorkflowStatus(item) === "待拍摄");
+      if (sourceModule === "content" && nextStatus === "千川待审核") {
+        setModuleTasksWorkflow(recordId, "ads", "千川待审核", item => taskWorkflowStatus(item) === "待办任务");
+      }
+      if (sourceModule === "edit" && nextStatus === "千川待审核") {
+        setModuleTasksWorkflow(recordId, "content", "千川待审核", item => taskWorkflowStatus(item) === "待拍摄");
+        setModuleTasksWorkflow(recordId, "ads", "千川待审核", item => taskWorkflowStatus(item) === "待办任务");
       }
       if ((sourceModule === "edit" && nextStatus === "审核通过") || (sourceModule === "ads" && nextStatus === "待投放") || (sourceModule === "content" && nextStatus === "待发布")) {
-        setModuleTasksWorkflow(recordId, "content", "待发布", item => ["千川审核中", "待拍摄"].includes(taskWorkflowStatus(item)));
-        setModuleTasksWorkflow(recordId, "edit", "审核通过", item => ["千川审核中", "剪辑中"].includes(taskWorkflowStatus(item)));
-        setModuleTasksWorkflow(recordId, "ads", "待投放", item => ["待办任务"].includes(taskWorkflowStatus(item)));
+        setModuleTasksWorkflow(recordId, "content", "待发布", item => ["千川待审核", "待拍摄"].includes(taskWorkflowStatus(item)));
+        setModuleTasksWorkflow(recordId, "edit", "审核通过", item => ["千川待审核", "剪辑中"].includes(taskWorkflowStatus(item)));
+        setModuleTasksWorkflow(recordId, "ads", "待投放", item => ["千川待审核", "待办任务"].includes(taskWorkflowStatus(item)));
       }
       if (sourceModule === "content" && nextStatus === "已发布") {
-        setModuleTasksWorkflow(recordId, "edit", "已发布", item => ["审核通过", "千川审核中", "剪辑中"].includes(taskWorkflowStatus(item)));
+        setModuleTasksWorkflow(recordId, "edit", "已发布", item => ["审核通过", "千川待审核", "剪辑中"].includes(taskWorkflowStatus(item)));
       }
+    }
+
+    function hasModuleTasks(recordId, moduleKey) {
+      return Boolean((dispatchTasks[recordId]?.[moduleKey] || []).length);
     }
 
     function setModuleTasksWorkflow(recordId, moduleKey, status, predicate = () => true) {
       const record = records.find(item => item.id === recordId);
-      tasksFor(recordId, moduleKey).forEach((task, index) => {
+      const list = dispatchTasks[recordId]?.[moduleKey] || [];
+      if (!list.length) return;
+      list.forEach((task, index) => {
         const item = { record, moduleKey, task, index, key: `${recordId}:${moduleKey}:${index}` };
         if (!predicate(item) || isTaskWorkflowAbnormal(taskWorkflowStatus(item))) return;
         setTaskWorkflowStatus(task, moduleKey, status, record, { reason: "关联任务自动流转" });
@@ -7948,6 +7963,11 @@
       document.querySelectorAll("#drawer [data-save-task-memo]").forEach(btn => btn.addEventListener("click", () => saveTaskMemo(btn.dataset.saveTaskMemo)));
       document.querySelectorAll("#drawer [data-close-task-memo]").forEach(btn => btn.addEventListener("click", () => closeTaskMemo(btn.dataset.closeTaskMemo)));
       document.querySelectorAll("#drawer [data-save-info-editor]").forEach(btn => btn.addEventListener("click", () => saveSpecialInfoEditor(btn.dataset.saveInfoEditor)));
+      document.querySelectorAll("#drawer [data-toggle-task-memo]").forEach(btn => btn.addEventListener("click", () => toggleTaskMemo(btn.dataset.toggleTaskMemo)));
+      document.querySelectorAll("#drawer [data-advance-task]").forEach(btn => btn.addEventListener("click", () => {
+        closeDrawer();
+        advanceMyTask(btn.dataset.advanceTask, btn.dataset.nextStatus);
+      }));
     }
 
     function toast(message) {
