@@ -2854,6 +2854,9 @@
       dataMember: "all",
       dataStatus: "all",
       dataCenterTab: "specialStats",
+      dataTaskModule: "content",
+      dataTaskMember: "all",
+      dataTaskMonth: "2026-06",
       dataMetricTab: "special",
       dataMetricMenuOpen: false,
       monthlyMonth: "2026-06",
@@ -5684,7 +5687,7 @@
       return `<section class="my-task-dispatch">${pageDispatch({ embedded: true })}</section>`;
     }
 
-    function myTaskCalendar(month, groups, activeModule, scopeItems) {
+    function myTaskCalendar(month, groups, activeModule, scopeItems, options = {}) {
       const [year, rawMonth] = month.split("-").map(Number);
       const first = new Date(year, rawMonth - 1, 1);
       const last = new Date(year, rawMonth, 0);
@@ -5713,8 +5716,11 @@
           ${moreButton}
         </div>`;
       });
+      const title = options.title || `${taskScopeTitle()}的任务日历`;
+      const badgeText = options.badge || `${supportNeeds[activeModule].title} ${monthGroups.length} 条`;
+      const monthAttr = options.monthAttr || "data-task-month";
       return `<section class="panel month-calendar my-task-calendar">
-        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">${taskScopeTitle()}的任务日历</h2>${badge(`${supportNeeds[activeModule].title} ${monthGroups.length} 条`, modules[activeModule].cls)}</div><div class="calendar-head-actions"><label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label></div></div>
+        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">${title}</h2>${badge(badgeText, modules[activeModule].cls)}</div><div class="calendar-head-actions"><label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" ${monthAttr}></label></div></div>
         <div class="panel-body">
           ${monthGroups.length ? `<div class="calendar-grid">
             ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
@@ -6341,15 +6347,47 @@
       const delayed = items.filter(item => item.task.status === "延期中").length;
       const pending = total - done;
       const rate = total ? Math.round(done / total * 100) : 0;
+      let content = dataTaskCalendarPanel();
+      if (state.dataCenterTab === "specialStats") content = monthlySpecialStatsPanel();
+      if (state.dataCenterTab === "dataBlocks") content = dataBlockDashboard(items, total, done, delayed, pending, rate);
       return `${dataCenterTabs()}
-      ${state.dataCenterTab === "specialStats" ? monthlySpecialStatsPanel() : dataBlockDashboard(items, total, done, delayed, pending, rate)}`;
+      ${content}`;
     }
 
     function dataCenterTabs() {
       return `<div class="data-center-tabs">
         <button class="data-center-tab ${state.dataCenterTab === "specialStats" ? "active" : ""}" data-data-center-tab="specialStats">专场统计</button>
         <button class="data-center-tab ${state.dataCenterTab === "dataBlocks" ? "active" : ""}" data-data-center-tab="dataBlocks">数据板块</button>
+        <button class="data-center-tab ${state.dataCenterTab === "taskCalendar" ? "active" : ""}" data-data-center-tab="taskCalendar">任务日历</button>
       </div>`;
+    }
+
+    function dataTaskCalendarPanel() {
+      const moduleKey = moduleOrder.includes(state.dataTaskModule) ? state.dataTaskModule : "content";
+      state.dataTaskModule = moduleKey;
+      const moduleItems = allDispatchTaskItems().filter(item => item.moduleKey === moduleKey);
+      const memberOptions = ownersWithTasks(moduleItems);
+      if (state.dataTaskMember !== "all" && !memberOptions.includes(state.dataTaskMember)) state.dataTaskMember = "all";
+      const filteredItems = moduleItems.filter(item => state.dataTaskMember === "all" || item.task.owner === state.dataTaskMember);
+      const groups = groupedMyTaskItems(filteredItems);
+      const title = state.dataTaskMember === "all" ? `${supportNeeds[moduleKey].title}任务日历` : `${state.dataTaskMember}的任务日历`;
+      return `${dataTaskCalendarToolbar(memberOptions)}
+      ${myTaskCalendar(state.dataTaskMonth, groups, moduleKey, filteredItems, {
+        title,
+        badge: `${supportNeeds[moduleKey].title} ${groups.length} 条`,
+        monthAttr: "data-data-task-month"
+      })}`;
+    }
+
+    function dataTaskCalendarToolbar(memberOptions) {
+      return `<section class="panel data-filter-panel">
+        <div class="panel-body">
+          <div class="data-toolbar">
+            <label class="filter-field"><span>支持类型</span><select class="select" data-data-task-module>${moduleOrder.map(key => `<option value="${key}" ${state.dataTaskModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
+            <label class="filter-field"><span>成员</span><select class="select" data-data-task-member><option value="all">全部</option>${memberOptions.map(owner => `<option value="${owner}" ${state.dataTaskMember === owner ? "selected" : ""}>${owner}</option>`).join("")}</select></label>
+          </div>
+        </div>
+      </section>`;
     }
 
     function dataBlockDashboard(items, total, done, delayed, pending, rate) {
@@ -7202,6 +7240,22 @@
       document.querySelectorAll("[data-data-module]").forEach(input => input.addEventListener("change", () => { state.dataModule = input.value; render(); }));
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
+      document.querySelectorAll("[data-data-task-module]").forEach(input => input.addEventListener("change", () => {
+        state.dataTaskModule = input.value;
+        state.dataTaskMember = "all";
+        state.taskCalendarExpandedDay = "";
+        render();
+      }));
+      document.querySelectorAll("[data-data-task-member]").forEach(input => input.addEventListener("change", () => {
+        state.dataTaskMember = input.value;
+        state.taskCalendarExpandedDay = "";
+        render();
+      }));
+      document.querySelectorAll("[data-data-task-month]").forEach(input => input.addEventListener("change", () => {
+        state.dataTaskMonth = input.value;
+        state.taskCalendarExpandedDay = "";
+        render();
+      }));
       document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
       document.querySelectorAll("[data-data-metric-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.dataMetricMenuOpen = !state.dataMetricMenuOpen;
