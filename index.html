@@ -4965,7 +4965,8 @@
       const embedded = options.embedded === true;
       const visibleModules = taskDispatchModules().length ? taskDispatchModules() : moduleOrder;
       if (!visibleModules.includes(state.module)) state.module = visibleModules[0];
-      const pending = records.filter(record => assignmentFor(record.id, state.module).status === "待派发").length;
+      const poolRecords = dispatchPoolRecords(state.module);
+      const pending = poolRecords.length;
       const standaloneTabs = embedded ? "" : `<section class="module-tabs">${visibleModules.map(moduleTab).join("")}</section>`;
       const headActions = embedded
         ? dispatchModuleSwitcher(visibleModules)
@@ -4977,7 +4978,7 @@
           <div class="dispatch-head-actions">${headActions}</div>
         </div>
         <div class="panel-body">
-          <div class="dispatch-list">${records.map(record => dispatchCard(record, state.module)).join("")}</div>
+          <div class="dispatch-list">${poolRecords.map(record => dispatchCard(record, state.module)).join("")}</div>
         </div>
       </section>`;
     }
@@ -4988,14 +4989,14 @@
         .concat(visibleModules.filter(key => !["ops", "edit", "content", "ads"].includes(key)));
       const labelMap = { ops: "运营", edit: "剪辑", content: "内容", ads: "投放" };
       return `<div class="task-module-tabs dispatch-module-tabs" aria-label="需求派发模块切换">${order.map(key => {
-        const pending = records.filter(record => assignmentFor(record.id, key).status === "待派发").length;
+        const pending = dispatchPoolRecords(key).length;
         return `<button class="task-module-tab ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">${labelMap[key] || supportNeeds[key].title}<i>${pending}</i></button>`;
       }).join("")}</div>`;
     }
 
     function moduleTab(key) {
       const module = modules[key];
-      const pending = records.filter(record => assignmentFor(record.id, key).status === "待派发").length;
+      const pending = dispatchPoolRecords(key).length;
       return `<button class="module-tab ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">
         <div class="row"><strong>${supportNeeds[key].title}</strong>${badge(`${pending} 待派发`, pending ? "orange" : "green")}</div>
         <span class="muted">负责人：${module.owner}</span>
@@ -5509,11 +5510,15 @@
       return allowed[0];
     }
 
+    function dispatchPoolRecords(moduleKey) {
+      return records
+        .filter(record => assignmentFor(record.id, moduleKey).status === "待派发")
+        .slice(0, 4);
+    }
+
     function dispatchPendingTotal(moduleKey = state.module) {
       const keys = moduleOrder.includes(moduleKey) ? [moduleKey] : moduleOrder;
-      return records.reduce((sum, record) => (
-        sum + keys.filter(key => assignmentFor(record.id, key).status === "待派发").length
-      ), 0);
+      return keys.reduce((sum, key) => sum + dispatchPoolRecords(key).length, 0);
     }
 
     function myTaskDispatchWorkspace() {
