@@ -1300,6 +1300,14 @@
       font-size: 12px;
       line-height: 1;
     }
+    .dispatch-head-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-left: auto;
+    }
+    .dispatch-module-tabs { white-space: nowrap; }
     .task-total-list {
       display: grid;
       gap: 10px;
@@ -4953,21 +4961,36 @@
       </button>`;
     }
 
-    function pageDispatch() {
+    function pageDispatch(options = {}) {
+      const embedded = options.embedded === true;
       const visibleModules = taskDispatchModules().length ? taskDispatchModules() : moduleOrder;
       if (!visibleModules.includes(state.module)) state.module = visibleModules[0];
-      const module = modules[state.module];
       const pending = records.filter(record => assignmentFor(record.id, state.module).status === "待派发").length;
-      return `<section class="module-tabs">${visibleModules.map(moduleTab).join("")}</section>
+      const standaloneTabs = embedded ? "" : `<section class="module-tabs">${visibleModules.map(moduleTab).join("")}</section>`;
+      const headActions = embedded
+        ? dispatchModuleSwitcher(visibleModules)
+        : badge(`${pending} 个待派发`, pending ? "orange" : "green");
+      return `${standaloneTabs}
       <section class="panel">
         <div class="panel-head">
           <div><h2 class="panel-title">${supportNeeds[state.module].title}工作台</h2></div>
-          ${badge(`${pending} 个待派发`, pending ? "orange" : "green")}
+          <div class="dispatch-head-actions">${headActions}</div>
         </div>
         <div class="panel-body">
           <div class="dispatch-list">${records.map(record => dispatchCard(record, state.module)).join("")}</div>
         </div>
       </section>`;
+    }
+
+    function dispatchModuleSwitcher(visibleModules) {
+      const order = ["ops", "edit", "content", "ads"]
+        .filter(key => visibleModules.includes(key))
+        .concat(visibleModules.filter(key => !["ops", "edit", "content", "ads"].includes(key)));
+      const labelMap = { ops: "运营", edit: "剪辑", content: "内容", ads: "投放" };
+      return `<div class="task-module-tabs dispatch-module-tabs" aria-label="需求派发模块切换">${order.map(key => {
+        const pending = records.filter(record => assignmentFor(record.id, key).status === "待派发").length;
+        return `<button class="task-module-tab ${state.module === key ? "active" : ""}" data-module="${key}" data-go="dispatch">${labelMap[key] || supportNeeds[key].title}<i>${pending}</i></button>`;
+      }).join("")}</div>`;
     }
 
     function moduleTab(key) {
@@ -5494,7 +5517,7 @@
     }
 
     function myTaskDispatchWorkspace() {
-      return `<section class="my-task-dispatch">${pageDispatch()}</section>`;
+      return `<section class="my-task-dispatch">${pageDispatch({ embedded: true })}</section>`;
     }
 
     function myTaskCalendar(month, groups, activeModule, scopeItems) {
