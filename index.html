@@ -5483,10 +5483,9 @@
       const pending = scopeGroups.filter(item => myTaskGroupStatus(item.groupItems) === "待办任务").length;
       const priorityOptions = ["all:全部优先级", "S+:S+ 级", "S:S 级", "A:A 级", "B:B 级", "C:C 级"];
       const nodeOptions = [`all:全部节点 ${activeModuleItems.length}`, ...moduleWorkflowStatusOptions(activeModule, activeModuleItems).map(status => `${status}:${status} ${activeModuleItems.filter(item => taskWorkflowStatus(item) === status).length}`)];
-      const workTabs = canDispatch ? myTaskWorkTabs(dispatchMode, dispatchPending, scopeGroups.length, dispatchModule) : "";
       const statsRow = `<section class="stats my-task-stats ${canDispatch ? "has-work-switch" : ""}">
-        ${workTabs}
-        <button class="stat stat-orange" data-open-my-task-total><div><strong>${scopeGroups.length}</strong><span>我的任务</span></div></button>
+        ${canDispatch ? `<button class="stat stat-orange ${dispatchMode ? "active" : ""}" data-task-workspace="dispatch" data-task-dispatch-module="${dispatchModule}"><div><strong>${dispatchPending}</strong><span>需求派发</span></div></button>` : ""}
+        <button class="stat stat-orange ${!dispatchMode ? "active" : ""}" data-task-workspace="tasks"><div><strong>${scopeGroups.length}</strong><span>我的任务</span></div></button>
         <div class="stat stat-blue"><div><strong>${pending}</strong><span>待办任务</span></div></div>
         <div class="stat stat-green"><div><strong>${done}</strong><span>已发布/已投放</span></div></div>
         <div class="stat stat-red"><div><strong>${abnormal}</strong><span>延期/取消</span></div></div>
