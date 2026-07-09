@@ -3862,7 +3862,6 @@
     function pageEntry() {
       const feishuLink = String(state.entryFeishuLink || "").trim();
       const validFeishuLink = isFeishuLink(feishuLink);
-      const feishuStatus = validFeishuLink ? "已保存飞书链接，可跳转查看文档。" : (feishuLink ? "请输入有效的飞书文档链接" : "未粘贴飞书链接");
       return `<section class="panel">
         <div class="panel-head">
           <div><h2 class="panel-title">专场文档录入</h2></div>
@@ -3874,15 +3873,12 @@
                 <div class="entry-source-card is-primary entry-link-card">
                   <div class="entry-source-head">
                     <strong>飞书链接上传</strong>
-                    <span class="entry-source-kicker">飞书文档</span>
                   </div>
-                  <div class="entry-source-copy">粘贴飞书文档链接后，系统保存文档地址，并展示可跳转入口。</div>
                   <label class="entry-link-field">
                     <span>飞书文档链接</span>
                     <input class="entry-link-input" type="url" inputmode="url" data-entry-feishu-link value="${escapeHtml(state.entryFeishuLink)}" placeholder="https://xxx.feishu.cn/docx/..." aria-label="飞书文档链接">
                   </label>
-                  <div class="entry-link-status ${validFeishuLink ? "is-ready" : ""}">${feishuStatus}</div>
-                  <div class="entry-link-open">${validFeishuLink ? `<span>跳转入口</span><a href="${escapeHtml(feishuLink)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(feishuLink)}">${escapeHtml(feishuLink)}</a>` : `<span>保存后展示飞书文档跳转入口</span>`}</div>
+                  <div class="entry-link-open">${validFeishuLink ? `<a href="${escapeHtml(feishuLink)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(feishuLink)}">${escapeHtml(feishuLink)}</a>` : ``}</div>
                   <div class="entry-upload-actions">
                     <button class="btn primary" data-action="saveFeishuLink">保存飞书链接</button>
                     <button class="btn ghost" data-action="clearFeishuLink">清空链接</button>
@@ -3891,9 +3887,7 @@
                 <div class="entry-source-card">
                   <div class="entry-source-head">
                     <strong>文本粘贴识别填写</strong>
-                    <span class="entry-source-kicker">文字识别</span>
                   </div>
-                  <div class="entry-source-copy">从飞书、微信或表格复制整段专场信息，粘贴后点击识别即可自动填表。</div>
                   <textarea class="entry-textarea" data-entry-text placeholder="示例：达人昵称：河北卫视中华好诗词&#10;达人UID：dy26060101&#10;专场排期：2026/06/01 20:00&#10;负责商务：刘则宇黄娇&#10;直播间：直播间C&#10;主推产品：防晒素颜霜（化学款）&#10;主推机制：买二送一，前20分钟加赠旅行装&#10;目标销售额：180万&#10;是否有试用：正装试用&#10;福袋需求：飞机盒礼盒（价值599元）">${escapeHtml(state.entryText)}</textarea>
                   <div class="entry-upload-actions">
                     <button class="btn primary" data-action="recognizeText">识别文本并填写</button>
