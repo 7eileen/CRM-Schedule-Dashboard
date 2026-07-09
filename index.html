@@ -2736,6 +2736,13 @@
       { id: "grade", label: "达人等级优先" }
     ];
     const moduleOrder = ["content", "edit", "ads", "ops"];
+    const dispatchModuleOrder = ["edit", "ops", "content", "ads"];
+    const dispatchPoolSamples = {
+      edit: ["ZC-0620", "ZC-0624", "ZC-0604-3", "ZC-0608-1"],
+      ops: ["ZC-0620-2", "ZC-0604-1", "ZC-0604-2", "ZC-0606-1"],
+      content: ["ZC-0620-3", "ZC-0603-2", "ZC-0605-1", "ZC-0607-1"],
+      ads: ["ZC-0604-2", "ZC-0605-2", "ZC-0606-1", "ZC-0608-1"]
+    };
     const moduleMembers = {
       content: ["毛毛", "小颖", "叶子", "海洋", "颜颜", "待分配"],
       edit: ["陈响", "周宁", "林悦", "待分配"],
@@ -4963,7 +4970,7 @@
 
     function pageDispatch(options = {}) {
       const embedded = options.embedded === true;
-      const visibleModules = taskDispatchModules().length ? taskDispatchModules() : moduleOrder;
+      const visibleModules = embedded ? dispatchModuleOrder : (taskDispatchModules().length ? taskDispatchModules() : moduleOrder);
       if (!visibleModules.includes(state.module)) state.module = visibleModules[0];
       const poolRecords = dispatchPoolRecords(state.module);
       const pending = poolRecords.length;
@@ -4984,9 +4991,9 @@
     }
 
     function dispatchModuleSwitcher(visibleModules) {
-      const order = ["ops", "edit", "content", "ads"]
+      const order = dispatchModuleOrder
         .filter(key => visibleModules.includes(key))
-        .concat(visibleModules.filter(key => !["ops", "edit", "content", "ads"].includes(key)));
+        .concat(visibleModules.filter(key => !dispatchModuleOrder.includes(key)));
       const labelMap = { ops: "运营", edit: "剪辑", content: "内容", ads: "投放" };
       return `<div class="task-module-tabs dispatch-module-tabs" aria-label="需求派发模块切换">${order.map(key => {
         const pending = dispatchPoolRecords(key).length;
@@ -5503,7 +5510,7 @@
     }
 
     function activeDispatchModule(fallbackModule = state.module) {
-      const allowed = taskDispatchModules();
+      const allowed = state.taskWorkspace === "dispatch" ? dispatchModuleOrder : taskDispatchModules();
       if (!allowed.length) return fallbackModule;
       if (allowed.includes(state.module)) return state.module;
       if (allowed.includes(fallbackModule)) return fallbackModule;
@@ -5511,9 +5518,13 @@
     }
 
     function dispatchPoolRecords(moduleKey) {
-      return records
-        .filter(record => assignmentFor(record.id, moduleKey).status === "待派发")
-        .slice(0, 4);
+      const sampleIds = dispatchPoolSamples[moduleKey] || [];
+      const sampled = sampleIds
+        .map(id => records.find(record => record.id === id))
+        .filter(Boolean);
+      if (sampled.length >= 4) return sampled.slice(0, 4);
+      const fallback = records.filter(record => !sampleIds.includes(record.id));
+      return sampled.concat(fallback).slice(0, 4);
     }
 
     function dispatchPendingTotal(moduleKey = state.module) {
