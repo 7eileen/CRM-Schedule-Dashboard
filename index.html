@@ -2505,6 +2505,8 @@
       color: #6d7889;
       white-space: nowrap;
     }
+    .calendar-progress-row.orange .calendar-progress-row-head span { color: #f08200; }
+    .calendar-progress-row.green .calendar-progress-row-head span { color: #138743; }
     .calendar-progress-track {
       height: 6px;
       border-radius: 999px;
@@ -3601,7 +3603,8 @@
       const assignment = assignmentFor(record.id, moduleKey);
       const name = (support.title || module.name || "").replace(/需求|支持/g, "") || module.name;
       const status = summary.label || assignment.status || "待同步";
-      const cls = summary.badgeCls || module.cls || "blue";
+      const isDone = summary.total ? summary.done >= summary.total : assignment.status === "已完成";
+      const cls = isDone ? "green" : "orange";
       return `<div class="calendar-progress-row ${cls}">
         <div class="calendar-progress-row-head"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(status)}</span></div>
         <div class="calendar-progress-track"><span class="calendar-progress-fill" style="width:${summary.progress}%"></span></div>
