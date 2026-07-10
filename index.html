@@ -5219,13 +5219,10 @@
             </div>
             <div class="task-builder">
               <div class="task-builder-head">
-                <div class="task-builder-title">
-                  <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
-                  <strong>${published ? "任务观察" : "新建任务"}</strong>
-                </div>
+                <strong>${published ? "任务观察" : "新建任务"}</strong>
                 <div class="task-builder-head-actions">
                   ${published ? badge(assignment.status, statusCls) : ""}
-                  ${badge(`${taskList.length} 条子任务`, module.cls)}
+                  <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
                 </div>
               </div>
               ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
@@ -5422,13 +5419,10 @@
             </div>
             <div class="task-builder">
               <div class="task-builder-head">
-                <div class="task-builder-title">
-                  <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
-                  <strong>${published ? "任务观察" : "新建任务"}</strong>
-                </div>
+                <strong>${published ? "任务观察" : "新建任务"}</strong>
                 <div class="task-builder-head-actions">
                   ${published ? badge(assignment.status, statusCls) : ""}
-                  ${badge(`${taskList.length} 条子任务`, module.cls)}
+                  <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
                 </div>
               </div>
               ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
