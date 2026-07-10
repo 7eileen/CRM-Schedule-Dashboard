@@ -1205,7 +1205,7 @@
     .task-observer-list { display: grid; gap: 10px; padding: 14px 16px; background: #fff; }
     .task-observe-row {
       display: grid;
-      grid-template-columns: 34px minmax(210px, 1fr) 120px 112px 100px minmax(190px, 1fr) minmax(140px, .75fr) 128px;
+      grid-template-columns: 34px minmax(180px, 1fr) 110px 120px 100px;
       gap: 12px;
       align-items: center;
       padding: 12px;
@@ -1219,12 +1219,14 @@
     .task-observe-cell { display: grid; gap: 5px; min-width: 0; }
     .task-observe-cell strong { font-weight: 500; color: #00152e; }
     .task-observe-note {
+      grid-column: 2 / 4;
       color: #526074;
       font-size: 13px;
       line-height: 1.55;
       min-width: 0;
     }
     .task-observe-files {
+      grid-column: 4 / 6;
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
@@ -1232,6 +1234,7 @@
     }
     .task-observe-files .file-chip { max-width: 170px; background: #eef6ff; color: #1c6fba; }
     .task-observe-actions {
+      grid-column: 2 / -1;
       display: flex;
       justify-content: flex-end;
       gap: 8px;
@@ -1242,24 +1245,27 @@
       padding: 0 12px;
     }
     .task-observe-row.is-editing {
-      grid-template-columns: 34px minmax(210px, 1fr) 150px 150px 100px minmax(130px, 1fr) auto;
+      grid-template-columns: 34px minmax(180px, 1fr) 130px 150px 100px;
       align-items: end;
       border-color: #ffc78f;
       background: #fffaf3;
     }
     .task-observe-edit-note {
+      grid-column: 2 / 4;
       align-self: center;
       color: var(--muted);
       font-size: 12px;
       line-height: 1.5;
     }
     .task-observe-edit-actions {
+      grid-column: 4 / -1;
       display: flex;
       align-items: center;
       justify-content: flex-end;
       gap: 8px;
     }
     .task-observe-edit-actions .btn { min-height: 40px; padding: 0 12px; }
+    .task-observe-row > .cancel-form { grid-column: 2 / -1; }
     .task-review-line {
       grid-column: 2 / -1;
       display: grid;
@@ -2801,6 +2807,7 @@
       .calendar-cell.is-muted { display: none; }
       .task-review-line { grid-column: 1; }
       .task-observe-row.is-editing { grid-template-columns: 1fr; }
+      .task-observe-note, .task-observe-files, .task-observe-actions, .task-observe-edit-note, .task-observe-edit-actions, .task-observe-row > .cancel-form { grid-column: 1; }
       .task-observe-edit-actions { justify-content: flex-start; }
       .task-row-actions { justify-content: flex-start; }
       .module-task-note, .module-task-log { grid-column: 1; }
