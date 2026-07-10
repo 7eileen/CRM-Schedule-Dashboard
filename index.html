@@ -617,6 +617,33 @@
       font-size: 12px;
     }
     .module-task-dialog { display: grid; gap: 16px; }
+    .module-task-dialog-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #f5f7fa;
+      overflow-x: auto;
+    }
+    .module-task-dialog-tabs .task-module-tab {
+      flex: 1 0 112px;
+      justify-content: center;
+      min-height: 38px;
+    }
+    .module-task-dialog-tabs .task-module-tab.active {
+      border: 1px solid #ffd3ad;
+    }
+    .module-task-state-machine {
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px;
+      border: 1px solid #ffe0c2;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #fff8f1 0%, rgba(255, 248, 241, .35) 100%);
+    }
+    .module-task-state-machine > strong { color: #00152e; font-size: 14px; }
     .module-task-summary {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3046,10 +3073,10 @@
     };
 
     const taskTemplates = {
-      content: ["预热视频脚本确认", "主页种草脚本", "千川视频脚本"],
-      edit: ["千川视频剪辑", "主页视频剪辑", "二创投放素材"],
-      ads: ["千川合作码核验", "达人画像与人群包", "投放计划配置"],
-      ops: ["直播设备确认", "样品与福利品确认", "开播前检查"]
+      content: ["预热视频脚本确认", "主页种草脚本", "千川视频脚本", "达人发布文案确认"],
+      edit: ["千川视频剪辑", "主页视频剪辑", "二创投放素材", "视频修改与终版同步"],
+      ads: ["千川合作码核验", "达人画像与人群包", "投放计划配置", "千川审核与投放确认"],
+      ops: ["直播设备确认", "样品与福利品确认", "开播前检查", "直播间排期与人员确认"]
     };
     const workflowStatusList = ["待办任务", "编写中", "待审核", "待拍摄", "剪辑中", "千川待审核", "审核通过", "待发布", "已发布", "待投放", "已投放"];
     const moduleWorkflowStatuses = {
@@ -4982,22 +5009,72 @@
       return { total, done, delayed, canceled, uploaded, noticeCount, progress, label, badgeCls, chips };
     }
 
+    const moduleTaskSampleStatuses = {
+      content: ["编写中", "待审核", "待拍摄", "千川待审核"],
+      edit: ["待办任务", "剪辑中", "千川待审核", "审核通过"],
+      ads: ["待办任务", "千川待审核", "待投放", "已投放"],
+      ops: ["待办任务", "编写中", "编写中", "已发布"]
+    };
+
+    function ensureModuleTaskSamples(recordId, moduleKey) {
+      const record = records.find(item => item.id === recordId) || selectedRecord();
+      const taskList = tasksFor(record.id, moduleKey);
+      const templates = taskTemplates[moduleKey];
+      const sampleStatuses = moduleTaskSampleStatuses[moduleKey];
+      const members = moduleMembers[moduleKey] || [modules[moduleKey].owner];
+      while (taskList.length < 4) {
+        const index = taskList.length;
+        const title = templates.find(name => !taskList.some(task => task.title === name)) || `${modules[moduleKey].name}子任务 ${index + 1}`;
+        const workflowStatus = sampleStatuses[index];
+        taskList.push({
+          title,
+          owner: members[index % members.length] || modules[moduleKey].owner,
+          due: assignmentFor(record.id, moduleKey).due || defaultDue(record),
+          status: isTaskWorkflowDone(workflowStatus) ? "已完成" : "待处理",
+          workflowStatus,
+          completedAt: isTaskWorkflowDone(workflowStatus) ? actionDate : "",
+          isNew: true,
+          businessNotice: "new"
+        });
+      }
+      taskList.slice(0, 4).forEach((task, index) => {
+        if (!task.owner) task.owner = members[index % members.length] || modules[moduleKey].owner;
+        if (!task.workflowStatus && task.status !== "已完成" && task.status !== "延期中" && task.status !== "已取消") {
+          task.workflowStatus = sampleStatuses[index];
+        }
+      });
+      return taskList.slice(0, 4);
+    }
+
+    function moduleTaskDialogTabs(recordId, activeModuleKey) {
+      const labels = { content: "内容", edit: "剪辑", ads: "投放", ops: "运营" };
+      return `<div class="module-task-dialog-tabs" role="tablist" aria-label="子任务类型切换">${moduleOrder.map(moduleKey => {
+        const count = ensureModuleTaskSamples(recordId, moduleKey).length;
+        return `<button class="task-module-tab ${activeModuleKey === moduleKey ? "active" : ""}" role="tab" aria-selected="${activeModuleKey === moduleKey}" data-module-task-tab="${recordId}:${moduleKey}">${labels[moduleKey]}<i>${count}</i></button>`;
+      }).join("")}</div>`;
+    }
+
     function openModuleTaskDialog(key) {
       const [recordId, moduleKey] = key.split(":");
       const record = records.find(item => item.id === recordId) || selectedRecord();
       const module = modules[moduleKey];
-      const support = supportNeeds[moduleKey] || module;
-      const taskList = tasksFor(record.id, moduleKey);
+      moduleOrder.forEach(item => ensureModuleTaskSamples(record.id, item));
+      const taskList = ensureModuleTaskSamples(record.id, moduleKey);
       const summary = moduleTaskSummary(record, moduleKey);
       state.module = moduleKey;
       const rows = taskList.map((task, index) => moduleTaskDetailRow(record.id, moduleKey, task, index)).join("");
       openDrawer(
-        `${module.name}子任务详情`,
+        `${record.title} · 子任务详情`,
         `<div class="module-task-dialog">
+          ${moduleTaskDialogTabs(record.id, moduleKey)}
           <div class="module-task-summary">
             ${field("达人专场", record.title)}
             ${field("需求负责人", module.owner)}
             ${field("完成情况", summary.label)}
+          </div>
+          <div class="module-task-state-machine">
+            <strong>${module.name}状态机</strong>
+            ${workflowPathStrip(moduleKey, taskWorkflowStatus({ record, moduleKey, task: taskList[0] }))}
           </div>
           <div class="module-task-detail-list">${rows || `<div class="upload"><div><strong>暂无子任务</strong></div></div>`}</div>
         </div>`,
@@ -5089,8 +5166,9 @@
 
     function moduleTaskDetailRow(recordId, moduleKey, task, index) {
       const module = modules[moduleKey];
+      const record = records.find(item => item.id === recordId) || selectedRecord();
       const due = task.delayDue || task.due || assignmentFor(recordId, moduleKey).due;
-      const status = task.status || "待处理";
+      const status = taskWorkflowStatus({ record, moduleKey, task });
       const note = moduleTaskDetailNote(moduleKey, task);
       const key = `${recordId}:${moduleKey}:${index}`;
       return `<article class="module-task-detail-item">
@@ -5099,8 +5177,8 @@
           <strong>${escapeHtml(task.title || taskTemplates[moduleKey][0])}</strong>
           <span>${supportNeeds[moduleKey].title} · 负责人：${escapeHtml(module.owner)}</span>
         </div>
-        <div class="module-task-cell"><span>执行人</span><strong>${escapeHtml(task.owner || "待分配")}</strong></div>
-        <div class="module-task-cell"><span>完成时间</span><strong>${formatDate(due)}</strong></div>
+        <div class="module-task-cell"><span>执行人</span><strong>${escapeHtml(task.owner || module.owner)}</strong></div>
+        <div class="module-task-cell"><span>预计截止日期</span><strong>${formatDate(due)}</strong></div>
         <div class="module-task-cell"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
         <div class="module-task-actions"><button class="btn ghost" data-toggle-module-task-log="${key}">${task.logOpen ? "收起记录" : "查看记录"}</button></div>
         ${note ? `<div class="module-task-note">${note}</div>` : ""}
@@ -8615,6 +8693,7 @@
 
     function bindDrawer() {
       document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", closeDrawer));
+      document.querySelectorAll("#drawer [data-module-task-tab]").forEach(btn => btn.addEventListener("click", () => openModuleTaskDialog(btn.dataset.moduleTaskTab)));
       document.querySelectorAll("#drawer [data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
       document.querySelectorAll("#drawer [data-open-project]").forEach(btn => btn.addEventListener("click", () => {
         state.selected = btn.dataset.openProject;
