@@ -5219,15 +5219,16 @@
             </div>
             <div class="task-builder">
               <div class="task-builder-head">
-                <strong>${published ? "任务观察" : "新建任务"}</strong>
+                <div class="task-builder-title">
+                  <strong>${published ? "任务观察" : "新建任务"}</strong>
+                  ${badge(assignment.status, statusCls)}
+                </div>
                 <div class="task-builder-head-actions">
-                  ${published ? badge(assignment.status, statusCls) : ""}
                   <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
                 </div>
               </div>
               ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
               ${!published || draftCount ? `<div class="task-actions">
-                ${badge(assignment.status, statusCls)}
                 ${published ? badge(`${draftCount} 条待发布`, "orange") : ""}
                 <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "发布新增任务"}</button>
               </div>` : ""}
@@ -5419,15 +5420,16 @@
             </div>
             <div class="task-builder">
               <div class="task-builder-head">
-                <strong>${published ? "任务观察" : "新建任务"}</strong>
+                <div class="task-builder-title">
+                  <strong>${published ? "任务观察" : "新建任务"}</strong>
+                  ${badge(assignment.status, statusCls)}
+                </div>
                 <div class="task-builder-head-actions">
-                  ${published ? badge(assignment.status, statusCls) : ""}
                   <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
                 </div>
               </div>
               ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
               ${!published || draftCount ? `<div class="task-actions">
-                ${badge(assignment.status, statusCls)}
                 ${published ? badge(`${draftCount} 条待发布`, "orange") : ""}
                 <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "发布新增任务"}</button>
               </div>` : ""}
