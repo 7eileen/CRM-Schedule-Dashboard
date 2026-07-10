@@ -5106,8 +5106,6 @@
       if (!visibleModules.includes(state.module)) state.module = visibleModules[0];
       const poolRecords = dispatchPoolRecords(state.module);
       const pending = poolRecords.length;
-      const [openRecordId = "", openModuleKey = ""] = String(state.dispatchOpen || "").split(":");
-      const openRecord = openModuleKey === state.module ? poolRecords.find(record => record.id === openRecordId) : null;
       const standaloneTabs = embedded ? "" : `<section class="module-tabs">${visibleModules.map(moduleTab).join("")}</section>`;
       const headActions = embedded
         ? dispatchModuleSwitcher(visibleModules)
@@ -5120,7 +5118,6 @@
         </div>
         <div class="panel-body">
           ${dispatchCalendar(poolRecords, state.module)}
-          ${openRecord ? dispatchDetailPanel(openRecord, state.module) : ""}
         </div>
       </section>`;
     }
@@ -5168,7 +5165,6 @@
           ${moreButton}
         </div>`;
       });
-      const activeRecord = monthRecords.find(record => `${record.id}:${moduleKey}` === state.dispatchOpen);
       return `<div class="dispatch-calendar">
         <div class="calendar-head-actions" style="margin-bottom:12px;">
           <label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label>
@@ -5177,8 +5173,7 @@
           ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
           ${cells.join("")}
         </div>` : `<div class="task-calendar-empty">当前需求池暂无待派发任务</div>`}
-      </div>
-      ${activeRecord ? dispatchDetailPanel(activeRecord, moduleKey) : ""}`;
+      </div>`;
     }
 
     function dispatchCalendarDate(record, moduleKey) {
@@ -5231,6 +5226,14 @@
           </div>
         </div>
       </div>`;
+    }
+
+    function openDispatchEntryDialog(key) {
+      const [recordId, moduleKey] = key.split(":");
+      const record = records.find(item => item.id === recordId);
+      if (!record || !supportNeeds[moduleKey]) return;
+      const title = `${supportNeeds[moduleKey].title}派工录入`;
+      openDrawer(title, dispatchDetailPanel(record, moduleKey), `<button class="btn primary" data-close>关闭</button>`, true, true);
     }
 
     function moduleTab(key) {
@@ -7162,13 +7165,9 @@
       document.querySelectorAll("[data-task-done]").forEach(input => input.addEventListener("change", () => toggleTask(input.dataset.taskDone, input.checked)));
       document.querySelectorAll("[data-node-detail]").forEach(btn => btn.addEventListener("click", () => openNode(btn.dataset.nodeDetail)));
       document.querySelectorAll("[data-toggle-dispatch]").forEach(btn => btn.addEventListener("click", () => {
-        state.dispatchOpen = state.dispatchOpen === btn.dataset.toggleDispatch ? "" : btn.dataset.toggleDispatch;
+        state.dispatchOpen = btn.dataset.toggleDispatch;
         render();
-        if (state.dispatchOpen) {
-          requestAnimationFrame(() => {
-            document.querySelector("[data-dispatch-entry-panel]")?.scrollIntoView({ behavior: "smooth", block: "start" });
-          });
-        }
+        openDispatchEntryDialog(btn.dataset.toggleDispatch);
       }));
       document.querySelectorAll("[data-focus-dispatch-task]").forEach(btn => btn.addEventListener("click", () => focusDispatchTask(btn.dataset.focusDispatchTask)));
       document.querySelectorAll("[data-subtask-title]").forEach(input => input.addEventListener("input", () => {
@@ -8358,6 +8357,48 @@
       document.querySelectorAll("#drawer [data-advance-task]").forEach(btn => btn.addEventListener("click", () => {
         closeDrawer();
         advanceMyTask(btn.dataset.advanceTask, btn.dataset.nextStatus);
+      }));
+      document.querySelectorAll("#drawer [data-subtask-title]").forEach(input => input.addEventListener("input", () => {
+        const [recordId, moduleKey, index] = input.dataset.subtaskTitle.split(":");
+        tasksFor(recordId, moduleKey)[Number(index)].title = input.value;
+      }));
+      document.querySelectorAll("#drawer [data-subtask-owner]").forEach(input => input.addEventListener("change", () => {
+        const [recordId, moduleKey, index] = input.dataset.subtaskOwner.split(":");
+        tasksFor(recordId, moduleKey)[Number(index)].owner = input.value;
+      }));
+      document.querySelectorAll("#drawer [data-subtask-due]").forEach(input => input.addEventListener("change", () => {
+        const [recordId, moduleKey, index] = input.dataset.subtaskDue.split(":");
+        tasksFor(recordId, moduleKey)[Number(index)].due = input.value;
+      }));
+      document.querySelectorAll("#drawer [data-add-subtask]").forEach(btn => btn.addEventListener("click", () => {
+        addDispatchTask(btn.dataset.addSubtask);
+        openDispatchEntryDialog(btn.dataset.addSubtask);
+      }));
+      document.querySelectorAll("#drawer [data-remove-subtask]").forEach(btn => btn.addEventListener("click", () => {
+        const pairKey = btn.dataset.removeSubtask.split(":").slice(0, 2).join(":");
+        removeDispatchTask(btn.dataset.removeSubtask);
+        openDispatchEntryDialog(pairKey);
+      }));
+      document.querySelectorAll("#drawer [data-publish-dispatch]").forEach(btn => btn.addEventListener("click", () => {
+        publishDispatch(btn.dataset.publishDispatch);
+        openDispatchEntryDialog(btn.dataset.publishDispatch);
+      }));
+      document.querySelectorAll("#drawer [data-dispatch-task-detail]").forEach(btn => btn.addEventListener("click", () => openDispatchTaskDetail(btn.dataset.dispatchTaskDetail)));
+      document.querySelectorAll("#drawer [data-cancel-task]").forEach(btn => btn.addEventListener("click", () => {
+        const pairKey = btn.dataset.cancelTask.split(":").slice(0, 2).join(":");
+        startCancelTask(btn.dataset.cancelTask);
+        openDispatchEntryDialog(pairKey);
+      }));
+      document.querySelectorAll("#drawer [data-cancel-task-reason]").forEach(input => input.addEventListener("input", () => updateCancelTaskDraft(input.dataset.cancelTaskReason, input.value)));
+      document.querySelectorAll("#drawer [data-dismiss-cancel-task]").forEach(btn => btn.addEventListener("click", () => {
+        const pairKey = btn.dataset.dismissCancelTask.split(":").slice(0, 2).join(":");
+        dismissCancelTask(btn.dataset.dismissCancelTask);
+        openDispatchEntryDialog(pairKey);
+      }));
+      document.querySelectorAll("#drawer [data-save-cancel-task]").forEach(btn => btn.addEventListener("click", () => {
+        const pairKey = btn.dataset.saveCancelTask.split(":").slice(0, 2).join(":");
+        saveCancelTask(btn.dataset.saveCancelTask);
+        openDispatchEntryDialog(pairKey);
       }));
     }
 
