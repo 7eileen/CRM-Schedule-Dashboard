@@ -1420,7 +1420,9 @@
       justify-content: flex-end;
       gap: 10px;
       margin-left: auto;
+      flex-wrap: wrap;
     }
+    .dispatch-head-actions .dispatch-month-picker { margin-right: 4px; }
     .dispatch-module-tabs { white-space: nowrap; }
     .task-total-list {
       display: grid;
@@ -5110,16 +5112,22 @@
       const headActions = embedded
         ? dispatchModuleSwitcher(visibleModules)
         : badge(`${pending} 个待派发`, pending ? "orange" : "green");
+      const monthPicker = dispatchMonthPicker();
       return `${standaloneTabs}
       <section class="panel">
         <div class="panel-head">
           <div><h2 class="panel-title">${supportNeeds[state.module].title}工作台</h2></div>
-          <div class="dispatch-head-actions">${headActions}</div>
+          <div class="dispatch-head-actions">${monthPicker}${headActions}</div>
         </div>
         <div class="panel-body">
           ${dispatchCalendar(poolRecords, state.module)}
         </div>
       </section>`;
+    }
+
+    function dispatchMonthPicker() {
+      const month = state.taskMonth || "2026-06";
+      return `<label class="calendar-month-picker dispatch-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label>`;
     }
 
     function dispatchModuleSwitcher(visibleModules) {
@@ -5166,9 +5174,6 @@
         </div>`;
       });
       return `<div class="dispatch-calendar">
-        <div class="calendar-head-actions" style="margin-bottom:12px;">
-          <label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label>
-        </div>
         ${monthRecords.length ? `<div class="calendar-grid">
           ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
           ${cells.join("")}
