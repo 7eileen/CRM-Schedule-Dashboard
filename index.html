@@ -1105,6 +1105,7 @@
       background: #fff8ef;
     }
     .task-builder-head strong { display: block; font-size: 16px; font-weight: 400; }
+    .task-builder-title { display: flex; align-items: center; gap: 10px; }
     .task-builder-head-actions { display: flex; align-items: center; gap: 8px; }
     .dispatch-add-task {
       width: 34px;
@@ -5214,9 +5215,11 @@
             </div>
             <div class="task-builder">
               <div class="task-builder-head">
-                <div><strong>${published ? "任务观察" : "新建任务"}</strong></div>
+                <div class="task-builder-title">
+                  <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
+                  <strong>${published ? "任务观察" : "新建任务"}</strong>
+                </div>
                 <div class="task-builder-head-actions">
-                  ${published ? `<button class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新增任务">+</button>` : ""}
                   ${published ? badge(assignment.status, statusCls) : ""}
                   ${badge(`${taskList.length} 条子任务`, module.cls)}
                 </div>
@@ -5224,7 +5227,7 @@
               ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
               ${!published || draftCount ? `<div class="task-actions">
                 ${badge(assignment.status, statusCls)}
-                ${published ? badge(`${draftCount} 条待发布`, "orange") : `<button class="btn ghost" data-add-subtask="${record.id}:${moduleKey}">+ 新建任务</button>`}
+                ${published ? badge(`${draftCount} 条待发布`, "orange") : ""}
                 <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "发布新增任务"}</button>
               </div>` : ""}
             </div>
@@ -5415,11 +5418,11 @@
             </div>
             <div class="task-builder">
               <div class="task-builder-head">
-                <div>
+                <div class="task-builder-title">
+                  <button type="button" class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新建任务" aria-label="新建任务">+</button>
                   <strong>${published ? "任务观察" : "新建任务"}</strong>
                 </div>
                 <div class="task-builder-head-actions">
-                  ${published ? `<button class="dispatch-add-task" data-add-subtask="${record.id}:${moduleKey}" title="新增任务">+</button>` : ""}
                   ${published ? badge(assignment.status, statusCls) : ""}
                   ${badge(`${taskList.length} 条子任务`, module.cls)}
                 </div>
@@ -5427,7 +5430,7 @@
               ${published ? taskObserverList(record.id, moduleKey, taskList) : `<div class="task-list">${taskList.map((task, index) => taskRow(record.id, moduleKey, task, index)).join("")}</div>`}
               ${!published || draftCount ? `<div class="task-actions">
                 ${badge(assignment.status, statusCls)}
-                ${published ? badge(`${draftCount} 条待发布`, "orange") : `<button class="btn ghost" data-add-subtask="${record.id}:${moduleKey}">+ 新建任务</button>`}
+                ${published ? badge(`${draftCount} 条待发布`, "orange") : ""}
                 <button class="btn primary" data-publish-dispatch="${record.id}:${moduleKey}">${assignment.status === "待派发" ? "发布派工" : "发布新增任务"}</button>
               </div>` : ""}
             </div>
@@ -5533,7 +5536,7 @@
           <select class="select" data-subtask-owner="${key}">${moduleMembers[moduleKey].map(owner => `<option ${owner === task.owner ? "selected" : ""}>${owner}</option>`).join("")}</select>
         </label>
         <label class="task-field">
-          <span>完成日期</span>
+          <span>预计截止日期</span>
           <input class="input" type="date" value="${task.due}" data-subtask-due="${key}">
         </label>
         <div class="task-field">
@@ -5541,11 +5544,9 @@
           ${badge(status, statusCls === "gray" ? "" : statusCls)}
         </div>
         <div class="task-row-actions">
-          ${status === "已完成" ? "" : `<button class="btn danger" data-cancel-task="${key}">${status === "已取消" ? "编辑原因" : "取消"}</button>`}
           <button class="btn ghost task-remove" data-remove-subtask="${key}">删除</button>
         </div>
         ${taskReviewLine(key, moduleKey, task)}
-        ${taskCancelForm(key, task)}
       </div>`;
     }
 
