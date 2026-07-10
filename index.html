@@ -5168,6 +5168,7 @@
           ${moreButton}
         </div>`;
       });
+      const activeRecord = monthRecords.find(record => `${record.id}:${moduleKey}` === state.dispatchOpen);
       return `<div class="dispatch-calendar">
         <div class="calendar-head-actions" style="margin-bottom:12px;">
           <label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label>
@@ -5176,7 +5177,8 @@
           ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
           ${cells.join("")}
         </div>` : `<div class="task-calendar-empty">当前需求池暂无待派发任务</div>`}
-      </div>`;
+      </div>
+      ${activeRecord ? dispatchDetailPanel(activeRecord, moduleKey) : ""}`;
     }
 
     function dispatchCalendarDate(record, moduleKey) {
@@ -5202,7 +5204,7 @@
       const statusCls = taskStatusClass(assignment.status);
       const published = assignment.status !== "待派发";
       const draftCount = taskList.filter(task => task.isDraft).length;
-      return `<div class="dispatch-calendar-detail">
+      return `<div class="dispatch-calendar-detail" data-dispatch-entry-panel>
         <div class="dispatch-detail">
           <div class="dispatch-main">
             ${myTaskSpecialInfo(record)}
@@ -7162,6 +7164,11 @@
       document.querySelectorAll("[data-toggle-dispatch]").forEach(btn => btn.addEventListener("click", () => {
         state.dispatchOpen = state.dispatchOpen === btn.dataset.toggleDispatch ? "" : btn.dataset.toggleDispatch;
         render();
+        if (state.dispatchOpen) {
+          requestAnimationFrame(() => {
+            document.querySelector("[data-dispatch-entry-panel]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        }
       }));
       document.querySelectorAll("[data-focus-dispatch-task]").forEach(btn => btn.addEventListener("click", () => focusDispatchTask(btn.dataset.focusDispatchTask)));
       document.querySelectorAll("[data-subtask-title]").forEach(input => input.addEventListener("input", () => {
