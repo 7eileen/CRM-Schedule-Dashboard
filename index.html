@@ -169,6 +169,21 @@
     .stat span { color: var(--muted); font-size: 14px; }
     .my-task-stats { grid-template-columns: repeat(4, minmax(128px, 1fr)); }
     .my-task-stats.has-work-switch { grid-template-columns: repeat(5, minmax(128px, 1fr)); }
+    .my-task-stats.workflow-tab-stats {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 2px 2px 12px;
+      scrollbar-width: thin;
+    }
+    .my-task-stats.workflow-tab-stats .stat {
+      flex: 1 0 142px;
+      min-width: 142px;
+      min-height: 104px;
+      padding: 20px 22px;
+      cursor: pointer;
+    }
+    .my-task-stats.workflow-tab-stats .stat strong { font-size: 26px; }
     .my-task-stats button.stat.active {
       box-shadow: 0 0 0 1px #ff8200 inset, 0 10px 28px rgba(255, 130, 0, .16);
       background: #fff8ef;
@@ -198,6 +213,7 @@
     .stat.stat-green strong { color: var(--green); }
     .stat.stat-blue strong { color: var(--blue); }
     .stat.stat-red strong { color: var(--red); }
+    .stat.stat-purple strong { color: var(--purple); }
     .stat.stat-gray strong { color: #6d7889; }
     button.stat {
       width: 100%;
@@ -3005,7 +3021,7 @@
       module: "content",
       dispatchOpen: "",
       taskUser: "刘曼曼",
-      taskScope: "mine",
+      taskScope: "manager",
       taskSort: "urgency",
       taskSortOpen: false,
       taskPriorityFilter: "all",
@@ -3078,12 +3094,12 @@
       ads: ["千川合作码核验", "达人画像与人群包", "投放计划配置", "千川审核与投放确认"],
       ops: ["直播设备确认", "样品与福利品确认", "开播前检查", "直播间排期与人员确认"]
     };
-    const workflowStatusList = ["待办任务", "编写中", "待审核", "待拍摄", "剪辑中", "千川待审核", "审核通过", "待发布", "已发布", "待投放", "已投放"];
+    const workflowStatusList = ["初始", "待办任务", "编写中", "待审核", "待拍摄", "剪辑中", "千川待审核", "审核通过", "待发布", "已发布", "待投放", "已投放", "已完成"];
     const moduleWorkflowStatuses = {
       content: ["编写中", "待审核", "待拍摄", "千川待审核", "待发布", "已发布"],
       edit: ["待办任务", "剪辑中", "千川待审核", "审核通过", "已发布"],
       ads: ["待办任务", "千川待审核", "待投放", "已投放"],
-      ops: ["待办任务", "编写中", "已发布"]
+      ops: ["初始", "待办任务", "已完成"]
     };
     const abnormalWorkflowStatuses = ["延期中", "已取消"];
 
@@ -3577,6 +3593,7 @@
     applySeedMemberOverrides();
     seedSpecialNoticeTasks();
     normalizeLegacyTaskFields();
+    seedMyTaskBoardSamples();
 
     const projectNodes = [
       { id: "record", name: "专场记录表填写", owner: "商务", status: "已完成", date: "06/10", type: "record", note: "商务填写专场记录表" },
@@ -5013,7 +5030,7 @@
       content: ["编写中", "待审核", "待拍摄", "千川待审核"],
       edit: ["待办任务", "剪辑中", "千川待审核", "审核通过"],
       ads: ["待办任务", "千川待审核", "待投放", "已投放"],
-      ops: ["待办任务", "编写中", "编写中", "已发布"]
+      ops: ["初始", "待办任务", "待办任务", "已完成"]
     };
 
     function ensureModuleTaskSamples(recordId, moduleKey) {
@@ -5179,7 +5196,7 @@
         </div>
         <div class="module-task-cell"><span>执行人</span><strong>${escapeHtml(task.owner || module.owner)}</strong></div>
         <div class="module-task-cell"><span>预计截止日期</span><strong>${formatDate(due)}</strong></div>
-        <div class="module-task-cell"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
+        <div class="module-task-cell"><span>状态</span>${badge(taskStatusDisplayLabel(moduleKey, status), taskStatusClass(status))}</div>
         <div class="module-task-actions"><button class="btn ghost" data-toggle-module-task-log="${key}">${task.logOpen ? "收起记录" : "查看记录"}</button></div>
         ${note ? `<div class="module-task-note">${note}</div>` : ""}
         ${task.logOpen ? moduleTaskLogPanel(task, moduleKey) : ""}
@@ -5524,6 +5541,27 @@
       });
     }
 
+    function seedMyTaskBoardSamples() {
+      records.forEach((record, recordIndex) => {
+        moduleOrder.forEach(moduleKey => {
+          const statuses = moduleWorkflowStatuses[moduleKey];
+          const taskList = tasksFor(record.id, moduleKey);
+          taskList.forEach((task, taskIndex) => {
+            if (task.workflowStatus || task.status === "延期中" || task.status === "已取消") return;
+            if (task.status === "已完成") {
+              task.workflowStatus = moduleKey === "ads" ? "已投放" : moduleKey === "ops" ? "已完成" : "已发布";
+              return;
+            }
+            task.workflowStatus = statuses[(recordIndex + taskIndex) % statuses.length];
+            if (isTaskWorkflowDone(task.workflowStatus)) {
+              task.status = "已完成";
+              task.completedAt = task.completedAt || actionDate;
+            }
+          });
+        });
+      });
+    }
+
     function normalizeLegacyTaskFields() {
       Object.entries(dispatchTasks).forEach(([recordId, moduleMap]) => {
         Object.entries(moduleMap).forEach(([moduleKey, taskList]) => {
@@ -5802,14 +5840,13 @@
       if (workflowStatusList.includes(status)) return status;
       if (status === "千川审核中") return "千川待审核";
       if (status === "待审核") return "待审核";
-      if (status === "已完成") return moduleKey === "ads" ? "已投放" : "已发布";
+      if (status === "已完成") return moduleKey === "ads" ? "已投放" : moduleKey === "ops" ? "已完成" : "已发布";
       if (status === "进行中" || status === "执行中" || status === "已派发") return workflowStartStatus(moduleKey);
       return "待办任务";
     }
 
     function workflowStartStatus(moduleKey) {
       if (moduleKey === "content") return "编写中";
-      if (moduleKey === "ops") return "编写中";
       return "待办任务";
     }
 
@@ -5847,7 +5884,7 @@
     }
 
     function isTaskWorkflowDone(status) {
-      return status === "已发布" || status === "已投放";
+      return status === "已发布" || status === "已投放" || status === "已完成";
     }
 
     function isTaskWorkflowAbnormal(status) {
@@ -5866,6 +5903,11 @@
       const base = moduleWorkflowStatuses[moduleKey] || workflowStatusList;
       const extra = abnormalWorkflowStatuses.filter(status => state.taskStatusFilter === status || items.some(item => taskWorkflowStatus(item) === status));
       return [...base, ...extra];
+    }
+
+    function taskStatusDisplayLabel(moduleKey, status) {
+      if (moduleKey === "content" && status === "千川待审核") return "千川审核中";
+      return status;
     }
 
     function normalizedTaskStatusFilter(moduleKey, items) {
@@ -5899,6 +5941,7 @@
       const scopeItems = scopedTaskItems();
       const activeModule = activeTaskModuleFilter(scopeItems);
       const activeModuleItems = scopeItems.filter(item => item.moduleKey === activeModule);
+      const activeModuleGroups = groupedMyTaskItems(activeModuleItems);
       const dispatchModules = taskDispatchModules();
       const canDispatch = dispatchModules.length > 0;
       if (state.taskStatusFilter === "dispatch") {
@@ -5912,18 +5955,16 @@
       const selectedStatus = normalizedTaskStatusFilter(activeModule, activeModuleItems);
       const myItems = filteredMyTaskItems(scopeItems);
       const myGroups = groupedMyTaskItems(myItems);
-      const scopeGroups = groupedMyTaskItems(scopeItems);
-      const done = scopeGroups.filter(item => isTaskWorkflowDone(myTaskGroupStatus(item.groupItems))).length;
-      const abnormal = scopeGroups.filter(item => isTaskWorkflowAbnormal(myTaskGroupStatus(item.groupItems))).length;
-      const pending = scopeGroups.filter(item => myTaskGroupStatus(item.groupItems) === "待办任务").length;
       const priorityOptions = ["all:全部优先级", "S+:S+ 级", "S:S 级", "A:A 级", "B:B 级", "C:C 级"];
-      const nodeOptions = [`all:全部节点 ${activeModuleItems.length}`, ...moduleWorkflowStatusOptions(activeModule, activeModuleItems).map(status => `${status}:${status} ${activeModuleItems.filter(item => taskWorkflowStatus(item) === status).length}`)];
-      const statsRow = `<section class="stats my-task-stats ${canDispatch ? "has-work-switch" : ""}">
+      const workflowCards = (moduleWorkflowStatuses[activeModule] || []).map(status => {
+        const count = activeModuleGroups.filter(group => myTaskGroupStatus(group.groupItems) === status).length;
+        const active = !dispatchMode && selectedStatus === status;
+        return `<button class="stat stat-${taskStatusClass(status)} ${active ? "active" : ""}" data-task-status-card="${status}"><div><strong>${count}</strong><span>${taskStatusDisplayLabel(activeModule, status)}</span></div></button>`;
+      }).join("");
+      const statsRow = `<section class="stats my-task-stats workflow-tab-stats">
         ${canDispatch ? `<button class="stat stat-orange ${dispatchMode ? "active" : ""}" data-task-workspace="dispatch" data-task-dispatch-module="${dispatchModule}"><div><strong>${dispatchPending}</strong><span>需求派发</span></div></button>` : ""}
-        <button class="stat stat-orange ${!dispatchMode ? "active" : ""}" data-task-workspace="tasks"><div><strong>${scopeGroups.length}</strong><span>我的任务</span></div></button>
-        <div class="stat stat-blue"><div><strong>${pending}</strong><span>待办任务</span></div></div>
-        <div class="stat stat-green"><div><strong>${done}</strong><span>已发布/已投放</span></div></div>
-        <div class="stat stat-red"><div><strong>${abnormal}</strong><span>延期/取消</span></div></div>
+        <button class="stat stat-orange ${!dispatchMode && selectedStatus === "all" ? "active" : ""}" data-task-workspace="tasks"><div><strong>${activeModuleGroups.length}</strong><span>我的任务</span></div></button>
+        ${workflowCards}
       </section>`;
       const taskBoard = `${statsRow}
       <div class="my-task-tools task-filter-only">
@@ -5932,14 +5973,10 @@
             <span>任务优先级</span>
             <select class="select" data-task-priority-filter>${priorityOptions.map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.taskPriorityFilter === value ? "selected" : ""}>${label}</option>`; }).join("")}</select>
           </label>
-          <label class="task-filter-field task-node">
-            <span>任务节点</span>
-            <select class="select" data-task-status-filter>${nodeOptions.map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${selectedStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select>
-          </label>
           <input class="input task-search" value="${state.taskSearch}" placeholder="搜索专场名称" data-task-search>
         </div>
       </div>
-      ${myTaskCalendar(state.taskMonth, myGroups, activeModule, scopeItems)}`;
+      ${myTaskCalendar(state.taskMonth, myGroups, activeModule, scopeItems, { moduleTabs: taskModulePoolTabs(scopeItems) })}`;
       return dispatchMode ? `${statsRow}${myTaskDispatchWorkspace()}` : taskBoard;
     }
 
@@ -6010,7 +6047,7 @@
       const badgeText = options.badge || `${supportNeeds[activeModule].title} ${monthGroups.length} 条`;
       const monthAttr = options.monthAttr || "data-task-month";
       return `<section class="panel month-calendar my-task-calendar">
-        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">${title}</h2>${badge(badgeText, modules[activeModule].cls)}</div><div class="calendar-head-actions"><label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" ${monthAttr}></label></div></div>
+        <div class="panel-head"><div class="calendar-title"><h2 class="panel-title">${title}</h2>${badge(badgeText, modules[activeModule].cls)}</div><div class="calendar-head-actions">${options.moduleTabs || ""}<label class="calendar-month-picker"><span>月份</span><input class="input" type="month" value="${month}" ${monthAttr}></label></div></div>
         <div class="panel-body">
           ${monthGroups.length ? `<div class="calendar-grid">
             ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
@@ -6096,14 +6133,14 @@
           </div>
           <div class="task-calendar-detail-cell"><span>执行人</span><strong>${escapeHtml(task.owner || "待分配")}</strong></div>
           <div class="task-calendar-detail-cell"><span>${taskCalendarDateLabel(moduleKey)}</span><strong>${formatMonthDay(moduleKey === "content" ? taskDemandDate(item) : record.liveTime.slice(0, 10))}</strong></div>
-          <div class="task-calendar-detail-cell"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
+          <div class="task-calendar-detail-cell"><span>状态</span>${badge(taskStatusDisplayLabel(moduleKey, status), taskStatusClass(status))}</div>
           <div class="task-calendar-detail-cell"><span>附件</span><strong title="${escapeHtml(files)}">${escapeHtml(files)}</strong></div>
         </div>`;
       }).join("");
       return `<div class="stack my-task-calendar-detail">
         ${myTaskSpecialInfo(record)}
         <div class="field-grid">
-          ${field("当前任务状态", badge(groupStatus, taskStatusClass(groupStatus)))}
+          ${field("当前任务状态", badge(taskStatusDisplayLabel(moduleKey, groupStatus), taskStatusClass(groupStatus)))}
         </div>
         ${workflowPathStrip(moduleKey, groupStatus)}
         <div class="task-note">${demandText(record, moduleKey)}</div>
@@ -6120,7 +6157,7 @@
       const currentIndex = statuses.indexOf(currentStatus);
       return `<div class="workflow-path" aria-label="${escapeHtml(supportNeeds[moduleKey].title)}状态流程">${statuses.map((status, index) => {
         const cls = index === currentIndex ? "is-current" : currentIndex > index ? "is-past" : "";
-        return `<span class="workflow-path-step ${cls}">${escapeHtml(status)}</span>`;
+        return `<span class="workflow-path-step ${cls}">${escapeHtml(taskStatusDisplayLabel(moduleKey, status))}</span>`;
       }).join("")}</div>`;
     }
 
@@ -6135,10 +6172,10 @@
 
     function taskModuleFilterOptions() {
       return [
-        { key: "ops", label: "运营" },
-        { key: "edit", label: "剪辑" },
         { key: "content", label: "内容" },
-        { key: "ads", label: "投放" }
+        { key: "edit", label: "剪辑" },
+        { key: "ads", label: "投放" },
+        { key: "ops", label: "运营" }
       ];
     }
 
@@ -6162,7 +6199,7 @@
       if (state.taskScope === "contentLead") return "内容组长";
       if (state.taskScope === "editLead") return "剪辑组长";
       if (state.taskScope === "adsLead") return "投放组长";
-      if (state.taskScope === "manager") return "管理者";
+      if (state.taskScope === "manager") return "管理员";
       return option ? option.label : state.taskUser;
     }
 
@@ -6240,6 +6277,7 @@
       const moduleKey = items[0]?.moduleKey || "";
       if (statuses.every(status => status === "已发布")) return "已发布";
       if (statuses.every(status => status === "已投放")) return "已投放";
+      if (statuses.every(status => status === "已完成")) return "已完成";
       if (statuses.every(status => status === "已取消")) return "已取消";
       if (statuses.some(status => status === "延期中")) return "延期中";
       return items.slice().sort((a, b) => taskWorkflowRank(a) - taskWorkflowRank(b) || taskDemandCompare(a, b) || a.index - b.index).map(item => taskWorkflowStatus(item))[0] || workflowStartStatus(moduleKey);
@@ -6422,8 +6460,8 @@
           "千川待审核": { next: "待投放", label: "千川审核已通过", actor: `${modules.ads.owner}（投放组长）` }
         },
         ops: {
-          "待办任务": { next: "编写中", label: "开始处理", actor: "运营执行人" },
-          "编写中": { next: "已发布", label: "提交完成", actor: "运营执行人" }
+          "初始": { next: "待办任务", label: "接收任务", actor: "运营组长" },
+          "待办任务": { next: "已完成", label: "提交完成", actor: "运营执行人" }
         }
       };
       return map[moduleKey]?.[status] || null;
@@ -8046,7 +8084,7 @@
       if (moduleKey === "content" && nextStatus === "待拍摄") return "内容组长已通过审核，等待拍摄";
       if (moduleKey === "content" && nextStatus === "千川待审核") return "视频已同步给投放审核";
       if (moduleKey === "edit" && nextStatus === "千川待审核") return "剪辑完成文件已同步给内容和投放审核";
-      if (moduleKey === "ops" && nextStatus === "已发布") return "运营节点已完成";
+      if (moduleKey === "ops" && nextStatus === "已完成") return "运营节点已完成";
       if (nextStatus === "待投放") return "千川审核已通过，等待直播当天投放";
       if (nextStatus === "已发布") return "视频已发布主页";
       if (nextStatus === "已投放") return "直播排期已到达，任务已投放";
@@ -8058,7 +8096,7 @@
       if (moduleKey === "content" && nextStatus === "待拍摄") return "内容审核已通过，剪辑任务已同步进入剪辑中";
       if (moduleKey === "content" && nextStatus === "千川待审核") return "已同步投放审核，任务进入千川待审核";
       if (moduleKey === "edit" && nextStatus === "千川待审核") return "已同步投放和内容审核，任务进入千川待审核";
-      if (moduleKey === "ops" && nextStatus === "已发布") return "运营任务已完成";
+      if (moduleKey === "ops" && nextStatus === "已完成") return "运营任务已完成";
       if (nextStatus === "待投放") return "千川审核已通过，投放任务进入待投放";
       if (nextStatus === "审核通过") return "千川审核已通过，剪辑任务进入审核通过";
       if (nextStatus === "已发布") return "已标记视频发布";
