@@ -1241,6 +1241,25 @@
       min-height: 34px;
       padding: 0 12px;
     }
+    .task-observe-row.is-editing {
+      grid-template-columns: 34px minmax(210px, 1fr) 150px 150px 100px minmax(130px, 1fr) auto;
+      align-items: end;
+      border-color: #ffc78f;
+      background: #fffaf3;
+    }
+    .task-observe-edit-note {
+      align-self: center;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .task-observe-edit-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .task-observe-edit-actions .btn { min-height: 40px; padding: 0 12px; }
     .task-review-line {
       grid-column: 2 / -1;
       display: grid;
@@ -2781,6 +2800,8 @@
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
       .task-review-line { grid-column: 1; }
+      .task-observe-row.is-editing { grid-template-columns: 1fr; }
+      .task-observe-edit-actions { justify-content: flex-start; }
       .task-row-actions { justify-content: flex-start; }
       .module-task-note, .module-task-log { grid-column: 1; }
       .module-task-log { grid-template-columns: 1fr; }
@@ -4943,6 +4964,7 @@
         uploaded: "子任务已上传附件，提醒商务查看",
         submitted: "子任务已上传完成，提醒商务查看",
         done: "子任务已完成，提醒商务查看",
+        updated: "子任务信息已修改，提醒关联人员查看",
         status: "子任务状态已变更，提醒关联人员查看"
       }[notice] || "子任务有更新，提醒商务查看";
     }
@@ -5441,7 +5463,11 @@
 
     function taskObserverList(recordId, moduleKey, taskList) {
       return `<div class="task-observer-list">${taskList.map((task, index) => (
-        task.isDraft ? taskRow(recordId, moduleKey, task, index) : taskObserveRow(recordId, moduleKey, task, index)
+        task.isDraft
+          ? taskRow(recordId, moduleKey, task, index)
+          : task.editing
+            ? taskObserveEditRow(recordId, moduleKey, task, index)
+            : taskObserveRow(recordId, moduleKey, task, index)
       )).join("")}</div>`;
     }
 
@@ -5462,10 +5488,42 @@
         <div class="task-observe-note">${taskObservationText(task, moduleKey)}</div>
         <div class="task-observe-files">${files.length ? files.map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("") : `<span class="muted">暂无附件</span>`}</div>
         <div class="task-observe-actions">
+          ${status === "已取消" ? "" : `<button class="btn ghost" data-edit-dispatch-task="${key}">编辑</button>`}
           <button class="btn ghost" data-dispatch-task-detail="${key}">查看</button>
           ${status === "已完成" ? "" : `<button class="btn ${status === "已取消" ? "ghost" : "danger"}" data-cancel-task="${key}">${status === "已取消" ? "编辑原因" : "取消"}</button>`}
         </div>
         ${task.cancelEditing ? taskCancelForm(key, task) : ""}
+      </article>`;
+    }
+
+    function taskObserveEditRow(recordId, moduleKey, task, index) {
+      const key = `${recordId}:${moduleKey}:${index}`;
+      const draft = task.editDraft || {
+        title: task.title || taskTemplates[moduleKey][0],
+        owner: task.owner || moduleMembers[moduleKey][0],
+        due: task.delayDue || task.due
+      };
+      const status = task.status || "待处理";
+      return `<article class="task-observe-row is-editing">
+        ${taskIndexNotice(index, task)}
+        <label class="task-field">
+          <span>任务名称</span>
+          <input class="input" value="${escapeHtml(draft.title)}" data-dispatch-edit-title="${key}">
+        </label>
+        <label class="task-field">
+          <span>执行组员</span>
+          <select class="select" data-dispatch-edit-owner="${key}">${moduleMembers[moduleKey].map(owner => `<option ${owner === draft.owner ? "selected" : ""}>${owner}</option>`).join("")}</select>
+        </label>
+        <label class="task-field">
+          <span>预计截止日期</span>
+          <input class="input" type="date" value="${escapeHtml(draft.due)}" data-dispatch-edit-due="${key}">
+        </label>
+        <div class="task-field"><span>状态</span>${badge(status, taskStatusClass(status))}</div>
+        <div class="task-observe-edit-note">保存后同步当前子任务信息，并提醒关联人员。</div>
+        <div class="task-observe-edit-actions">
+          <button class="btn ghost" data-dismiss-dispatch-edit="${key}">取消编辑</button>
+          <button class="btn primary" data-save-dispatch-edit="${key}">保存修改</button>
+        </div>
       </article>`;
     }
 
@@ -7191,6 +7249,20 @@
       document.querySelectorAll("[data-add-subtask]").forEach(btn => btn.addEventListener("click", () => addDispatchTask(btn.dataset.addSubtask)));
       document.querySelectorAll("[data-remove-subtask]").forEach(btn => btn.addEventListener("click", () => removeDispatchTask(btn.dataset.removeSubtask)));
       document.querySelectorAll("[data-dispatch-task-detail]").forEach(btn => btn.addEventListener("click", () => openDispatchTaskDetail(btn.dataset.dispatchTaskDetail)));
+      document.querySelectorAll("[data-edit-dispatch-task]").forEach(btn => btn.addEventListener("click", () => {
+        startDispatchTaskEdit(btn.dataset.editDispatchTask);
+        render();
+      }));
+      document.querySelectorAll("[data-dispatch-edit-title]").forEach(input => input.addEventListener("input", () => updateDispatchTaskEdit(input.dataset.dispatchEditTitle, "title", input.value)));
+      document.querySelectorAll("[data-dispatch-edit-owner]").forEach(input => input.addEventListener("change", () => updateDispatchTaskEdit(input.dataset.dispatchEditOwner, "owner", input.value)));
+      document.querySelectorAll("[data-dispatch-edit-due]").forEach(input => input.addEventListener("change", () => updateDispatchTaskEdit(input.dataset.dispatchEditDue, "due", input.value)));
+      document.querySelectorAll("[data-dismiss-dispatch-edit]").forEach(btn => btn.addEventListener("click", () => {
+        dismissDispatchTaskEdit(btn.dataset.dismissDispatchEdit);
+        render();
+      }));
+      document.querySelectorAll("[data-save-dispatch-edit]").forEach(btn => btn.addEventListener("click", () => {
+        if (saveDispatchTaskEdit(btn.dataset.saveDispatchEdit)) render();
+      }));
       document.querySelectorAll("[data-assign-owner]").forEach(input => input.addEventListener("change", () => {
         const [recordId, moduleKey] = input.dataset.assignOwner.split(":");
         assignmentFor(recordId, moduleKey).owner = input.value;
@@ -7401,6 +7473,59 @@
 
     function taskByKey(key) {
       return taskActionItems(key)[0]?.task;
+    }
+
+    function startDispatchTaskEdit(key) {
+      const task = taskByKey(key);
+      const moduleKey = moduleKeyFromTaskAction(key);
+      if (!task || !moduleMembers[moduleKey] || task.status === "已取消") return;
+      task.editing = true;
+      task.editDraft = {
+        title: task.title || taskTemplates[moduleKey][0],
+        owner: task.owner || moduleMembers[moduleKey][0],
+        due: task.delayDue || task.due
+      };
+    }
+
+    function updateDispatchTaskEdit(key, field, value) {
+      const task = taskByKey(key);
+      if (!task || !task.editing) return;
+      task.editDraft = { ...(task.editDraft || {}), [field]: value };
+    }
+
+    function dismissDispatchTaskEdit(key) {
+      const task = taskByKey(key);
+      if (!task) return;
+      delete task.editing;
+      delete task.editDraft;
+    }
+
+    function saveDispatchTaskEdit(key) {
+      const item = taskActionItems(key)[0];
+      const task = item?.task;
+      const draft = task?.editDraft;
+      if (!item || !task || !draft) return false;
+      const title = String(draft.title || "").trim();
+      const owner = String(draft.owner || "").trim();
+      const due = String(draft.due || "").trim();
+      if (!title || !owner || !due) {
+        toast("请完整填写任务名称、执行组员和预计截止日期");
+        return false;
+      }
+      task.title = title;
+      task.owner = owner;
+      task.due = due;
+      if (task.delayDue) task.delayDue = due;
+      task.businessNotice = "updated";
+      task.noticeAt = actionDate;
+      delete task.editing;
+      delete task.editDraft;
+      const assignment = assignmentFor(item.record.id, item.moduleKey);
+      const taskList = tasksFor(item.record.id, item.moduleKey);
+      assignment.owner = taskList[0]?.owner || assignment.owner;
+      syncAssignmentStatus(item.record.id, item.moduleKey);
+      toast("子任务修改已保存并同步关联人员");
+      return true;
     }
 
     function focusDispatchTask(key) {
@@ -8390,6 +8515,23 @@
         openDispatchEntryDialog(btn.dataset.publishDispatch);
       }));
       document.querySelectorAll("#drawer [data-dispatch-task-detail]").forEach(btn => btn.addEventListener("click", () => openDispatchTaskDetail(btn.dataset.dispatchTaskDetail)));
+      document.querySelectorAll("#drawer [data-edit-dispatch-task]").forEach(btn => btn.addEventListener("click", () => {
+        const key = btn.dataset.editDispatchTask;
+        startDispatchTaskEdit(key);
+        openDispatchEntryDialog(key.split(":").slice(0, 2).join(":"));
+      }));
+      document.querySelectorAll("#drawer [data-dispatch-edit-title]").forEach(input => input.addEventListener("input", () => updateDispatchTaskEdit(input.dataset.dispatchEditTitle, "title", input.value)));
+      document.querySelectorAll("#drawer [data-dispatch-edit-owner]").forEach(input => input.addEventListener("change", () => updateDispatchTaskEdit(input.dataset.dispatchEditOwner, "owner", input.value)));
+      document.querySelectorAll("#drawer [data-dispatch-edit-due]").forEach(input => input.addEventListener("change", () => updateDispatchTaskEdit(input.dataset.dispatchEditDue, "due", input.value)));
+      document.querySelectorAll("#drawer [data-dismiss-dispatch-edit]").forEach(btn => btn.addEventListener("click", () => {
+        const key = btn.dataset.dismissDispatchEdit;
+        dismissDispatchTaskEdit(key);
+        openDispatchEntryDialog(key.split(":").slice(0, 2).join(":"));
+      }));
+      document.querySelectorAll("#drawer [data-save-dispatch-edit]").forEach(btn => btn.addEventListener("click", () => {
+        const key = btn.dataset.saveDispatchEdit;
+        if (saveDispatchTaskEdit(key)) openDispatchEntryDialog(key.split(":").slice(0, 2).join(":"));
+      }));
       document.querySelectorAll("#drawer [data-cancel-task]").forEach(btn => btn.addEventListener("click", () => {
         const pairKey = btn.dataset.cancelTask.split(":").slice(0, 2).join(":");
         startCancelTask(btn.dataset.cancelTask);
