@@ -2513,6 +2513,20 @@
     .drawer-head, .drawer-foot { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
     .drawer-foot { border-top: 1px solid var(--line); border-bottom: 0; justify-content: flex-end; }
     .drawer h2 { margin: 0; font-size: 20px; }
+    .drawer-title-status-layout {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .drawer-title-status-layout .drawer-title-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .drawer-title-status-layout .badge { flex: 0 0 auto; }
     .drawer-body { padding: 22px 24px; overflow: auto; }
     .icon-btn { width: 36px; height: 36px; border-radius: 10px; background: #f4f2ee; color: #4b5058; font-size: 18px; }
     .toast {
@@ -6161,6 +6175,7 @@
       const primary = primaryGroupTaskItem(groupItems);
       const record = primary.record;
       const moduleKey = primary.moduleKey;
+      const groupStatus = myTaskGroupStatus(groupItems);
       const title = `${record.talent} ${shortLiveDate(record.liveTime)} ${record.product}`;
       openDrawer(
         "任务详情",
@@ -6169,7 +6184,10 @@
         true,
         true
       );
-      $("#drawerTitle").textContent = title;
+      $("#drawerTitle").innerHTML = `<span class="drawer-title-status-layout">
+        <span class="drawer-title-text">${escapeHtml(title)}</span>
+        ${badge(taskStatusDisplayLabel(moduleKey, groupStatus), taskStatusClass(groupStatus))}
+      </span>`;
     }
 
     function myTaskCalendarDetailBody(groupItems) {
@@ -6211,9 +6229,6 @@
       }).join("");
       return `<div class="stack my-task-calendar-detail">
         ${myTaskSpecialInfo(record)}
-        <div class="field-grid">
-          ${field("当前任务状态", badge(taskStatusDisplayLabel(moduleKey, groupStatus), taskStatusClass(groupStatus)))}
-        </div>
         ${workflowPathStrip(moduleKey, groupStatus)}
         <div class="task-note">${demandText(record, moduleKey)}</div>
         <div class="task-calendar-detail-list">${rows}</div>
