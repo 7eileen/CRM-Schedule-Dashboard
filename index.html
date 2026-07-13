@@ -2772,6 +2772,11 @@
       padding: 0 2px 11px;
       border-bottom: 1px solid #edf1f6;
     }
+    .calendar-progress-workflow:last-child {
+      margin-bottom: -2px;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
     .calendar-progress-workflow-head {
       display: flex;
       align-items: center;
@@ -4091,40 +4096,22 @@
     }
 
     function calendarProgressPopover(record, moduleKey = "", currentStatus = "") {
-      const workflow = moduleKey ? `<div class="calendar-progress-workflow">
+      const workflowKeys = moduleKey ? [moduleKey] : moduleOrder;
+      const workflows = workflowKeys.map(key => {
+        const taskList = (dispatchTasks[record.id] && dispatchTasks[record.id][key]) || [];
+        const status = key === moduleKey && currentStatus
+          ? currentStatus
+          : calendarWorkflowStatus(record, key, taskList);
+        return `<div class="calendar-progress-workflow">
         <div class="calendar-progress-workflow-head">
-          <strong>${escapeHtml((supportNeeds[moduleKey]?.title || modules[moduleKey]?.name || "任务").replace(/需求|支持/g, ""))}任务状态</strong>
-          <span>${escapeHtml(taskStatusDisplayLabel(moduleKey, currentStatus))}</span>
+          <strong>${escapeHtml((supportNeeds[key]?.title || modules[key]?.name || "任务").replace(/需求|支持/g, ""))}任务状态</strong>
+          <span>${escapeHtml(taskStatusDisplayLabel(key, status))}</span>
         </div>
-        ${workflowPathStrip(moduleKey, currentStatus)}
-      </div>` : "";
-      return `<div class="calendar-progress-popover ${moduleKey ? "has-workflow" : ""}" role="tooltip">
-        ${workflow}
-        <div class="calendar-progress-title"><strong>任务状态</strong></div>
-        <div class="calendar-progress-list">
-          ${moduleOrder.map(moduleKey => calendarProgressRow(record, moduleKey)).join("")}
-        </div>
+        ${workflowPathStrip(key, status)}
       </div>`;
-    }
-
-    function calendarProgressRow(record, moduleKey) {
-      const taskList = (dispatchTasks[record.id] && dispatchTasks[record.id][moduleKey]) || [];
-      const done = taskList.filter((task, index) => isTaskWorkflowDone(taskWorkflowStatus({ record, moduleKey, task, index }))).length;
-      const total = taskList.length;
-      const module = modules[moduleKey];
-      const support = supportNeeds[moduleKey] || module;
-      const name = (support.title || module.name || "").replace(/需求|支持/g, "") || module.name;
-      const currentStatus = total ? calendarWorkflowStatus(record, moduleKey, taskList) : "";
-      const statuses = moduleWorkflowStatuses[moduleKey] || workflowStatusList;
-      const currentIndex = statuses.indexOf(currentStatus);
-      const progress = currentIndex >= 0 ? Math.round((currentIndex + 1) / statuses.length * 100) : 0;
-      const displayStatus = total ? taskStatusDisplayLabel(moduleKey, currentStatus) : "暂无任务";
-      const status = total ? `${displayStatus} · ${done}/${total}` : displayStatus;
-      const isDone = total > 0 && done >= total;
-      const cls = isDone ? "green" : "orange";
-      return `<div class="calendar-progress-row ${cls}">
-        <div class="calendar-progress-row-head"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(status)}</span></div>
-        <div class="calendar-progress-track"><span class="calendar-progress-fill" style="width:${progress}%"></span></div>
+      }).join("");
+      return `<div class="calendar-progress-popover has-workflow ${moduleKey ? "" : "is-overview"}" role="tooltip">
+        ${workflows}
       </div>`;
     }
 
