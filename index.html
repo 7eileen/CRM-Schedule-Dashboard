@@ -6099,7 +6099,8 @@
       const myItems = filteredMyTaskItems(scopeItems);
       const myGroups = groupedMyTaskItems(myItems);
       const priorityOptions = ["all:全部优先级", "S+:S+ 级", "S:S 级", "A:A 级", "B:B 级", "C:C 级"];
-      const workflowCards = (moduleWorkflowStatuses[activeModule] || []).map(status => {
+      const visibleWorkflowStatuses = (moduleWorkflowStatuses[activeModule] || []).filter(status => status !== "初始");
+      const workflowCards = visibleWorkflowStatuses.map(status => {
         const count = activeModuleGroups.filter(group => myTaskGroupStatus(group.groupItems) === status).length;
         const active = !dispatchMode && selectedStatus === status;
         return `<button class="stat stat-${taskStatusClass(status)} ${active ? "active" : ""}" data-task-status-card="${status}"><div><strong>${count}</strong><span>${taskStatusDisplayLabel(activeModule, status)}</span></div></button>`;
