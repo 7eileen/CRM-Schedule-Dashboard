@@ -3137,6 +3137,14 @@
       ads: ["待办任务", "千川待审核", "待投放", "已投放"],
       ops: ["初始", "待办任务", "已完成"]
     };
+    const contentWorkflowRecordSamples = {
+      "ZC-0620-2": { status: "编写中", note: "内容组长已完成派发，编导正在编写脚本。" },
+      "ZC-0620-3": { status: "待审核", note: "编导已提交脚本文档，等待内容组长审核。", file: "梓慧儿-专场脚本-v1.docx", submittedAt: "2026-05-31" },
+      "ZC-0624": { status: "待拍摄", note: "内容组长已审核通过，等待按脚本拍摄。", reviewedAt: "2026-06-01" },
+      "ZC-0601": { status: "千川待审核", note: "拍剪视频已同步飞书群，等待千川审核。", file: "温格夫妇-拍剪视频终版.mp4", submittedAt: "2026-06-02" },
+      "ZC-0603-2": { status: "待发布", note: "千川审核已通过，等待达人主页发布。", reviewedAt: "2026-06-03" },
+      "ZC-0604-1": { status: "已发布", note: "达人主页已发布，内容任务完成。", completedAt: "2026-06-04" }
+    };
     const abnormalWorkflowStatuses = ["延期中", "已取消"];
 
     const dispatchTasks = {
@@ -5582,6 +5590,23 @@
         moduleOrder.forEach(moduleKey => {
           const statuses = moduleWorkflowStatuses[moduleKey];
           const taskList = tasksFor(record.id, moduleKey);
+          const contentSample = moduleKey === "content" ? contentWorkflowRecordSamples[record.id] : null;
+          if (contentSample) {
+            taskList.forEach(task => {
+              setTaskWorkflowStatus(task, moduleKey, contentSample.status, record, { silent: true });
+              task.docNote = contentSample.note;
+              task.files = contentSample.file ? [contentSample.file] : [];
+              if (contentSample.submittedAt) task.submittedAt = contentSample.submittedAt;
+              else delete task.submittedAt;
+              if (contentSample.reviewedAt) task.reviewedAt = contentSample.reviewedAt;
+              else delete task.reviewedAt;
+              if (contentSample.completedAt) task.completedAt = contentSample.completedAt;
+              else if (!isTaskWorkflowDone(contentSample.status)) delete task.completedAt;
+              task.businessNotice = "status";
+              task.noticeAt = actionDate;
+            });
+            return;
+          }
           taskList.forEach((task, taskIndex) => {
             if (task.workflowStatus || task.status === "延期中" || task.status === "已取消") return;
             if (task.status === "已完成") {
