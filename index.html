@@ -2725,6 +2725,9 @@
       transform: translateY(6px);
       transition: opacity .14s ease, transform .14s ease;
     }
+    .calendar-progress-popover.has-workflow {
+      width: min(390px, calc(100vw - 32px));
+    }
     .calendar-cell:nth-child(7n) .calendar-progress-popover,
     .calendar-cell:nth-child(7n - 1) .calendar-progress-popover {
       left: auto;
@@ -2761,6 +2764,46 @@
       color: #00152e;
       font-size: 13px;
       font-weight: 800;
+    }
+    .calendar-progress-workflow {
+      display: grid;
+      gap: 8px;
+      margin: -2px -2px 11px;
+      padding: 0 2px 11px;
+      border-bottom: 1px solid #edf1f6;
+    }
+    .calendar-progress-workflow-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #00152e;
+      font-size: 12px;
+    }
+    .calendar-progress-workflow-head strong {
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .calendar-progress-workflow-head span {
+      color: #f08200;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .calendar-progress-popover .workflow-path {
+      padding: 7px;
+      overflow: hidden;
+      border-radius: 6px;
+    }
+    .calendar-progress-popover .workflow-path-step {
+      min-height: 24px;
+      padding: 0 7px;
+      font-size: 11px;
+    }
+    .calendar-progress-popover .workflow-path-step + .workflow-path-step {
+      margin-left: 13px;
+    }
+    .calendar-progress-popover .workflow-path-step + .workflow-path-step::before {
+      width: 13px;
     }
     .calendar-progress-list {
       display: grid;
@@ -4047,8 +4090,16 @@
       </button>`;
     }
 
-    function calendarProgressPopover(record) {
-      return `<div class="calendar-progress-popover" role="tooltip">
+    function calendarProgressPopover(record, moduleKey = "", currentStatus = "") {
+      const workflow = moduleKey ? `<div class="calendar-progress-workflow">
+        <div class="calendar-progress-workflow-head">
+          <strong>${escapeHtml((supportNeeds[moduleKey]?.title || modules[moduleKey]?.name || "任务").replace(/需求|支持/g, ""))}任务状态</strong>
+          <span>${escapeHtml(taskStatusDisplayLabel(moduleKey, currentStatus))}</span>
+        </div>
+        ${workflowPathStrip(moduleKey, currentStatus)}
+      </div>` : "";
+      return `<div class="calendar-progress-popover ${moduleKey ? "has-workflow" : ""}" role="tooltip">
+        ${workflow}
         <div class="calendar-progress-title"><strong>需求进度</strong></div>
         <div class="calendar-progress-list">
           ${moduleOrder.map(moduleKey => calendarProgressRow(record, moduleKey)).join("")}
@@ -4057,18 +4108,27 @@
     }
 
     function calendarProgressRow(record, moduleKey) {
-      const summary = moduleTaskSummary(record, moduleKey);
+      const taskList = (dispatchTasks[record.id] && dispatchTasks[record.id][moduleKey]) || [];
+      const done = taskList.filter((task, index) => isTaskWorkflowDone(taskWorkflowStatus({ record, moduleKey, task, index }))).length;
+      const total = taskList.length;
+      const progress = total ? Math.round(done / total * 100) : 0;
       const module = modules[moduleKey];
       const support = supportNeeds[moduleKey] || module;
       const assignment = assignmentFor(record.id, moduleKey);
       const name = (support.title || module.name || "").replace(/需求|支持/g, "") || module.name;
-      const status = summary.label || assignment.status || "待同步";
-      const isDone = summary.total ? summary.done >= summary.total : assignment.status === "已完成";
+      const status = total ? `${done}/${total} 已完成` : assignment.status || "待同步";
+      const isDone = total ? done >= total : assignment.status === "已完成";
       const cls = isDone ? "green" : "orange";
       return `<div class="calendar-progress-row ${cls}">
         <div class="calendar-progress-row-head"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(status)}</span></div>
-        <div class="calendar-progress-track"><span class="calendar-progress-fill" style="width:${summary.progress}%"></span></div>
+        <div class="calendar-progress-track"><span class="calendar-progress-fill" style="width:${progress}%"></span></div>
       </div>`;
+    }
+
+    function calendarWorkflowStatus(record, moduleKey, taskList = []) {
+      if (!moduleKey) return "";
+      const items = taskList.map((task, index) => ({ record, moduleKey, task, index }));
+      return items.length ? myTaskGroupStatus(items) : workflowStartStatus(moduleKey);
     }
 
     function listFilterButton(key, label, count) {
@@ -5432,12 +5492,14 @@
     function dispatchCalendarEvent(record, moduleKey) {
       const dispatchKey = `${record.id}:${moduleKey}`;
       const taskList = tasksFor(record.id, moduleKey);
+      const workflowStatus = calendarWorkflowStatus(record, moduleKey, taskList);
       const noticeCount = taskNoticeCount(taskList);
       const active = state.dispatchOpen === dispatchKey;
       return `<button class="calendar-event dispatch-calendar-event ${active ? "is-active" : ""}" data-toggle-dispatch="${dispatchKey}">
         <span class="dispatch-calendar-title"><span>${escapeHtml(record.talent)} ${shortLiveDate(record.liveTime)}</span>${summaryNoticeDot(noticeCount, "该专场有新增子任务提醒")}</span>
         <span class="dispatch-calendar-sub">${escapeHtml(record.product)} · ${supportNeeds[moduleKey].title}</span>
         <span class="dispatch-calendar-meta"><span>预计完成 ${formatMonthDay(dispatchCalendarDate(record, moduleKey))}</span><span>${taskList.length} 子任务</span></span>
+        ${calendarProgressPopover(record, moduleKey, workflowStatus)}
       </button>`;
     }
 
@@ -6151,6 +6213,7 @@
       return `<button class="calendar-event task-calendar-event ${eventCls}" data-open-my-task-calendar="${group.key}">
         <span class="task-calendar-line">${escapeHtml(primary.record.talent)} ${shortLiveDate(primary.record.liveTime)} ${escapeHtml(primary.record.product)}</span>
         <span class="task-calendar-deadline">内容需求截止时间：${formatMonthDay(taskDemandDate(anchor))}</span>
+        ${calendarProgressPopover(primary.record, primary.moduleKey, status)}
       </button>`;
     }
 
