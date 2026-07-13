@@ -2874,6 +2874,38 @@
       white-space: nowrap;
       color: #00152e;
     }
+    .task-calendar-detail-row-actions {
+      grid-column: 2 / -1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid #edf1f6;
+    }
+    .task-calendar-detail-upload {
+      position: relative;
+      cursor: pointer;
+    }
+    .task-calendar-detail-upload input { display: none; }
+    .task-calendar-edit-form {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.5fr) minmax(160px, 1fr) minmax(180px, 1fr);
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid #ffd3aa;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff7ef 0%, rgba(255, 247, 239, 0.28) 100%);
+    }
+    .task-calendar-edit-files {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid #f2dfce;
+    }
 
     @media (max-width: 1180px) {
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2901,7 +2933,7 @@
       main { margin-left: 0; padding: 24px 14px 42px; }
       .head { display: grid; }
       .head h1 { font-size: 24px; }
-      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .special-info-fields, .info-editor-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid, .list-stat-field-grid { grid-template-columns: 1fr; }
+      .process, .stats, .grid-4, .module-tabs, .field-grid, .detail-fields, .special-info-fields, .info-editor-fields, .assign-grid, .task-row, .task-observe-row, .task-review-line, .delay-form, .cancel-form, .data-toolbar, .monthly-toolbar, .monthly-summary, .analysis-grid, .data-block-grid, .chart, .project-grid, .list-controls, .product-select-row, .support-pie-grid, .module-task-summary, .module-task-detail-item, .task-total-row, .entry-source-grid, .list-stat-field-grid, .task-calendar-edit-form { grid-template-columns: 1fr; }
       .calendar-grid { grid-template-columns: 1fr; }
       .calendar-weekday { display: none; }
       .calendar-cell.is-muted { display: none; }
@@ -2911,6 +2943,10 @@
       .task-observe-edit-actions { justify-content: flex-start; }
       .task-row-actions { justify-content: flex-start; }
       .module-task-note, .module-task-log { grid-column: 1; }
+      .task-calendar-detail-row { grid-template-columns: 32px 1fr; }
+      .task-calendar-detail-cell { grid-column: 2; }
+      .task-calendar-detail-row-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
+      .task-calendar-edit-files { grid-column: 1; align-items: flex-start; flex-direction: column; }
       .module-task-log { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; }
       .my-task-tools { display: grid; }
@@ -6125,6 +6161,7 @@
         const task = item.task;
         const status = taskWorkflowStatus(item);
         const files = (task.files || []).length ? (task.files || []).join("、") : "暂无附件";
+        const canOperate = status !== "已取消";
         return `<div class="task-calendar-detail-row">
           <span class="task-calendar-detail-index">${index + 1}</span>
           <div class="task-calendar-detail-main">
@@ -6135,6 +6172,13 @@
           <div class="task-calendar-detail-cell"><span>${taskCalendarDateLabel(moduleKey)}</span><strong>${formatMonthDay(moduleKey === "content" ? taskDemandDate(item) : record.liveTime.slice(0, 10))}</strong></div>
           <div class="task-calendar-detail-cell"><span>状态</span>${badge(taskStatusDisplayLabel(moduleKey, status), taskStatusClass(status))}</div>
           <div class="task-calendar-detail-cell"><span>附件</span><strong title="${escapeHtml(files)}">${escapeHtml(files)}</strong></div>
+          ${canOperate ? `<div class="task-calendar-detail-row-actions">
+            <label class="btn ghost task-calendar-detail-upload">
+              上传文件
+              <input type="file" multiple data-calendar-task-upload="${item.key}" data-calendar-parent="${actionKey}">
+            </label>
+            <button class="btn ghost" data-calendar-task-edit="${item.key}" data-calendar-parent="${actionKey}">编辑任务</button>
+          </div>` : ""}
         </div>`;
       }).join("");
       return `<div class="stack my-task-calendar-detail">
@@ -6147,6 +6191,48 @@
         <div class="task-calendar-detail-list">${rows}</div>
         ${actionPanel}
       </div>`;
+    }
+
+    function openMyTaskSubtaskEditor(key, parentKey) {
+      const item = taskActionItems(key)[0];
+      if (!item || item.task.status === "已取消") return;
+      if (!item.task.editing) startDispatchTaskEdit(key);
+      const task = item.task;
+      const draft = task.editDraft || {
+        title: task.title || taskTemplates[item.moduleKey][0],
+        owner: task.owner || moduleMembers[item.moduleKey][0],
+        due: task.delayDue || task.due
+      };
+      const files = (task.files || []).length
+        ? (task.files || []).map(name => `<span class="file-chip"><span class="file-chip-name">${escapeHtml(name)}</span></span>`).join("")
+        : `<span class="muted">暂无附件</span>`;
+      const body = `<div class="stack">
+        ${myTaskSpecialInfo(item.record)}
+        <div class="task-calendar-edit-form">
+          <label class="task-field">
+            <span>任务名称</span>
+            <input class="input" value="${escapeHtml(draft.title)}" data-dispatch-edit-title="${key}">
+          </label>
+          <label class="task-field">
+            <span>执行人</span>
+            <select class="select" data-dispatch-edit-owner="${key}">${moduleMembers[item.moduleKey].map(owner => `<option ${owner === draft.owner ? "selected" : ""}>${escapeHtml(owner)}</option>`).join("")}</select>
+          </label>
+          <label class="task-field">
+            <span>预计截止日期</span>
+            <input class="input" type="date" value="${escapeHtml(draft.due || "")}" data-dispatch-edit-due="${key}">
+          </label>
+          <div class="task-calendar-edit-files">
+            <div class="task-upload-main"><span class="task-upload-title">已上传附件</span><span class="task-files">${files}</span></div>
+            <label class="btn ghost task-calendar-detail-upload">
+              上传文件
+              <input type="file" multiple data-calendar-task-upload="${key}" data-calendar-parent="${parentKey}" data-calendar-editor="true">
+            </label>
+          </div>
+        </div>
+      </div>`;
+      const foot = `<button class="btn ghost" data-calendar-edit-back="${parentKey}" data-calendar-edit-key="${key}">返回任务详情</button>
+        <button class="btn primary" data-calendar-edit-save="${key}" data-calendar-parent="${parentKey}">保存修改</button>`;
+      openDrawer("编辑子任务", body, foot, true, true);
     }
 
     function workflowPathStrip(moduleKey, currentStatus) {
@@ -8747,6 +8833,24 @@
       document.querySelectorAll("#drawer [data-close-task-memo]").forEach(btn => btn.addEventListener("click", () => closeTaskMemo(btn.dataset.closeTaskMemo)));
       document.querySelectorAll("#drawer [data-save-info-editor]").forEach(btn => btn.addEventListener("click", () => saveSpecialInfoEditor(btn.dataset.saveInfoEditor)));
       document.querySelectorAll("#drawer [data-toggle-task-memo]").forEach(btn => btn.addEventListener("click", () => toggleTaskMemo(btn.dataset.toggleTaskMemo)));
+      document.querySelectorAll("#drawer [data-calendar-task-upload]").forEach(input => input.addEventListener("change", () => {
+        const key = input.dataset.calendarTaskUpload;
+        const parentKey = input.dataset.calendarParent;
+        const returnToEditor = input.dataset.calendarEditor === "true";
+        uploadTaskFiles(key, input.files);
+        if (returnToEditor) openMyTaskSubtaskEditor(key, parentKey);
+        else openMyTaskCalendarDetail(parentKey);
+      }));
+      document.querySelectorAll("#drawer [data-calendar-task-edit]").forEach(btn => btn.addEventListener("click", () => {
+        openMyTaskSubtaskEditor(btn.dataset.calendarTaskEdit, btn.dataset.calendarParent);
+      }));
+      document.querySelectorAll("#drawer [data-calendar-edit-back]").forEach(btn => btn.addEventListener("click", () => {
+        dismissDispatchTaskEdit(btn.dataset.calendarEditKey);
+        openMyTaskCalendarDetail(btn.dataset.calendarEditBack);
+      }));
+      document.querySelectorAll("#drawer [data-calendar-edit-save]").forEach(btn => btn.addEventListener("click", () => {
+        if (saveDispatchTaskEdit(btn.dataset.calendarEditSave)) openMyTaskCalendarDetail(btn.dataset.calendarParent);
+      }));
       document.querySelectorAll("#drawer [data-advance-task]").forEach(btn => btn.addEventListener("click", () => {
         closeDrawer();
         advanceMyTask(btn.dataset.advanceTask, btn.dataset.nextStatus);
