@@ -4100,7 +4100,7 @@
       </div>` : "";
       return `<div class="calendar-progress-popover ${moduleKey ? "has-workflow" : ""}" role="tooltip">
         ${workflow}
-        <div class="calendar-progress-title"><strong>需求进度</strong></div>
+        <div class="calendar-progress-title"><strong>任务状态</strong></div>
         <div class="calendar-progress-list">
           ${moduleOrder.map(moduleKey => calendarProgressRow(record, moduleKey)).join("")}
         </div>
@@ -4111,13 +4111,16 @@
       const taskList = (dispatchTasks[record.id] && dispatchTasks[record.id][moduleKey]) || [];
       const done = taskList.filter((task, index) => isTaskWorkflowDone(taskWorkflowStatus({ record, moduleKey, task, index }))).length;
       const total = taskList.length;
-      const progress = total ? Math.round(done / total * 100) : 0;
       const module = modules[moduleKey];
       const support = supportNeeds[moduleKey] || module;
-      const assignment = assignmentFor(record.id, moduleKey);
       const name = (support.title || module.name || "").replace(/需求|支持/g, "") || module.name;
-      const status = total ? `${done}/${total} 已完成` : assignment.status || "待同步";
-      const isDone = total ? done >= total : assignment.status === "已完成";
+      const currentStatus = total ? calendarWorkflowStatus(record, moduleKey, taskList) : "";
+      const statuses = moduleWorkflowStatuses[moduleKey] || workflowStatusList;
+      const currentIndex = statuses.indexOf(currentStatus);
+      const progress = currentIndex >= 0 ? Math.round((currentIndex + 1) / statuses.length * 100) : 0;
+      const displayStatus = total ? taskStatusDisplayLabel(moduleKey, currentStatus) : "暂无任务";
+      const status = total ? `${displayStatus} · ${done}/${total}` : displayStatus;
+      const isDone = total > 0 && done >= total;
       const cls = isDone ? "green" : "orange";
       return `<div class="calendar-progress-row ${cls}">
         <div class="calendar-progress-row-head"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(status)}</span></div>
