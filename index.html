@@ -3138,12 +3138,12 @@
       ops: ["初始", "待办任务", "已完成"]
     };
     const contentWorkflowRecordSamples = {
-      "ZC-0620-2": { status: "编写中", note: "内容组长已完成派发，编导正在编写脚本。" },
-      "ZC-0620-3": { status: "待审核", note: "编导已提交脚本文档，等待内容组长审核。", file: "梓慧儿-专场脚本-v1.docx", submittedAt: "2026-05-31" },
-      "ZC-0624": { status: "待拍摄", note: "内容组长已审核通过，等待按脚本拍摄。", reviewedAt: "2026-06-01" },
-      "ZC-0601": { status: "千川待审核", note: "拍剪视频已同步飞书群，等待千川审核。", file: "温格夫妇-拍剪视频终版.mp4", submittedAt: "2026-06-02" },
-      "ZC-0603-2": { status: "待发布", note: "千川审核已通过，等待达人主页发布。", reviewedAt: "2026-06-03" },
-      "ZC-0604-1": { status: "已发布", note: "达人主页已发布，内容任务完成。", completedAt: "2026-06-04" }
+      "ZC-0620-2": { talent: "憨憨金和帅帅银", status: "编写中", note: "内容组长已完成派发，编导正在编写脚本。" },
+      "ZC-0620-3": { talent: "梓慧儿", status: "待审核", note: "编导已提交脚本文档，等待内容组长审核。", file: "梓慧儿-专场脚本-v1.docx", submittedAt: "2026-05-31" },
+      "ZC-0624": { talent: "美呀呀meea", status: "待拍摄", note: "内容组长已审核通过，等待按脚本拍摄。", reviewedAt: "2026-06-01" },
+      "ZC-0601": { talent: "温格夫妇", status: "千川待审核", note: "拍剪视频已同步飞书群，等待千川审核。", file: "温格夫妇-拍剪视频终版.mp4", submittedAt: "2026-06-02" },
+      "ZC-0603-2": { talent: "彤彤夫妇", status: "待发布", note: "千川审核已通过，等待达人主页发布。", reviewedAt: "2026-06-03" },
+      "ZC-0604-1": { talent: "小小木子", status: "已发布", note: "达人主页已发布，内容任务完成。", completedAt: "2026-06-04" }
     };
     const abnormalWorkflowStatuses = ["延期中", "已取消"];
 
@@ -5590,7 +5590,10 @@
         moduleOrder.forEach(moduleKey => {
           const statuses = moduleWorkflowStatuses[moduleKey];
           const taskList = tasksFor(record.id, moduleKey);
-          const contentSample = moduleKey === "content" ? contentWorkflowRecordSamples[record.id] : null;
+          const contentSample = moduleKey === "content"
+            ? contentWorkflowRecordSamples[record.id]
+              || Object.values(contentWorkflowRecordSamples).find(sample => sample.talent === record.talent)
+            : null;
           if (contentSample) {
             taskList.forEach(task => {
               setTaskWorkflowStatus(task, moduleKey, contentSample.status, record, { silent: true });
