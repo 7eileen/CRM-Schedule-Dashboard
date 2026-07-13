@@ -2794,6 +2794,20 @@
       font-weight: 700;
       white-space: nowrap;
     }
+    .calendar-progress-current-status {
+      width: fit-content;
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      border: 1px solid #ff9b36;
+      border-radius: 6px;
+      background: #fff8ef;
+      color: #e97300;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
     .calendar-progress-popover .workflow-path {
       padding: 7px;
       overflow: hidden;
@@ -4105,9 +4119,8 @@
         return `<div class="calendar-progress-workflow">
         <div class="calendar-progress-workflow-head">
           <strong>${escapeHtml((supportNeeds[key]?.title || modules[key]?.name || "任务").replace(/需求|支持/g, ""))}任务状态</strong>
-          <span>${escapeHtml(taskStatusDisplayLabel(key, status))}</span>
         </div>
-        ${workflowPathStrip(key, status)}
+        <span class="calendar-progress-current-status">${escapeHtml(taskStatusDisplayLabel(key, status))}</span>
       </div>`;
       }).join("");
       return `<div class="calendar-progress-popover has-workflow ${moduleKey ? "" : "is-overview"}" role="tooltip">
