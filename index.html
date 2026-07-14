@@ -6107,7 +6107,7 @@
       }).join("");
       const statsRow = `<section class="stats my-task-stats workflow-tab-stats">
         ${canDispatch ? `<button class="stat stat-orange ${dispatchMode ? "active" : ""}" data-task-workspace="dispatch" data-task-dispatch-module="${dispatchModule}"><div><strong>${dispatchPending}</strong><span>需求派发</span></div></button>` : ""}
-        <button class="stat stat-orange ${!dispatchMode && selectedStatus === "all" ? "active" : ""}" data-task-workspace="tasks"><div><strong>${activeModuleGroups.length}</strong><span>我的任务</span></div></button>
+        <button class="stat stat-orange ${!dispatchMode && selectedStatus === "all" ? "active" : ""}" data-task-workspace="tasks"><div><strong>${activeModuleGroups.length}</strong><span>全部任务</span></div></button>
         ${workflowCards}
       </section>`;
       const taskBoard = `${statsRow}
