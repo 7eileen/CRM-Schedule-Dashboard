@@ -5585,10 +5585,19 @@
         dispatchAssignments[recordId][moduleKey] = {
           owner: defaultOwnerFor(recordId, moduleKey),
           due: defaultDue(records.find(record => record.id === recordId)),
-          status: "待派发"
+          status: defaultAssignmentStatus(recordId, moduleKey)
         };
       }
       return dispatchAssignments[recordId][moduleKey];
+    }
+
+    function defaultAssignmentStatus(recordId, moduleKey) {
+      return (dispatchPoolSamples[moduleKey] || []).includes(recordId) ? "待派发" : "已派发";
+    }
+
+    function isDispatchPublished(recordId, moduleKey) {
+      const isPendingSample = (dispatchPoolSamples[moduleKey] || []).includes(recordId);
+      return !isPendingSample || assignmentFor(recordId, moduleKey).status !== "待派发";
     }
 
     function defaultOwnerFor(recordId, moduleKey) {
@@ -5606,7 +5615,7 @@
             dispatchAssignments[recordId][moduleKey] = {
               owner,
               due: defaultDue(records.find(record => record.id === recordId)),
-              status: "待派发"
+              status: defaultAssignmentStatus(recordId, moduleKey)
             };
           } else {
             dispatchAssignments[recordId][moduleKey].owner = owner;
@@ -6141,12 +6150,9 @@
 
     function dispatchPoolRecords(moduleKey) {
       const sampleIds = dispatchPoolSamples[moduleKey] || [];
-      const sampled = sampleIds
+      return sampleIds
         .map(id => records.find(record => record.id === id))
-        .filter(Boolean);
-      if (sampled.length >= 4) return sampled.slice(0, 4);
-      const fallback = records.filter(record => !sampleIds.includes(record.id));
-      return sampled.concat(fallback).slice(0, 4);
+        .filter(record => record && !isDispatchPublished(record.id, moduleKey));
     }
 
     function dispatchPendingTotal(moduleKey = state.module) {
@@ -6382,7 +6388,7 @@
     }
 
     function scopedTaskItems() {
-      const items = allDispatchTaskItems();
+      const items = allDispatchTaskItems().filter(item => isDispatchPublished(item.record.id, item.moduleKey));
       const scopeModule = { contentLead: "content", editLead: "edit", adsLead: "ads" }[state.taskScope];
       if (scopeModule) return items.filter(item => item.moduleKey === scopeModule);
       if (state.taskScope === "manager") return items;
@@ -8520,7 +8526,8 @@
       assignment.due = dispatchDue(recordId, moduleKey);
       syncAssignmentStatus(recordId, moduleKey);
       if (record && record.status === "待识别") record.status = "派工中";
-      toast(`已发布${supportNeeds[moduleKey].title} ${taskList.length} 条任务`);
+      closeDrawer();
+      toast(`已发布${supportNeeds[moduleKey].title} ${taskList.length} 条任务，已同步到全部任务`);
       render();
     }
 
