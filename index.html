@@ -4110,12 +4110,13 @@
     }
 
     function calendarProgressPopover(record, moduleKey = "", currentStatus = "") {
-      const workflowKeys = moduleKey ? [moduleKey] : moduleOrder;
+      const workflowKeys = moduleKey
+        ? taskCalendarFeedbackKeys(moduleKey, currentStatus)
+        : moduleOrder;
+      if (!workflowKeys.length) return "";
       const workflows = workflowKeys.map(key => {
         const taskList = (dispatchTasks[record.id] && dispatchTasks[record.id][key]) || [];
-        const status = key === moduleKey && currentStatus
-          ? currentStatus
-          : calendarWorkflowStatus(record, key, taskList);
+        const status = calendarWorkflowStatus(record, key, taskList);
         return `<div class="calendar-progress-workflow">
         <div class="calendar-progress-workflow-head">
           <strong>${escapeHtml((supportNeeds[key]?.title || modules[key]?.name || "任务").replace(/需求|支持/g, ""))}任务状态</strong>
@@ -4126,6 +4127,13 @@
       return `<div class="calendar-progress-popover has-workflow ${moduleKey ? "" : "is-overview"}" role="tooltip">
         ${workflows}
       </div>`;
+    }
+
+    function taskCalendarFeedbackKeys(moduleKey, currentStatus) {
+      if (moduleKey === "content" && currentStatus === "千川待审核") return ["edit", "ads"];
+      if (moduleKey === "edit" && currentStatus === "待办任务") return ["content"];
+      if (moduleKey === "ads" && currentStatus === "待办任务") return ["content", "edit"];
+      return [];
     }
 
     function calendarWorkflowStatus(record, moduleKey, taskList = []) {
