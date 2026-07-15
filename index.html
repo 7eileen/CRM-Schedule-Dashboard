@@ -6250,7 +6250,33 @@
       return month && day ? `${Number(month)}月${Number(day)}日` : "待定";
     }
 
-    function openMyTaskCalendarDetail(key) {
+function taskAllowsArtifactUpload(moduleKey, status) {
+  const normalizedModule = moduleKey === "edit" ? "editing" : moduleKey;
+  return (normalizedModule === "content" && status === "编写中")
+    || (normalizedModule === "editing" && status === "剪辑中");
+}
+
+const TASK_FEISHU_LINK_STORAGE_KEY = "crm-task-feishu-links";
+
+function taskFeishuLinkMap() {
+  try {
+    return JSON.parse(localStorage.getItem(TASK_FEISHU_LINK_STORAGE_KEY) || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function taskFeishuLinkFor(taskKey) {
+  return taskFeishuLinkMap()[taskKey] || "";
+}
+
+function saveTaskFeishuLink(taskKey, url) {
+  const links = taskFeishuLinkMap();
+  links[taskKey] = url;
+  localStorage.setItem(TASK_FEISHU_LINK_STORAGE_KEY, JSON.stringify(links));
+}
+
+function openMyTaskCalendarDetail(key) {
       const groupItems = taskActionItems(key).sort(taskRecordSubtaskCompare);
       if (!groupItems.length) return;
       const primary = primaryGroupTaskItem(groupItems);
@@ -9053,6 +9079,33 @@
     $("#mask").addEventListener("click", closeDrawer);
     document.addEventListener("keydown", event => { if (event.key === "Escape") closeDrawer(); });
     render();
+  </script>
+  <script>
+    // Keep artifact upload actions aligned with the task state machine.
+    (() => {
+      const uploadActionLabels = ["上传文件", "上传本地文件", "本地文件", "飞书链接"];
+
+      function taskRowAllowsUpload(row) {
+        const text = row.textContent || "";
+        return (text.includes("内容支持") && text.includes("编写中"))
+          || (text.includes("剪辑支持") && text.includes("剪辑中"));
+      }
+
+      function syncTaskUploadActions(root = document) {
+        root.querySelectorAll(".task-calendar-detail-row").forEach((row) => {
+          const allowUpload = taskRowAllowsUpload(row);
+          row.querySelectorAll("button, label, a").forEach((control) => {
+            const label = (control.textContent || "").trim();
+            const isUploadAction = uploadActionLabels.some((name) => label.includes(name));
+            if (isUploadAction) control.hidden = !allowUpload;
+          });
+        });
+      }
+
+      const observer = new MutationObserver(() => syncTaskUploadActions());
+      observer.observe(document.body, { childList: true, subtree: true });
+      syncTaskUploadActions();
+    })();
   </script>
 </body>
 </html>
