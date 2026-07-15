@@ -9107,5 +9107,64 @@ function openMyTaskCalendarDetail(key) {
       syncTaskUploadActions();
     })();
   </script>
+  <!-- Task files can only be changed while the assignee is actively producing them. -->
+  <script>
+    (() => {
+      const artifactActionLabels = new Set(["上传文件", "编辑任务"]);
+      const taskStatuses = new Set([
+        "待办任务", "编写中", "待审核", "待拍摄", "剪辑中",
+        "千川待审核", "审核通过", "待发布", "已发布", "待投放", "已投放"
+      ]);
+
+      function getCurrentTaskStatus(row) {
+        const candidates = row.querySelectorAll(".badge, .status, [class*='status']");
+        for (const candidate of candidates) {
+          const value = candidate.textContent.trim();
+          if (taskStatuses.has(value)) return value;
+        }
+
+        for (const candidate of row.querySelectorAll("*")) {
+          if (candidate.children.length === 0) {
+            const value = candidate.textContent.trim();
+            if (taskStatuses.has(value)) return value;
+          }
+        }
+        return "";
+      }
+
+      function syncArtifactActions(root = document) {
+        root.querySelectorAll(".task-calendar-detail-row").forEach((row) => {
+          const text = row.textContent || "";
+          const status = getCurrentTaskStatus(row);
+          const canEditArtifact =
+            (text.includes("内容支持") && status === "编写中") ||
+            (text.includes("剪辑支持") && status === "剪辑中");
+
+          row.querySelectorAll("button").forEach((button) => {
+            if (artifactActionLabels.has(button.textContent.trim())) {
+              button.hidden = !canEditArtifact;
+              button.style.display = canEditArtifact ? "" : "none";
+            }
+          });
+        });
+      }
+
+      let updateQueued = false;
+      const scheduleArtifactSync = () => {
+        if (updateQueued) return;
+        updateQueued = true;
+        requestAnimationFrame(() => {
+          updateQueued = false;
+          syncArtifactActions();
+        });
+      };
+
+      new MutationObserver(scheduleArtifactSync).observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      scheduleArtifactSync();
+    })();
+  </script>
 </body>
 </html>
