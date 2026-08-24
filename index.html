@@ -1026,56 +1026,221 @@
     .module-tab.active strong { color: var(--orange); }
     .module-tab.active .muted { color: #c46b00; }
     .module-tab strong { font-size: 17px; font-weight: 400; line-height: 1.3; }
-    .dispatch-list { display: grid; gap: 14px; }
-    .dispatch-calendar .calendar-cell { min-height: 168px; }
-    .dispatch-calendar .calendar-cell.has-many { min-height: 238px; }
-    .dispatch-calendar-event {
-      border-color: #ffd8ae;
-      background: #fff4e8;
-      gap: 7px;
-      cursor: pointer;
-    }
-    .dispatch-calendar-event.is-active {
-      border-color: var(--orange);
-      box-shadow: inset 0 0 0 1px var(--orange), 0 8px 18px rgba(255, 111, 0, .12);
-    }
-    .dispatch-calendar-event .dispatch-calendar-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .dispatch-workstrip {
       min-width: 0;
-      font-size: 13px;
-      font-weight: 800;
-      color: #7a3f00;
+      display: grid;
+      gap: 18px;
     }
-    .dispatch-calendar-event .dispatch-calendar-title span:first-child {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .dispatch-calendar-event .dispatch-calendar-meta {
+    .dispatch-workstrip-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 16px;
+    }
+    .dispatch-workstrip-summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .dispatch-workstrip-summary-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 13px;
+      color: var(--orange);
+      background: linear-gradient(145deg, #fff7ed, #ffead2);
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .dispatch-workstrip-summary-copy {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .dispatch-workstrip-summary-copy strong { color: #00152e; font-size: 16px; font-weight: 650; }
+    .dispatch-workstrip-summary-copy span { color: var(--muted); font-size: 13px; }
+    .dispatch-workstrip-controls {
+      display: inline-flex;
+      align-items: center;
       gap: 8px;
-      color: #8a4a00;
+      flex: 0 0 auto;
+    }
+    .dispatch-workstrip-position {
+      min-width: 58px;
+      color: #6f7c8e;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+    .dispatch-workstrip-arrow {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #dfe6ef;
+      border-radius: 11px;
+      background: #fff;
+      color: #334155;
+      font-size: 20px;
+      line-height: 1;
+      box-shadow: 0 3px 10px rgba(15, 35, 65, .04);
+      transition: border-color .16s ease, color .16s ease, transform .16s ease, opacity .16s ease;
+    }
+    .dispatch-workstrip-arrow:hover:not(:disabled) { border-color: #ffb15d; color: var(--orange); transform: translateY(-1px); }
+    .dispatch-workstrip-arrow:disabled { cursor: default; opacity: .35; }
+    .dispatch-workstrip-viewport {
+      min-width: 0;
+      overflow-x: auto;
+      padding: 4px 2px 14px;
+      scroll-behavior: smooth;
+      scroll-snap-type: x mandatory;
+      overscroll-behavior-inline: contain;
+      scrollbar-width: thin;
+      scrollbar-color: #ffc88e #f3f6fb;
+    }
+    .dispatch-workstrip-viewport:focus-visible {
+      outline: 2px solid rgba(255, 127, 0, .36);
+      outline-offset: 5px;
+      border-radius: 12px;
+    }
+    .dispatch-workstrip-track {
+      width: max-content;
+      min-width: 100%;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: clamp(310px, 32vw, 520px);
+      gap: 16px;
+      position: relative;
+      padding: 0 3px 4px;
+    }
+    .dispatch-workstrip-track::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      left: 28px;
+      right: 28px;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ffb462 0%, #ffe5c7 100%);
+    }
+    .dispatch-workstrip-item {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 30px 1fr;
+      gap: 11px;
+      position: relative;
+      scroll-snap-align: start;
+    }
+    .dispatch-workstrip-marker {
+      width: max-content;
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      position: relative;
+      z-index: 1;
+      padding: 0 10px 0 7px;
+      border: 1px solid #ffd4a5;
+      border-radius: 999px;
+      background: #fffaf4;
+      color: #b86000;
+      font-size: 12px;
       font-weight: 700;
     }
-    .dispatch-calendar-event .dispatch-calendar-sub {
-      color: #8a6a43;
-      font-size: 12px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .dispatch-workstrip-marker::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255, 127, 0, .13);
     }
-    .dispatch-calendar-detail {
+    .dispatch-workstrip-card {
+      width: 100%;
+      min-height: 230px;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto auto;
+      gap: 14px;
+      border: 1px solid #e5ebf3;
+      border-radius: 18px;
+      background: linear-gradient(155deg, #fff 0%, #fff 64%, #fff8ef 100%);
+      color: inherit;
+      text-align: left;
+      box-shadow: 0 8px 24px rgba(15, 35, 65, .055);
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .dispatch-workstrip-card:hover,
+    .dispatch-workstrip-card:focus-visible {
+      border-color: #ffb562;
+      box-shadow: 0 12px 28px rgba(255, 127, 0, .11);
+      transform: translateY(-2px);
+      outline: none;
+    }
+    .dispatch-workstrip-card.is-active {
+      border-color: var(--orange);
+      box-shadow: inset 0 0 0 1px var(--orange), 0 12px 28px rgba(255, 127, 0, .12);
+    }
+    .dispatch-workstrip-card-head,
+    .dispatch-workstrip-card-foot,
+    .dispatch-workstrip-metrics {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .dispatch-workstrip-sequence {
+      color: #a7b0be;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .dispatch-workstrip-title { display: grid; gap: 6px; min-width: 0; }
+    .dispatch-workstrip-title strong {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      color: #00152e;
+      font-size: 18px;
+      font-weight: 650;
+      line-height: 1.35;
+    }
+    .dispatch-workstrip-title > span {
+      color: #748096;
+      font-size: 13px;
+    }
+    .dispatch-workstrip-product {
+      align-self: start;
+      display: -webkit-box;
+      overflow: hidden;
+      color: #4d5a6d;
+      font-size: 14px;
+      line-height: 1.55;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+    .dispatch-workstrip-metrics {
+      padding: 12px 0;
+      border-top: 1px solid #edf1f6;
+      border-bottom: 1px solid #edf1f6;
+    }
+    .dispatch-workstrip-metric { display: grid; gap: 4px; }
+    .dispatch-workstrip-metric span { color: #99a2b0; font-size: 11px; }
+    .dispatch-workstrip-metric strong { color: #344054; font-size: 14px; font-weight: 650; }
+    .dispatch-workstrip-card-foot { color: #8791a1; font-size: 12px; }
+    .dispatch-workstrip-card-foot span:last-child { color: var(--orange); font-weight: 650; }
+    .dispatch-entry-detail {
       margin-top: 16px;
       border: 1px solid #ffd8ae;
       border-radius: 14px;
       background: linear-gradient(135deg, #fffaf5 0%, #fff 70%);
       overflow: hidden;
     }
-    .dispatch-calendar-detail .dispatch-detail { padding: 16px; }
+    .dispatch-entry-detail .dispatch-detail { padding: 16px; }
     .dispatch-card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -1496,6 +1661,20 @@
       flex-wrap: wrap;
     }
     .dispatch-head-actions .dispatch-month-picker { margin-right: 4px; }
+    .dispatch-month-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .dispatch-month-picker .input {
+      width: 148px;
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: 14px;
+    }
     .dispatch-module-tabs { white-space: nowrap; }
     .task-total-list {
       display: grid;
@@ -3023,6 +3202,12 @@
       .task-calendar-detail-cell { grid-column: 2; }
       .task-calendar-detail-row-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
       .task-calendar-edit-files { grid-column: 1; align-items: flex-start; flex-direction: column; }
+      .dispatch-workstrip { width: calc(100vw - 28px); max-width: calc(100vw - 28px); }
+      .dispatch-workstrip-toolbar { align-items: flex-end; }
+      .dispatch-workstrip-summary-icon { display: none; }
+      .dispatch-workstrip-summary-copy span { max-width: 220px; }
+      .dispatch-workstrip-track { grid-auto-columns: min(86vw, 360px); }
+      .dispatch-workstrip-card { min-height: 218px; }
       .module-task-log { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; }
       .my-task-tools { display: grid; }
@@ -3143,7 +3328,6 @@
       taskSearch: "",
       taskMonth: "2026-06",
       taskCalendarExpandedDay: "",
-      dispatchCalendarExpandedDay: "",
       listFilter: "all",
       listSearch: "",
       listGrade: "all",
@@ -5435,14 +5619,14 @@
           <div class="dispatch-head-actions">${monthPicker}${headActions}</div>
         </div>
         <div class="panel-body">
-          ${dispatchCalendar(poolRecords, state.module)}
+          ${dispatchWorkstrip(poolRecords, state.module)}
         </div>
       </section>`;
     }
 
     function dispatchMonthPicker() {
       const month = state.taskMonth || "2026-06";
-      return `<label class="calendar-month-picker dispatch-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label>`;
+      return `<label class="dispatch-month-picker"><span>月份</span><input class="input" type="month" value="${month}" data-task-month></label>`;
     }
 
     function dispatchModuleSwitcher(visibleModules) {
@@ -5456,62 +5640,58 @@
       }).join("")}</div>`;
     }
 
-    function dispatchCalendar(poolRecords, moduleKey) {
+    function dispatchWorkstrip(poolRecords, moduleKey) {
       const month = state.taskMonth || "2026-06";
-      const [year, rawMonth] = month.split("-").map(Number);
-      const first = new Date(year, rawMonth - 1, 1);
-      const last = new Date(year, rawMonth, 0);
-      const startOffset = first.getDay() === 0 ? 6 : first.getDay() - 1;
-      const totalCells = Math.ceil((startOffset + last.getDate()) / 7) * 7;
-      const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
       const monthRecords = poolRecords
-        .filter(record => dispatchCalendarDate(record, moduleKey).slice(0, 7) === month)
-        .sort((a, b) => dispatchCalendarDate(a, moduleKey).localeCompare(dispatchCalendarDate(b, moduleKey)) || gradeRank(a.grade) - gradeRank(b.grade));
-      const cells = Array.from({ length: totalCells }, (_, index) => {
-        const day = index - startOffset + 1;
-        const inMonth = day >= 1 && day <= last.getDate();
-        const dateText = inMonth ? `${month}-${String(day).padStart(2, "0")}` : "";
-        const dayRecords = inMonth
-          ? monthRecords.filter(record => dispatchCalendarDate(record, moduleKey) === dateText)
-          : [];
-        const expanded = state.dispatchCalendarExpandedDay === dateText;
-        const visibleRecords = expanded ? dayRecords : dayRecords.slice(0, 3);
-        const hiddenCount = dayRecords.length - visibleRecords.length;
-        const moreButton = hiddenCount > 0
-          ? `<button class="calendar-more" data-dispatch-calendar-day-toggle="${dateText}">还有 ${hiddenCount} 条</button>`
-          : expanded && dayRecords.length > 3
-            ? `<button class="calendar-more" data-dispatch-calendar-day-toggle="${dateText}">收起</button>`
-            : "";
-        return `<div class="calendar-cell ${inMonth ? "" : "is-muted"} ${dayRecords.length > 3 ? "has-many" : ""} ${expanded ? "is-expanded" : ""}">
-          <div class="calendar-day"><span>${inMonth ? day : ""}</span>${dayRecords.length ? badge(`${dayRecords.length}条`, "orange") : ""}</div>
-          ${visibleRecords.map(record => dispatchCalendarEvent(record, moduleKey)).join("")}
-          ${moreButton}
-        </div>`;
-      });
-      return `<div class="dispatch-calendar">
-        ${monthRecords.length ? `<div class="calendar-grid">
-          ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join("")}
-          ${cells.join("")}
+        .filter(record => dispatchWorkstripDate(record, moduleKey).slice(0, 7) === month)
+        .sort((a, b) => dispatchWorkstripDate(a, moduleKey).localeCompare(dispatchWorkstripDate(b, moduleKey)) || gradeRank(a.grade) - gradeRank(b.grade));
+      const count = monthRecords.length;
+      return `<div class="dispatch-workstrip" data-dispatch-workstrip data-dispatch-module="${moduleKey}">
+        <div class="dispatch-workstrip-toolbar">
+          <div class="dispatch-workstrip-summary">
+            <span class="dispatch-workstrip-summary-icon" aria-hidden="true">派</span>
+            <span class="dispatch-workstrip-summary-copy"><strong>待派发工作条</strong><span>按预计完成时间排列，横向浏览并进入派工</span></span>
+          </div>
+          ${count ? `<div class="dispatch-workstrip-controls">
+            <button type="button" class="dispatch-workstrip-arrow" data-dispatch-workstrip-prev aria-label="上一张工作页卡">‹</button>
+            <span class="dispatch-workstrip-position" data-dispatch-workstrip-status aria-live="polite">1 / ${count}</span>
+            <button type="button" class="dispatch-workstrip-arrow" data-dispatch-workstrip-next aria-label="下一张工作页卡">›</button>
+          </div>` : ""}
+        </div>
+        ${count ? `<div class="dispatch-workstrip-viewport" data-dispatch-workstrip-viewport tabindex="0" aria-label="待派发任务横向工作条">
+          <div class="dispatch-workstrip-track" role="list">
+            ${monthRecords.map((record, index) => dispatchWorkstripCard(record, moduleKey, index)).join("")}
+          </div>
         </div>` : `<div class="task-calendar-empty">当前需求池暂无待派发任务</div>`}
       </div>`;
     }
 
-    function dispatchCalendarDate(record, moduleKey) {
+    function dispatchWorkstripDate(record, moduleKey) {
       return String(dispatchDue(record.id, moduleKey) || record.liveTime || "").replaceAll("/", "-").slice(0, 10);
     }
 
-    function dispatchCalendarEvent(record, moduleKey) {
+    function dispatchWorkstripCard(record, moduleKey, index) {
       const dispatchKey = `${record.id}:${moduleKey}`;
       const taskList = tasksFor(record.id, moduleKey);
       const workflowStatus = calendarWorkflowStatus(record, moduleKey, taskList);
+      const assignment = assignmentFor(record.id, moduleKey);
+      const due = dispatchWorkstripDate(record, moduleKey);
       const noticeCount = taskNoticeCount(taskList);
       const active = state.dispatchOpen === dispatchKey;
-      return `<button class="calendar-event dispatch-calendar-event ${active ? "is-active" : ""}" data-toggle-dispatch="${dispatchKey}">
-        <span class="dispatch-calendar-title"><span>${escapeHtml(record.talent)} ${shortLiveDate(record.liveTime)}</span>${summaryNoticeDot(noticeCount, "该专场有新增子任务提醒")}</span>
-        <span class="dispatch-calendar-sub">${escapeHtml(record.product)} · ${supportNeeds[moduleKey].title}</span>
-        <span class="dispatch-calendar-meta"><span>预计完成 ${formatMonthDay(dispatchCalendarDate(record, moduleKey))}</span><span>${taskList.length} 子任务</span></span>
-        ${calendarProgressPopover(record, moduleKey, workflowStatus)}
-      </button>`;
+      const statusLabel = taskStatusDisplayLabel(moduleKey, workflowStatus);
+      return `<div class="dispatch-workstrip-item" role="listitem">
+        <time class="dispatch-workstrip-marker" datetime="${due}">${formatMonthDay(due)}</time>
+        <button type="button" class="dispatch-workstrip-card ${active ? "is-active" : ""}" data-dispatch-workstrip-card data-toggle-dispatch="${dispatchKey}" aria-label="${escapeHtml(record.talent)}，预计完成 ${formatMonthDay(due)}，进入派工">
+          <span class="dispatch-workstrip-card-head"><span class="dispatch-workstrip-sequence">WORK ${String(index + 1).padStart(2, "0")}</span>${badge(assignment.status, taskStatusClass(assignment.status))}</span>
+          <span class="dispatch-workstrip-title"><strong>${escapeHtml(record.talent)}${summaryNoticeDot(noticeCount, "该专场有新增子任务提醒")}</strong><span>开播 ${shortLiveDate(record.liveTime)}</span></span>
+          <span class="dispatch-workstrip-product">${escapeHtml(record.product)} · ${supportNeeds[moduleKey].title}</span>
+          <span class="dispatch-workstrip-metrics">
+            <span class="dispatch-workstrip-metric"><span>预计完成</span><strong>${formatMonthDay(due)}</strong></span>
+            <span class="dispatch-workstrip-metric"><span>子任务</span><strong>${taskList.length} 项</strong></span>
+          </span>
+          <span class="dispatch-workstrip-card-foot"><span>${escapeHtml(statusLabel)}</span><span>查看派工 →</span></span>
+        </button>
+      </div>`;
     }
 
     function dispatchDetailPanel(record, moduleKey) {
@@ -5521,7 +5701,7 @@
       const statusCls = taskStatusClass(assignment.status);
       const published = assignment.status !== "待派发";
       const draftCount = taskList.filter(task => task.isDraft).length;
-      return `<div class="dispatch-calendar-detail" data-dispatch-entry-panel>
+      return `<div class="dispatch-entry-detail" data-dispatch-entry-panel>
         <div class="dispatch-detail">
           <div class="dispatch-main">
             ${myTaskSpecialInfo(record)}
@@ -7666,15 +7846,10 @@ function openMyTaskCalendarDetail(key) {
       document.querySelectorAll("[data-task-month]").forEach(input => input.addEventListener("change", () => {
         state.taskMonth = input.value;
         state.taskCalendarExpandedDay = "";
-        state.dispatchCalendarExpandedDay = "";
         render();
       }));
       document.querySelectorAll("[data-task-calendar-day-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.taskCalendarExpandedDay = state.taskCalendarExpandedDay === btn.dataset.taskCalendarDayToggle ? "" : btn.dataset.taskCalendarDayToggle;
-        render();
-      }));
-      document.querySelectorAll("[data-dispatch-calendar-day-toggle]").forEach(btn => btn.addEventListener("click", () => {
-        state.dispatchCalendarExpandedDay = state.dispatchCalendarExpandedDay === btn.dataset.dispatchCalendarDayToggle ? "" : btn.dataset.dispatchCalendarDayToggle;
         render();
       }));
       document.querySelectorAll("[data-open-my-task-calendar]").forEach(btn => btn.addEventListener("click", () => openMyTaskCalendarDetail(btn.dataset.openMyTaskCalendar)));
@@ -7696,7 +7871,6 @@ function openMyTaskCalendarDetail(key) {
       document.querySelectorAll("[data-module]").forEach(btn => btn.addEventListener("click", () => {
         state.module = btn.dataset.module;
         state.dispatchOpen = btn.dataset.moduleRecord ? `${btn.dataset.moduleRecord}:${btn.dataset.module}` : "";
-        state.dispatchCalendarExpandedDay = "";
         if (btn.dataset.go === "dispatch") {
           state.view = "myTasks";
           state.taskWorkspace = "dispatch";
@@ -7922,6 +8096,59 @@ function openMyTaskCalendarDetail(key) {
       document.querySelectorAll("[data-monthly-product]").forEach(input => input.addEventListener("change", () => { state.monthlyProduct = input.value; render(); }));
       document.querySelectorAll("[data-monthly-special-detail]").forEach(btn => btn.addEventListener("click", () => openMonthlySpecialDetail(btn.dataset.monthlySpecialDetail)));
       document.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => action(btn.dataset.action)));
+      bindDispatchWorkstrip();
+    }
+
+    function bindDispatchWorkstrip() {
+      document.querySelectorAll("[data-dispatch-workstrip]").forEach(workstrip => {
+        const viewport = workstrip.querySelector("[data-dispatch-workstrip-viewport]");
+        const cards = [...workstrip.querySelectorAll("[data-dispatch-workstrip-card]")];
+        const previous = workstrip.querySelector("[data-dispatch-workstrip-prev]");
+        const next = workstrip.querySelector("[data-dispatch-workstrip-next]");
+        const status = workstrip.querySelector("[data-dispatch-workstrip-status]");
+        if (!viewport || !cards.length || !previous || !next || !status) return;
+
+        const items = cards.map(card => card.closest(".dispatch-workstrip-item") || card);
+        const maxScroll = () => Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+        const scrollStops = () => {
+          const limit = maxScroll();
+          const firstOffset = items[0]?.offsetLeft || 0;
+          return items.reduce((stops, item) => {
+            const stop = Math.max(0, Math.min(limit, (item.offsetLeft || 0) - firstOffset));
+            if (!stops.length || Math.abs(stop - stops[stops.length - 1]) > 1) stops.push(stop);
+            return stops;
+          }, []);
+        };
+        const currentIndex = stops => stops.reduce((nearest, stop, index) =>
+          Math.abs(stop - viewport.scrollLeft) < Math.abs(stops[nearest] - viewport.scrollLeft) ? index : nearest
+        , 0);
+        const updateControls = () => {
+          const stops = scrollStops();
+          const index = currentIndex(stops);
+          const hasOverflow = stops.length > 1;
+          status.textContent = hasOverflow ? `${index + 1} / ${stops.length} 页` : `全部 ${cards.length} 项`;
+          previous.disabled = !hasOverflow || index === 0;
+          next.disabled = !hasOverflow || index === stops.length - 1;
+        };
+        const move = direction => {
+          const stops = scrollStops();
+          const index = Math.max(0, Math.min(stops.length - 1, currentIndex(stops) + direction));
+          viewport.scrollTo({ left: stops[index], behavior: "smooth" });
+        };
+        let updateFrame = 0;
+        viewport.addEventListener("scroll", () => {
+          if (updateFrame) cancelAnimationFrame(updateFrame);
+          updateFrame = requestAnimationFrame(updateControls);
+        }, { passive: true });
+        viewport.addEventListener("keydown", event => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          move(event.key === "ArrowLeft" ? -1 : 1);
+        });
+        previous.addEventListener("click", () => move(-1));
+        next.addEventListener("click", () => move(1));
+        updateControls();
+      });
     }
 
     function addDispatchTask(key) {
