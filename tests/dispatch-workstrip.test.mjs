@@ -31,7 +31,7 @@ function loadDashboard() {
   return expression => vm.runInContext(expression, context);
 }
 
-test("需求派发以横向页卡工作条呈现，不再输出月历网格", () => {
+test("需求派发以单列宽页卡列表呈现，不再输出月历或横向翻页控件", () => {
   const run = loadDashboard();
   const markup = run(`(() => {
     state.taskScope = "manager";
@@ -41,11 +41,10 @@ test("需求派发以横向页卡工作条呈现，不再输出月历网格", ()
     return pageDispatch({ embedded: true });
   })()`);
 
-  assert.match(markup, /data-dispatch-workstrip/);
-  assert.match(markup, /data-dispatch-workstrip-viewport/);
-  assert.match(markup, /data-dispatch-workstrip-prev/);
-  assert.match(markup, /data-dispatch-workstrip-next/);
-  assert.match(markup, /role="list"/);
+  assert.match(markup, /data-dispatch-worklist/);
+  assert.match(markup, /data-dispatch-worklist-list/);
+  assert.equal((markup.match(/class="dispatch-worklist-item"/g) || []).length, 4);
+  assert.doesNotMatch(markup, /data-dispatch-workstrip-viewport|data-dispatch-workstrip-prev|data-dispatch-workstrip-next/);
   assert.doesNotMatch(markup, /calendar-grid|calendar-weekday|周一|周日/);
 });
 
@@ -79,67 +78,20 @@ test("工作页卡按预计完成日期排序，并仅展示所选月份", () =>
   assert.match(markup, /子任务/);
 });
 
-test("工作条翻页按钮移动横向视口并同步当前位置", () => {
-  const run = loadDashboard();
-  const result = run(`(() => {
-    const listeners = {};
-    const viewport = {
-      clientWidth: 1188,
-      scrollLeft: 0,
-      scrollWidth: 1696,
-      addEventListener(type, handler) { listeners[type] = handler; },
-      scrollTo({ left }) {
-        this.scrollLeft = left;
-        if (listeners.scroll) listeners.scroll();
-      }
-    };
-    const cards = [3, 429, 854, 1280].map(offsetLeft => ({
-      closest: () => ({ offsetLeft })
-    }));
-    const previous = {
-      addEventListener(type, handler) { this[type] = handler; },
-      disabled: false
-    };
-    const next = {
-      addEventListener(type, handler) { this[type] = handler; },
-      disabled: false
-    };
-    const status = { textContent: "" };
-    const workstrip = {
-      querySelector(selector) {
-        return {
-          "[data-dispatch-workstrip-viewport]": viewport,
-          "[data-dispatch-workstrip-prev]": previous,
-          "[data-dispatch-workstrip-next]": next,
-          "[data-dispatch-workstrip-status]": status
-        }[selector];
-      },
-      querySelectorAll: () => cards
-    };
-    document.querySelectorAll = () => [workstrip];
+test("任务列表与任务页卡使用单列全宽布局", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
-    bindDispatchWorkstrip();
-    const initiallyDisabled = previous.disabled;
-    next.click();
-
-    return {
-      initiallyDisabled,
-      nextDisabled: next.disabled,
-      position: status.textContent,
-      scrollLeft: viewport.scrollLeft
-    };
-  })()`);
-
-  assert.equal(result.initiallyDisabled, true);
-  assert.equal(result.nextDisabled, false);
-  assert.equal(result.position, "2 / 3 页");
-  assert.equal(Math.round(result.scrollLeft), 426);
+  assert.match(html, /\.dispatch-worklist-list\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(html, /\.dispatch-worklist-card\s*\{[^}]*width:\s*100%[^}]*grid-template-columns:/);
+  assert.doesNotMatch(html, /function bindDispatchWorkstrip\s*\(/);
 });
 
-test("移动端工作条限制在可视宽度内并保留横向滑动", () => {
+test("移动端任务页卡保持单列并将内部信息折行", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const mobileStyles = html.match(/@media \(max-width: 720px\) \{([\s\S]*?)\n    \}\n\n  <\/style>/)?.[1] || "";
 
-  assert.match(mobileStyles, /\.dispatch-workstrip\s*\{[^}]*max-width:\s*calc\(100vw - 28px\)/);
-  assert.match(html, /\.dispatch-workstrip-viewport\s*\{[^}]*overflow-x:\s*auto/);
+  assert.match(mobileStyles, /\.dispatch-worklist\s*\{[^}]*width:\s*calc\(100vw - 68px\)[^}]*max-width:\s*calc\(100vw - 68px\)/);
+  assert.match(mobileStyles, /\.dispatch-worklist-item\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(mobileStyles, /\.dispatch-worklist-card\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.doesNotMatch(html, /\.dispatch-workstrip-viewport\s*\{[^}]*overflow-x:\s*auto/);
 });
