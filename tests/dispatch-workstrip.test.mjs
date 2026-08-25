@@ -31,7 +31,7 @@ function loadDashboard() {
   return expression => vm.runInContext(expression, context);
 }
 
-test("需求派发以单列宽页卡列表呈现，不再输出月历或横向翻页控件", () => {
+test("需求派发直接呈现单列宽页卡，不再输出列表说明栏、月历或横向翻页控件", () => {
   const run = loadDashboard();
   const markup = run(`(() => {
     state.taskScope = "manager";
@@ -44,11 +44,13 @@ test("需求派发以单列宽页卡列表呈现，不再输出月历或横向�
   assert.match(markup, /data-dispatch-worklist/);
   assert.match(markup, /data-dispatch-worklist-list/);
   assert.equal((markup.match(/class="dispatch-worklist-item"/g) || []).length, 4);
+  assert.doesNotMatch(markup, /dispatch-worklist-toolbar|dispatch-worklist-summary|dispatch-worklist-count/);
+  assert.doesNotMatch(markup, /待派发任务列表|按预计完成时间排列|4 个专场/);
   assert.doesNotMatch(markup, /data-dispatch-workstrip-viewport|data-dispatch-workstrip-prev|data-dispatch-workstrip-next/);
   assert.doesNotMatch(markup, /calendar-grid|calendar-weekday|周一|周日/);
 });
 
-test("工作页卡按预计完成日期排序，并仅展示所选月份", () => {
+test("工作页卡按预计完成日期排序，同日再按开播时间排序，并仅展示所选月份", () => {
   const run = loadDashboard();
   const markup = run(`(() => {
     state.taskScope = "manager";
@@ -61,21 +63,35 @@ test("工作页卡按预计完成日期排序，并仅展示所选月份", () =>
     });
     setDue("ZC-0620-3", "2026-06-20");
     setDue("ZC-0603-2", "2026-06-03");
-    setDue("ZC-0605-1", "2026-07-05");
-    setDue("ZC-0607-1", "2026-06-07");
+    records.find(record => record.id === "ZC-0603-2").liveTime = "2026-06-03 22:00";
+    setDue("ZC-0605-1", "2026-06-03");
+    records.find(record => record.id === "ZC-0605-1").liveTime = "2026-06-03 19:00";
+    setDue("ZC-0607-1", "2026-07-07");
     return pageDispatch({ embedded: true });
   })()`);
 
+  const juneThirdEarly = markup.indexOf('data-toggle-dispatch="ZC-0605-1:content"');
   const juneThird = markup.indexOf('data-toggle-dispatch="ZC-0603-2:content"');
-  const juneSeventh = markup.indexOf('data-toggle-dispatch="ZC-0607-1:content"');
   const juneTwentieth = markup.indexOf('data-toggle-dispatch="ZC-0620-3:content"');
 
+  assert.ok(juneThirdEarly >= 0, "同为 6 月 3 日、19:00 开播的任务应显示");
+  assert.ok(juneThird > juneThirdEarly, "同一天的任务应按开播时间从早到晚排列");
   assert.ok(juneThird >= 0, "6 月 3 日任务应显示");
-  assert.ok(juneSeventh > juneThird, "6 月 7 日任务应排在 6 月 3 日之后");
-  assert.ok(juneTwentieth > juneSeventh, "6 月 20 日任务应排在 6 月 7 日之后");
-  assert.doesNotMatch(markup, /data-toggle-dispatch="ZC-0605-1:content"/);
+  assert.ok(juneTwentieth > juneThird, "6 月 20 日任务应排在 6 月 3 日之后");
+  assert.doesNotMatch(markup, /data-toggle-dispatch="ZC-0607-1:content"/);
   assert.match(markup, /预计完成/);
   assert.match(markup, /子任务/);
+});
+
+test("待派发页卡按参考样式仅显示达人时间、产品模块和完成信息三行内容", () => {
+  const run = loadDashboard();
+  const markup = run(`dispatchWorklistCard(records.find(record => record.id === "ZC-0620-3"), "content", 0)`);
+
+  assert.match(markup, /<strong>梓慧儿 6月1日 21:00<\/strong>/);
+  assert.match(markup, /<span>常规款定妆喷雾-橙瓶 · 内容支持<\/span>/);
+  assert.match(markup, /<span>完成 6月1日 · 1子任务<\/span>/);
+  assert.doesNotMatch(markup, /WORK 01|待派发|专场任务|查看派工/);
+  assert.doesNotMatch(markup, /dispatch-worklist-main|dispatch-worklist-product|dispatch-worklist-side/);
 });
 
 test("任务列表与任务页卡使用单列全宽布局", () => {
