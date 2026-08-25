@@ -1039,33 +1039,9 @@
     .dispatch-worklist-item {
       min-width: 0;
       display: grid;
-      grid-template-columns: 104px minmax(0, 1fr);
-      gap: 14px;
+      grid-template-columns: minmax(0, 1fr);
       align-items: stretch;
     }
-    .dispatch-worklist-marker {
-      min-height: 132px;
-      display: grid;
-      place-content: center;
-      gap: 7px;
-      padding: 14px 10px;
-      border: 1px solid #ffd4a5;
-      border-radius: 16px;
-      background: linear-gradient(155deg, #fffaf4, #fff3e5);
-      color: #a85a00;
-      text-align: center;
-    }
-    .dispatch-worklist-marker::before {
-      content: "";
-      width: 9px;
-      height: 9px;
-      justify-self: center;
-      border-radius: 50%;
-      background: var(--orange);
-      box-shadow: 0 0 0 4px rgba(255, 127, 0, .12);
-    }
-    .dispatch-worklist-marker span { color: #b78755; font-size: 11px; }
-    .dispatch-worklist-marker strong { font-size: 14px; font-weight: 800; }
     .dispatch-worklist-card {
       width: 100%;
       min-width: 0;
@@ -1095,20 +1071,26 @@
     }
     .dispatch-worklist-card-summary {
       display: grid;
-      gap: 8px;
+      grid-template-columns: minmax(120px, .8fr) minmax(180px, 1.1fr) minmax(120px, .8fr) minmax(210px, 1.35fr) minmax(120px, .7fr);
+      gap: 18px;
       min-width: 0;
-      color: #9a5714;
       line-height: 1.45;
     }
-    .dispatch-worklist-card-summary strong {
+    .dispatch-worklist-card-field {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 6px;
+    }
+    .dispatch-worklist-card-field small {
+      color: #a5784e;
+      font-size: 12px;
+    }
+    .dispatch-worklist-card-field strong {
       overflow-wrap: anywhere;
       color: #7d3f00;
-      font-size: 18px;
-      font-weight: 750;
-    }
-    .dispatch-worklist-card-summary span {
-      overflow-wrap: anywhere;
-      font-size: 14px;
+      font-size: 16px;
+      font-weight: 700;
     }
     .dispatch-entry-detail {
       margin-top: 16px;
@@ -3054,7 +3036,7 @@
       .task-total-row { grid-template-columns: minmax(220px, 1fr) minmax(180px, 1fr) 110px; }
       .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
       .my-task-tools, .task-filter-right { flex-wrap: wrap; }
-      .dispatch-worklist-item { grid-template-columns: 94px minmax(0, 1fr); }
+      .dispatch-worklist-card-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
       .topbar { padding: 0 14px; gap: 10px; overflow-x: auto; }
@@ -3081,18 +3063,9 @@
       .task-calendar-detail-row-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
       .task-calendar-edit-files { grid-column: 1; align-items: flex-start; flex-direction: column; }
       .dispatch-worklist { width: calc(100vw - 68px); max-width: calc(100vw - 68px); }
-      .dispatch-worklist-item { grid-template-columns: 1fr; gap: 9px; }
-      .dispatch-worklist-marker {
-        width: max-content;
-        min-height: 30px;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 0 10px 0 8px;
-        border-radius: 999px;
-      }
-      .dispatch-worklist-marker span { display: none; }
+      .dispatch-worklist-item { grid-template-columns: 1fr; }
       .dispatch-worklist-card { min-height: 0; grid-template-columns: 1fr; }
+      .dispatch-worklist-card-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .module-task-log { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; }
       .my-task-tools { display: grid; }
@@ -5550,16 +5523,15 @@
 
     function dispatchWorklistCard(record, moduleKey) {
       const dispatchKey = `${record.id}:${moduleKey}`;
-      const taskList = tasksFor(record.id, moduleKey);
-      const due = dispatchWorklistDate(record, moduleKey);
       const active = state.dispatchOpen === dispatchKey;
       return `<div class="dispatch-worklist-item" role="listitem">
-        <time class="dispatch-worklist-marker" datetime="${due}"><span>预计完成</span><strong>${formatMonthDay(due)}</strong></time>
-        <button type="button" class="dispatch-worklist-card ${active ? "is-active" : ""}" data-dispatch-worklist-card data-toggle-dispatch="${dispatchKey}" aria-label="${escapeHtml(record.talent)}，预计完成 ${formatMonthDay(due)}，进入派工">
+        <button type="button" class="dispatch-worklist-card ${active ? "is-active" : ""}" data-dispatch-worklist-card data-toggle-dispatch="${dispatchKey}" aria-label="${escapeHtml(record.talent)}，专场排期 ${escapeHtml(record.liveTime)}，负责商务 ${escapeHtml(record.business || "待填写")}，进入派工">
           <span class="dispatch-worklist-card-summary">
-            <strong>${escapeHtml(record.talent)} ${shortLiveDate(record.liveTime)}</strong>
-            <span>${escapeHtml(record.product)} · ${supportNeeds[moduleKey].title}</span>
-            <span>完成 ${formatMonthDay(due)} · ${taskList.length}子任务</span>
+            <span class="dispatch-worklist-card-field"><small>达人昵称</small><strong>${escapeHtml(record.talent)}</strong></span>
+            <span class="dispatch-worklist-card-field"><small>专场排期</small><strong>${escapeHtml(record.liveTime)}</strong></span>
+            <span class="dispatch-worklist-card-field"><small>负责商务</small><strong>${escapeHtml(record.business || "待填写")}</strong></span>
+            <span class="dispatch-worklist-card-field"><small>主推产品</small><strong>${escapeHtml(record.product)}</strong></span>
+            <span class="dispatch-worklist-card-field"><small>目标销售额</small><strong>${escapeHtml(record.expectedGmv || record.sales || "待填写")}</strong></span>
           </span>
         </button>
       </div>`;

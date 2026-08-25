@@ -79,18 +79,21 @@ test("工作页卡按预计完成日期排序，同日再按开播时间排序�
   assert.ok(juneThird >= 0, "6 月 3 日任务应显示");
   assert.ok(juneTwentieth > juneThird, "6 月 20 日任务应排在 6 月 3 日之后");
   assert.doesNotMatch(markup, /data-toggle-dispatch="ZC-0607-1:content"/);
-  assert.match(markup, /预计完成/);
-  assert.match(markup, /子任务/);
+  assert.doesNotMatch(markup, /预计完成|完成 \d+月\d+日|子任务/);
+  assert.match(markup, /目标销售额/);
 });
 
-test("待派发页卡按参考样式仅显示达人时间、产品模块和完成信息三行内容", () => {
+test("待派发页卡仅显示达人、排期、商务、产品和目标销售额", () => {
   const run = loadDashboard();
   const markup = run(`dispatchWorklistCard(records.find(record => record.id === "ZC-0620-3"), "content", 0)`);
 
-  assert.match(markup, /<strong>梓慧儿 6月1日 21:00<\/strong>/);
-  assert.match(markup, /<span>常规款定妆喷雾-橙瓶 · 内容支持<\/span>/);
-  assert.match(markup, /<span>完成 6月1日 · 1子任务<\/span>/);
-  assert.doesNotMatch(markup, /WORK 01|待派发|专场任务|查看派工/);
+  assert.doesNotMatch(markup, /dispatch-worklist-marker|<time|预计完成/);
+  assert.match(markup, /<small>达人昵称<\/small><strong>梓慧儿<\/strong>/);
+  assert.match(markup, /<small>专场排期<\/small><strong>2026-06-01 21:00<\/strong>/);
+  assert.match(markup, /<small>负责商务<\/small><strong>谭燕琳<\/strong>/);
+  assert.match(markup, /<small>主推产品<\/small><strong>常规款定妆喷雾-橙瓶<\/strong>/);
+  assert.match(markup, /<small>目标销售额<\/small><strong>¥68万<\/strong>/);
+  assert.doesNotMatch(markup, /完成 6月1日|子任务|内容支持|WORK 01|待派发|专场任务|查看派工/);
   assert.doesNotMatch(markup, /dispatch-worklist-main|dispatch-worklist-product|dispatch-worklist-side/);
 });
 
@@ -98,7 +101,9 @@ test("任务列表与任务页卡使用单列全宽布局", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
   assert.match(html, /\.dispatch-worklist-list\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(html, /\.dispatch-worklist-item\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
   assert.match(html, /\.dispatch-worklist-card\s*\{[^}]*width:\s*100%[^}]*grid-template-columns:/);
+  assert.doesNotMatch(html, /\.dispatch-worklist-marker(?:\s|:|\{)/);
   assert.doesNotMatch(html, /function bindDispatchWorkstrip\s*\(/);
 });
 
@@ -109,5 +114,6 @@ test("移动端任务页卡保持单列并将内部信息折行", () => {
   assert.match(mobileStyles, /\.dispatch-worklist\s*\{[^}]*width:\s*calc\(100vw - 68px\)[^}]*max-width:\s*calc\(100vw - 68px\)/);
   assert.match(mobileStyles, /\.dispatch-worklist-item\s*\{[^}]*grid-template-columns:\s*1fr/);
   assert.match(mobileStyles, /\.dispatch-worklist-card\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(mobileStyles, /\.dispatch-worklist-card-summary\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.doesNotMatch(html, /\.dispatch-workstrip-viewport\s*\{[^}]*overflow-x:\s*auto/);
 });
