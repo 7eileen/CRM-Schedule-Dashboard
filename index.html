@@ -984,38 +984,6 @@
       color: var(--muted);
       font-size: 12px;
     }
-    .content-shared-summary {
-      display: grid;
-      gap: 12px;
-      padding: 13px 14px;
-      border: 1px solid #c9dcf7;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
-    }
-    .content-shared-summary-head {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .content-shared-summary-head strong { color: #1c5794; font-size: 13px; }
-    .content-shared-summary-head span { color: #6f8198; font-size: 12px; }
-    .content-shared-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .content-shared-item {
-      min-width: 0;
-      display: grid;
-      gap: 5px;
-      padding: 10px;
-      border: 1px solid rgba(168, 197, 233, .62);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .82);
-    }
-    .content-shared-item span { color: #71849b; font-size: 11px; }
-    .content-shared-item strong { color: #16395f; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
     .content-topic-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3143,7 +3111,6 @@
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .special-info-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .content-shared-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .special-sync-panel { grid-template-columns: 1fr; }
       .task-total-row { grid-template-columns: minmax(220px, 1fr) minmax(180px, 1fr) 110px; }
       .grid-2, .grid-main, .dispatch-main { grid-template-columns: 1fr; }
@@ -3179,8 +3146,6 @@
       .dispatch-worklist-card { min-height: 0; grid-template-columns: 1fr; }
       .dispatch-worklist-card-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .content-topic-grid, .content-topic-fields { grid-template-columns: 1fr; }
-      .content-shared-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .content-shared-summary-head { align-items: flex-start; flex-direction: column; }
       .content-topic-card.full { grid-column: auto; }
       .content-requirement-section { padding: 12px; }
       .module-task-log { grid-template-columns: 1fr; }
@@ -4626,29 +4591,11 @@
       </div>`;
     }
 
-    function contentSharedSummary() {
-      const items = [
-        { label: "达人账号", value: specialValue("达人 UID", "待填写") },
-        { label: "直播时间", value: specialValue("专场排期（时间）", "待填写").replace("T", " ") },
-        { label: "直播机制", value: specialValue("主推机制", "待填写") },
-        { label: "福袋", value: specialValue("福袋需求", "待填写") },
-        { label: "预估销售额", value: specialValue("目标销售额", specialValue("预估销售额", "待填写")) }
-      ];
-      return `<div class="content-shared-summary" data-content-shared-summary>
-        <div class="content-shared-summary-head">
-          <strong>已同步专场信息</strong>
-          <span>以下内容与“专场信息”共用，无需重复填写</span>
-        </div>
-        <div class="content-shared-grid">${items.map(item => `<div class="content-shared-item"><span>${item.label}</span><strong>${escapeHtml(item.value)}</strong></div>`).join("")}</div>
-      </div>`;
-    }
-
     function contentRequirementFields(group, groupIndex) {
       const sections = [
         {
           title: "基本信息",
           note: "合作背景、专场属性、拍摄档期与脚本节点",
-          shared: true,
           topics: [
             { title: "合作与专场", labels: ["过往合作", "星图合作", "首播 / 复播"] },
             { title: "拍摄与脚本", labels: ["达人近期行程", "可拍摄时间地点", "脚本交付时间", "近期舆论热点"] }
@@ -4681,7 +4628,6 @@
         }).join("");
         return `<section class="content-requirement-section">
           <div class="content-requirement-section-head"><div><strong>${section.title}</strong><span>${section.note}</span></div></div>
-          ${section.shared ? contentSharedSummary() : ""}
           <div class="content-topic-grid">${topics}</div>
         </section>`;
       }).join("")}</div>`;
@@ -7983,8 +7929,7 @@ function openMyTaskCalendarDetail(key) {
             if (params && field.value === "是" && params.value === "无") params.value = "";
           }
           const instantRenderLabels = ["是否需要拍剪", "是否有达人美颜参数习惯？", "星图合作", "福袋需求", "状态"];
-          const sharedSummaryLabels = ["达人 UID", "专场排期（时间）", "主推机制", "福袋需求", "目标销售额"];
-          if (instantRenderLabels.includes(field.label) || (event.type === "change" && sharedSummaryLabels.includes(field.label))) {
+          if (instantRenderLabels.includes(field.label)) {
             render();
           }
         };
