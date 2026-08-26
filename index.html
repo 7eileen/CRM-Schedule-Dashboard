@@ -953,84 +953,54 @@
       box-shadow: 0 0 0 3px rgba(255, 122, 0, .12);
     }
     .entry-detail-panel .content-requirement-card {
-      border-color: #cbdcf5;
-      background: linear-gradient(145deg, rgba(247, 251, 255, .98) 0%, rgba(255, 255, 255, .98) 52%, rgba(255, 249, 243, .94) 100%);
+      border-color: #ffe2bf;
+      background: #fff8ef;
     }
     .content-requirement-card h3 {
-      color: #153c6d;
+      color: #28394d;
       font-weight: 650;
     }
     .content-requirement-layout {
       display: grid;
-      gap: 18px;
+      gap: 0;
     }
     .content-requirement-section {
       display: grid;
-      gap: 14px;
-      padding: 16px;
-      border: 1px solid #dbe7f7;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, .72);
+      gap: 18px;
+      padding: 18px 0;
+    }
+    .content-requirement-section + .content-requirement-section {
+      margin-top: 4px;
+      padding-top: 28px;
+      border-top: 1px solid #ffe0b9;
     }
     .content-requirement-section-head > div {
-      display: grid;
-      gap: 4px;
-    }
-    .content-requirement-section-head strong {
-      color: #153c6d;
-      font-size: 16px;
-    }
-    .content-requirement-section-head span {
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .content-topic-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      align-items: start;
-    }
-    .content-topic-card {
-      min-width: 0;
-      display: grid;
-      gap: 12px;
-      padding: 14px;
-      border: 1px solid #e2e9f2;
-      border-radius: 10px;
-      background: #fff;
-    }
-    .content-topic-card.full { grid-column: 1 / -1; }
-    .content-topic-card.is-important {
-      border-color: #ffb8ac;
-      background: linear-gradient(135deg, #fff5f3 0%, #fffaf9 100%);
-      box-shadow: inset 4px 0 0 #ff6b54;
-    }
-    .content-topic-title {
       display: flex;
       align-items: center;
-      gap: 8px;
-      color: #294c73;
-      font-size: 14px;
-      font-weight: 650;
+      gap: 10px;
     }
-    .content-topic-title::before {
+    .content-requirement-section-head > div::before {
       content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #4d8fd9;
-      box-shadow: 0 0 0 4px rgba(77, 143, 217, .12);
+      width: 5px;
+      height: 23px;
+      border-radius: 99px;
+      background: #ff710d;
     }
-    .content-topic-card.is-important .content-topic-title { color: #b63d2b; }
-    .content-topic-card.is-important .content-topic-title::before { background: #ff5f49; box-shadow: 0 0 0 4px rgba(255, 95, 73, .12); }
-    .content-topic-fields {
+    .content-requirement-section-head strong {
+      color: #2b3b50;
+      font-size: 16px;
+    }
+    .content-form-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 18px;
+      align-items: start;
     }
-    .content-topic-fields .detail-field.full { grid-column: 1 / -1; }
-    .content-topic-fields .detail-field textarea { min-height: 76px; }
-    .content-topic-card.is-important textarea { border-color: #f2b9b0; }
+    .content-form-grid .content-span-3 { grid-column: span 3; }
+    .content-form-grid .content-span-4 { grid-column: span 4; }
+    .content-form-grid .content-span-6 { grid-column: span 6; }
+    .content-form-grid .content-span-12 { grid-column: 1 / -1; }
+    .content-form-grid .detail-field textarea { min-height: 76px; }
     .entry-detail-panel .detail-card.is-collapsed {
       border-color: #e6edf5;
       background: linear-gradient(135deg, #fbfcfe 0%, #fff9f4 100%);
@@ -3145,8 +3115,11 @@
       .dispatch-worklist-item { grid-template-columns: 1fr; }
       .dispatch-worklist-card { min-height: 0; grid-template-columns: 1fr; }
       .dispatch-worklist-card-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .content-topic-grid, .content-topic-fields { grid-template-columns: 1fr; }
-      .content-topic-card.full { grid-column: auto; }
+      .content-form-grid { grid-template-columns: 1fr; }
+      .content-form-grid .content-span-3,
+      .content-form-grid .content-span-4,
+      .content-form-grid .content-span-6,
+      .content-form-grid .content-span-12 { grid-column: 1; }
       .content-requirement-section { padding: 12px; }
       .module-task-log { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; }
@@ -3500,25 +3473,28 @@
         supportKey: "content",
         switchLabel: "需要内容支持",
         fields: [
-          { label: "过往合作", value: "2025 年双 11 合作 1 场，定妆喷雾专场达成 ¥72万。", required: true, wide: "full" },
-          { label: "星图合作", value: "有", type: "select", options: ["有", "无", "待确认"], required: true },
-          { label: "首播 / 复播", value: "首播", type: "select", options: ["首播", "复播", "待确认"], required: true },
-          { label: "达人近期行程", value: "6 月上旬在河南，6 月 13 日后到杭州。", required: true, wide: "full" },
-          { label: "可拍摄时间地点", value: "河南家中（6.10-11）；杭州公司（6.13）。", required: true, wide: "full" },
+          { label: "过往合作", value: "2025 年双 11 合作 1 场，定妆喷雾专场达成 ¥72万。" },
+          { label: "星图合作", value: "2025 年星图合作 2 次，按约定完成发布。" },
+          { label: "区分首播 / 复播", value: "首播", type: "select", options: ["首播", "复播", "待确认"] },
+          { label: "达人近期行程", value: "6 月上旬在河南，6 月 13 日后到杭州。" },
+          { label: "预计拍摄时间", value: "2026-06-10 至 2026-06-13", required: true },
+          { label: "拍摄地点", value: "河南家中 / 杭州公司", required: true },
           { label: "脚本交付时间", value: "2026-06-16T18:00", type: "datetime-local", required: true },
-          { label: "近期舆论热点", value: "三胎怀孕、首次带货，可结合孕期持妆与首播背景；发布前复核最新舆情。", required: true, wide: "full" },
-          { label: "实拍尺度", value: "可接受喷水、花洒、暴汗实测；可做素颜瑕疵与妆后反差；不接受酱油、胶带、食用油和斑驳卡粉痛点图。", required: true, wide: "full" },
-          { label: "外景拍摄可行性", value: "可接受户外暴晒和运动暴汗；泳池实景需提前确认场地与档期。", required: true, wide: "full" },
-          { label: "出镜人员", value: "达人本人、品牌讲解员可出镜；家人和助理不出镜，禁止夫妻同框。", required: true, wide: "full" },
-          { label: "内容形式", value: "不接受剧情演绎", type: "select", options: ["剧情类与演绎类均可", "仅接受轻剧情", "不接受剧情演绎", "待确认"], required: true },
-          { label: "内容禁忌（重要）", value: "禁止老公出镜、斑驳卡粉痛点画面和夸大功效话术；避免家庭矛盾、孕期焦虑等账号避雷内容。", required: true, wide: "full" },
-          { label: "星图发布时间", value: "2026-06-18T18:00", type: "datetime-local", required: true, showWhen: { label: "星图合作", value: "有" } },
-          { label: "对应脚本", value: "星图短直脚本 01（附溯源视频与发布文案）", required: true, showWhen: { label: "星图合作", value: "有" }, wide: "full" },
+          { label: "近期舆论热点 / 达人热点与背景", value: "三胎怀孕、首次带货，可结合孕期持妆与首播背景；发布前复核最新舆情。", required: true },
+          { label: "实拍尺度（暴力测评可接受范围）", value: "可接受喷水、花洒、暴汗实测；可做素颜瑕疵与妆后反差；不接受酱油、胶带、食用油和斑驳卡粉痛点图。", placeholder: "如：喷水/花洒/酱油/胶带/食用油/暴汗实测；素颜瑕疵；斑驳卡粉痛点图等——具体哪种不接受？" },
+          { label: "外景拍摄可行性", value: "可接受户外暴晒和运动暴汗；泳池实景需提前确认场地与档期。", placeholder: "如：户外暴晒、运动暴汗、泳池等实景，是否可接受？" },
+          { label: "出镜人员", value: "达人本人、品牌讲解员可出镜；家人和助理不出镜，禁止夫妻同框。", required: true, placeholder: "家人/助理能否出镜，明确人物同框禁忌" },
+          { label: "内容形式", value: "不接受剧情演绎", placeholder: "是否接受剧情类、演绎类" },
+          { label: "内容禁忌（重要）", value: "禁止老公出镜、斑驳卡粉痛点画面和夸大功效话术；避免家庭矛盾、孕期焦虑等账号避雷内容。", required: true, placeholder: "禁止拍摄画面、敏感话术、抵触拍摄形式、账号避雷内容" },
+          { label: "星图发布时间", value: "2026-06-18T18:00", type: "datetime-local", showWhen: { label: "有无种草星图单", value: "有" } },
+          { label: "星图对应脚本", value: "星图短直脚本 01（附溯源视频与发布文案）", showWhen: { label: "有无种草星图单", value: "有" } },
+          { label: "有无种草星图单", value: "有", type: "select", options: ["有", "无", "待确认"], required: true },
+          { label: "脚本需求", value: "5 条，达人必须提供溯源视频。", required: true },
+          { label: "内容交付时间", value: "2026-06-18T18:00", type: "datetime-local", required: true },
           { label: "拍摄总条数", value: "5条", type: "text", required: true },
           { label: "主页发布数量", value: "2条", type: "text", required: true },
-          { label: "主页发布渠道", value: "星图短直 1 条 / 直接主页发布 1 条", required: true, wide: "full" },
-          { label: "脚本需求", value: "5 条，达人必须提供溯源视频。", required: true, wide: "full" },
-          { label: "需支援剪辑条数", value: "", type: "computed-shot-count", required: true }
+          { label: "主页发布渠道", value: "星图短直 1 条 / 直接主页发布 1 条", type: "text", required: true },
+          { label: "需支援剪辑条数", value: "5条", type: "text" }
         ]
       },
       {
@@ -4594,41 +4570,50 @@
     function contentRequirementFields(group, groupIndex) {
       const sections = [
         {
+          key: "basic",
           title: "基本信息",
-          note: "合作背景、专场属性、拍摄档期与脚本节点",
-          topics: [
-            { title: "合作与专场", labels: ["过往合作", "星图合作", "首播 / 复播"] },
-            { title: "拍摄与脚本", labels: ["达人近期行程", "可拍摄时间地点", "脚本交付时间", "近期舆论热点"] }
+          fields: [
+            { label: "过往合作", span: 6 },
+            { label: "星图合作", span: 6 },
+            { label: "区分首播 / 复播", span: 6 },
+            { label: "达人近期行程", span: 6 },
+            { label: "预计拍摄时间", span: 4 },
+            { label: "拍摄地点", span: 4 },
+            { label: "脚本交付时间", span: 4 },
+            { label: "近期舆论热点 / 达人热点与背景", span: 12 }
           ]
         },
         {
+          key: "content",
           title: "内容信息",
-          note: "明确可拍尺度、人员形式、发布计划与禁忌边界",
-          topics: [
-            { title: "实拍与外景", labels: ["实拍尺度", "外景拍摄可行性"] },
-            { title: "人员与形式", labels: ["出镜人员", "内容形式"] },
-            { title: "内容禁忌", labels: ["内容禁忌（重要）"], full: true, important: true },
-            { title: "星图", labels: ["星图发布时间", "对应脚本"] },
-            { title: "拍摄与发布", labels: ["拍摄总条数", "主页发布数量", "主页发布渠道", "脚本需求"] },
-            { title: "后期支持", labels: ["需支援剪辑条数"] }
+          fields: [
+            { label: "实拍尺度（暴力测评可接受范围）", span: 6 },
+            { label: "外景拍摄可行性", span: 6 },
+            { label: "出镜人员", span: 6 },
+            { label: "内容形式", span: 6 },
+            { label: "内容禁忌（重要）", span: 12 },
+            { label: "星图发布时间", span: 4 },
+            { label: "星图对应脚本", span: 4 },
+            { label: "有无种草星图单", span: 4 },
+            { label: "脚本需求", span: 6 },
+            { label: "内容交付时间", span: 6 },
+            { label: "拍摄总条数", span: 3 },
+            { label: "主页发布数量", span: 3 },
+            { label: "主页发布渠道", span: 3 },
+            { label: "需支援剪辑条数", span: 3 }
           ]
         }
       ];
 
       return `<div class="content-requirement-layout">${sections.map(section => {
-        const topics = section.topics.map(topic => {
-          const fields = topic.labels.map(label => {
-            const fieldIndex = group.fields.findIndex(item => item.label === label);
-            return fieldIndex >= 0 ? detailField(groupIndex, fieldIndex, group.fields[fieldIndex]) : "";
-          }).join("");
-          return `<section class="content-topic-card${topic.full ? " full" : ""}${topic.important ? " is-important" : ""}">
-            <div class="content-topic-title">${topic.title}</div>
-            <div class="content-topic-fields">${fields}</div>
-          </section>`;
+        const fields = section.fields.map(item => {
+          const fieldIndex = group.fields.findIndex(field => field.label === item.label);
+          if (fieldIndex < 0) return "";
+          return detailField(groupIndex, fieldIndex, { ...group.fields[fieldIndex], wide: `content-span-${item.span}` });
         }).join("");
-        return `<section class="content-requirement-section">
-          <div class="content-requirement-section-head"><div><strong>${section.title}</strong><span>${section.note}</span></div></div>
-          <div class="content-topic-grid">${topics}</div>
+        return `<section class="content-requirement-section" data-content-section="${section.key}">
+          <div class="content-requirement-section-head"><div><strong>${section.title}</strong></div></div>
+          <div class="content-form-grid">${fields}</div>
         </section>`;
       }).join("")}</div>`;
     }
@@ -4812,7 +4797,7 @@
       }
       return `<label class="detail-field${cls}">
         ${detailFieldLabel(item)}
-        <textarea data-special-detail="${key}" ${disabled ? "disabled" : ""}>${item.value}</textarea>
+        <textarea data-special-detail="${key}" placeholder="${escapeHtml(item.placeholder || "")}" ${disabled ? "disabled" : ""}>${item.value}</textarea>
       </label>`;
     }
 
@@ -7928,7 +7913,7 @@ function openMyTaskCalendarDetail(key) {
             if (params && field.value === "否") params.value = "无";
             if (params && field.value === "是" && params.value === "无") params.value = "";
           }
-          const instantRenderLabels = ["是否需要拍剪", "是否有达人美颜参数习惯？", "星图合作", "福袋需求", "状态"];
+          const instantRenderLabels = ["是否需要拍剪", "是否有达人美颜参数习惯？", "有无种草星图单", "福袋需求", "状态"];
           if (instantRenderLabels.includes(field.label)) {
             render();
           }
