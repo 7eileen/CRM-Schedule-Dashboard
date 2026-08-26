@@ -72,36 +72,11 @@ test("内容需求按基本信息和内容信息分区，并完整呈现新增�
   assert.doesNotMatch(markup, /达人内容方向禁忌|达人热点与背景|预估拍摄时间、地点|有无种草星图单|种草星图单链接/);
 });
 
-test("内容需求复用专场信息生成同步摘要，不重复创建共用输入框", () => {
+test("内容需求不展示与专场信息重复的摘要字段", () => {
   const run = loadDashboard();
-  const markup = run(`(() => {
-    const special = specialDetailGroups.find(group => group.title === "专场信息");
-    const values = {
-      "达人 UID": "dy-test-001",
-      "专场排期（时间）": "2026-07-08T19:30",
-      "主推机制": "买二送一，前 20 分钟加赠",
-      "福袋需求": "马年礼盒（价值1499元）",
-      "目标销售额": "¥99万"
-    };
-    special.fields.forEach(field => {
-      if (Object.hasOwn(values, field.label)) field.value = values[field.label];
-    });
-    const contentIndex = specialDetailGroups.findIndex(group => group.supportKey === "content");
-    return detailCard(specialDetailGroups[contentIndex], contentIndex);
-  })()`);
+  const markup = renderContentDemand(run);
 
-  [
-    ["达人账号", "dy-test-001"],
-    ["直播时间", "2026-07-08 19:30"],
-    ["直播机制", "买二送一，前 20 分钟加赠"],
-    ["福袋", "马年礼盒（价值1499元）"],
-    ["预估销售额", "¥99万"]
-  ].forEach(([label, value]) => {
-    assert.match(markup, new RegExp(`<span>${label}<\\/span><strong>${value}<\\/strong>`));
-  });
-
-  assert.equal((markup.match(/data-content-shared-summary/g) || []).length, 1);
-  assert.doesNotMatch(markup, /data-special-detail="[^"]+"[^>]*>[^<]*(达人账号|直播时间|直播机制|福袋|预估销售额)/);
+  assert.doesNotMatch(markup, /data-content-shared-summary|已同步专场信息|达人账号|直播时间|直播机制|>福袋<|预估销售额/);
 });
 
 test("切换星图合作后立即重绘并更新依赖字段", () => {
@@ -134,7 +109,7 @@ test("切换星图合作后立即重绘并更新依赖字段", () => {
   assert.equal(result.scriptVisible, false);
 });
 
-test("编辑共用专场字段后刷新内容需求同步摘要", () => {
+test("编辑专场信息不再为内容需求摘要触发整体重绘", () => {
   const run = loadDashboard();
   const result = run(`(() => {
     const groupIndex = specialDetailGroups.findIndex(group => group.title === "专场信息");
@@ -158,5 +133,5 @@ test("编辑共用专场字段后刷新内容需求同步摘要", () => {
   })()`);
 
   assert.equal(result.fieldValue, "直播前 20 分钟买二送一");
-  assert.equal(result.renderCount, 1);
+  assert.equal(result.renderCount, 0);
 });
