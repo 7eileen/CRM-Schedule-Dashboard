@@ -49,27 +49,37 @@ test("内容需求按基本信息和内容信息分区，并完整呈现新增�
   const expectedLabels = [
     "过往合作",
     "星图合作",
-    "首播 / 复播",
+    "区分首播 / 复播",
     "达人近期行程",
-    "可拍摄时间地点",
+    "预计拍摄时间",
+    "拍摄地点",
     "脚本交付时间",
-    "近期舆论热点",
-    "实拍尺度",
+    "近期舆论热点 / 达人热点与背景",
+    "实拍尺度（暴力测评可接受范围）",
     "外景拍摄可行性",
     "出镜人员",
     "内容形式",
     "内容禁忌（重要）",
     "星图发布时间",
-    "对应脚本",
+    "星图对应脚本",
+    "有无种草星图单",
+    "脚本需求",
+    "内容交付时间",
     "拍摄总条数",
     "主页发布数量",
+    "主页发布渠道",
     "需支援剪辑条数"
   ];
 
   expectedLabels.forEach(label => {
     assert.equal(markup.split(`>${label}<`).length - 1, 1, `${label} 应且仅应出现一次`);
   });
-  assert.doesNotMatch(markup, /达人内容方向禁忌|达人热点与背景|预估拍摄时间、地点|有无种草星图单|种草星图单链接/);
+  assert.match(markup, /data-content-section="basic"/);
+  assert.match(markup, /data-content-section="content"/);
+  assert.equal((markup.match(/content-form-grid/g) || []).length, 2);
+  assert.match(markup, /placeholder="如：喷水\/花洒\/酱油\/胶带\/食用油\/暴汗实测/);
+  assert.match(markup, /placeholder="禁止拍摄画面、敏感话术、抵触拍摄形式、账号避雷内容"/);
+  assert.doesNotMatch(markup, />可拍摄时间地点<|>近期舆论热点<|>实拍尺度<|>对应脚本<|>首播 \/ 复播</);
 });
 
 test("内容需求不展示与专场信息重复的摘要字段", () => {
@@ -79,11 +89,11 @@ test("内容需求不展示与专场信息重复的摘要字段", () => {
   assert.doesNotMatch(markup, /data-content-shared-summary|已同步专场信息|达人账号|直播时间|直播机制|>福袋<|预估销售额/);
 });
 
-test("切换星图合作后立即重绘并更新依赖字段", () => {
+test("切换有无种草星图单后立即重绘并更新依赖字段", () => {
   const run = loadDashboard();
   const result = run(`(() => {
     const groupIndex = specialDetailGroups.findIndex(group => group.supportKey === "content");
-    const fieldIndex = specialDetailGroups[groupIndex].fields.findIndex(field => field.label === "星图合作");
+    const fieldIndex = specialDetailGroups[groupIndex].fields.findIndex(field => field.label === "有无种草星图单");
     const listeners = {};
     const input = {
       dataset: { specialDetail: groupIndex + ":" + fieldIndex },
@@ -96,7 +106,7 @@ test("切换星图合作后立即重绘并更新依赖字段", () => {
     render = () => { renderCount += 1; };
     bind();
     listeners.change({ type: "change" });
-    const scriptField = specialDetailGroups[groupIndex].fields.find(field => field.label === "对应脚本");
+    const scriptField = specialDetailGroups[groupIndex].fields.find(field => field.label === "星图对应脚本");
     return {
       renderCount,
       selectedValue: specialDetailGroups[groupIndex].fields[fieldIndex].value,
