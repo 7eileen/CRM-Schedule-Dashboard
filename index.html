@@ -1001,6 +1001,10 @@
     .content-form-grid .content-span-6 { grid-column: span 6; }
     .content-form-grid .content-span-12 { grid-column: 1 / -1; }
     .content-form-grid .detail-field textarea { min-height: 76px; }
+    .content-requirement-card textarea::placeholder {
+      color: #98a2b3;
+      opacity: 1;
+    }
     .entry-detail-panel .detail-card.is-collapsed {
       border-color: #e6edf5;
       background: linear-gradient(135deg, #fbfcfe 0%, #fff9f4 100%);
@@ -3481,11 +3485,11 @@
           { label: "拍摄地点", value: "河南家中 / 杭州公司", required: true },
           { label: "脚本交付时间", value: "2026-06-16T18:00", type: "datetime-local", required: true },
           { label: "近期舆论热点 / 达人热点与背景", value: "三胎怀孕、首次带货，可结合孕期持妆与首播背景；发布前复核最新舆情。", required: true },
-          { label: "实拍尺度（暴力测评可接受范围）", value: "可接受喷水、花洒、暴汗实测；可做素颜瑕疵与妆后反差；不接受酱油、胶带、食用油和斑驳卡粉痛点图。", placeholder: "如：喷水/花洒/酱油/胶带/食用油/暴汗实测；素颜瑕疵；斑驳卡粉痛点图等——具体哪种不接受？" },
-          { label: "外景拍摄可行性", value: "可接受户外暴晒和运动暴汗；泳池实景需提前确认场地与档期。", placeholder: "如：户外暴晒、运动暴汗、泳池等实景，是否可接受？" },
-          { label: "出镜人员", value: "达人本人、品牌讲解员可出镜；家人和助理不出镜，禁止夫妻同框。", required: true, placeholder: "家人/助理能否出镜，明确人物同框禁忌" },
-          { label: "内容形式", value: "不接受剧情演绎", placeholder: "是否接受剧情类、演绎类" },
-          { label: "内容禁忌（重要）", value: "禁止老公出镜、斑驳卡粉痛点画面和夸大功效话术；避免家庭矛盾、孕期焦虑等账号避雷内容。", required: true, placeholder: "禁止拍摄画面、敏感话术、抵触拍摄形式、账号避雷内容" },
+          { label: "实拍尺度（暴力测评可接受范围）", value: "", placeholder: "能否接受暴力测评（喷水 / 花洒 / 酱油 / 胶带 / 食用油 / 暴汗实测）、素颜瑕疵 & 妆后强反差、斑驳卡粉痛点图，具体哪种不接受？" },
+          { label: "外景拍摄可行性", value: "", placeholder: "户外暴晒、运动暴汗、泳池等实景拍摄是否可接受？" },
+          { label: "出镜人员", value: "", required: true, placeholder: "家人 / 助理能否出镜，明确人物同框禁忌" },
+          { label: "内容形式", value: "", placeholder: "是否接受剧情类、演绎类" },
+          { label: "内容禁忌（重要）", value: "", required: true, placeholder: "禁止拍摄画面、敏感话术、抵触拍摄形式、账号避雷内容" },
           { label: "星图发布时间", value: "2026-06-18T18:00", type: "datetime-local", showWhen: { label: "有无种草星图单", value: "有" } },
           { label: "星图对应脚本", value: "星图短直脚本 01（附溯源视频与发布文案）", showWhen: { label: "有无种草星图单", value: "有" } },
           { label: "有无种草星图单", value: "有", type: "select", options: ["有", "无", "待确认"], required: true },
