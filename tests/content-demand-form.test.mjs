@@ -64,8 +64,6 @@ test("内容需求按基本信息和内容信息分区，并完整呈现新增�
     "星图对应脚本",
     "有无种草星图单",
     "脚本需求",
-    "内容交付时间",
-    "拍摄总条数",
     "主页发布数量",
     "主页发布渠道",
     "需支援剪辑条数"
@@ -78,6 +76,72 @@ test("内容需求按基本信息和内容信息分区，并完整呈现新增�
   assert.match(markup, /data-content-section="content"/);
   assert.equal((markup.match(/content-form-grid/g) || []).length, 2);
   assert.doesNotMatch(markup, />可拍摄时间地点<|>近期舆论热点<|>实拍尺度<|>对应脚本<|>首播 \/ 复播</);
+});
+
+test("内容信息删除内容交付时间和拍摄总条数", () => {
+  const run = loadDashboard();
+  const markup = renderContentDemand(run);
+  const labels = JSON.parse(run(`(() => {
+    const contentGroup = specialDetailGroups.find(group => group.supportKey === "content");
+    return JSON.stringify(contentGroup.fields.map(field => field.label));
+  })()`));
+
+  assert.equal(labels.includes("内容交付时间"), false);
+  assert.equal(labels.includes("拍摄总条数"), false);
+  assert.doesNotMatch(markup, />内容交付时间<|>拍摄总条数</);
+});
+
+test("内容信息保留字段全部显示为必填", () => {
+  const run = loadDashboard();
+  const markup = renderContentDemand(run);
+  const expectedLabels = [
+    "实拍尺度（暴力测评可接受范围）",
+    "外景拍摄可行性",
+    "出镜人员",
+    "内容形式",
+    "内容禁忌（重要）",
+    "星图发布时间",
+    "星图对应脚本",
+    "有无种草星图单",
+    "脚本需求",
+    "主页发布数量",
+    "主页发布渠道",
+    "需支援剪辑条数"
+  ];
+  const requiredFields = JSON.parse(run(`(() => {
+    const contentGroup = specialDetailGroups.find(group => group.supportKey === "content");
+    return JSON.stringify(contentGroup.fields
+      .filter(field => ${JSON.stringify([
+        "实拍尺度（暴力测评可接受范围）",
+        "外景拍摄可行性",
+        "出镜人员",
+        "内容形式",
+        "内容禁忌（重要）",
+        "星图发布时间",
+        "星图对应脚本",
+        "有无种草星图单",
+        "脚本需求",
+        "主页发布数量",
+        "主页发布渠道",
+        "需支援剪辑条数"
+      ])}.includes(field.label))
+      .map(field => ({ label: field.label, required: field.required === true })));
+  })()`));
+
+  assert.deepEqual(requiredFields, expectedLabels.map(label => ({ label, required: true })));
+  expectedLabels.forEach(label => {
+    assert.match(markup, new RegExp(`>${label.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}<i class="required">\\*</i>`));
+  });
+});
+
+test("删减后的脚本和发布字段使用两列等宽布局", () => {
+  const run = loadDashboard();
+  const markup = renderContentDemand(run);
+  const labels = ["脚本需求", "主页发布数量", "主页发布渠道", "需支援剪辑条数"];
+
+  labels.forEach(label => {
+    assert.match(markup, new RegExp(`<label class="detail-field content-span-6">\\s*<span class="detail-field-label">${label.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}<`));
+  });
 });
 
 test("五项内容采集字段默认显示灰色问询提示而非演示答案", () => {
