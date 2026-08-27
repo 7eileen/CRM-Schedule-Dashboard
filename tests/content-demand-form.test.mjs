@@ -134,6 +134,30 @@ test("内容信息保留字段全部显示为必填", () => {
   });
 });
 
+test("内容需求全部可见字段均参与必填校验", () => {
+  const run = loadDashboard();
+  const validationResults = JSON.parse(run(`(() => {
+    const groupIndex = specialDetailGroups.findIndex(group => group.supportKey === "content");
+    const group = specialDetailGroups[groupIndex];
+    return JSON.stringify(group.fields.map(field => {
+      const originalValue = field.value;
+      field.value = "";
+      const required = shouldShowDetailField(groupIndex, field)
+        ? entryRequiredErrors().includes(field.label)
+        : null;
+      field.value = originalValue;
+      return { label: field.label, required };
+    }));
+  })()`));
+
+  assert.equal(validationResults.length, 20);
+  assert.deepEqual(
+    validationResults.filter(field => field.required !== true),
+    [],
+    "内容需求中每个当前可见字段都应在留空时触发必填校验"
+  );
+});
+
 test("删减后的脚本和发布字段使用两列等宽布局", () => {
   const run = loadDashboard();
   const markup = renderContentDemand(run);
