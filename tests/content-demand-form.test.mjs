@@ -77,9 +77,47 @@ test("内容需求按基本信息和内容信息分区，并完整呈现新增�
   assert.match(markup, /data-content-section="basic"/);
   assert.match(markup, /data-content-section="content"/);
   assert.equal((markup.match(/content-form-grid/g) || []).length, 2);
-  assert.match(markup, /placeholder="如：喷水\/花洒\/酱油\/胶带\/食用油\/暴汗实测/);
-  assert.match(markup, /placeholder="禁止拍摄画面、敏感话术、抵触拍摄形式、账号避雷内容"/);
   assert.doesNotMatch(markup, />可拍摄时间地点<|>近期舆论热点<|>实拍尺度<|>对应脚本<|>首播 \/ 复播</);
+});
+
+test("五项内容采集字段默认显示灰色问询提示而非演示答案", () => {
+  const run = loadDashboard();
+  const fields = JSON.parse(run(`(() => {
+    const labels = ["实拍尺度（暴力测评可接受范围）", "外景拍摄可行性", "出镜人员", "内容形式", "内容禁忌（重要）"];
+    const contentGroup = specialDetailGroups.find(group => group.supportKey === "content");
+    return JSON.stringify(labels.map(label => {
+      const field = contentGroup.fields.find(item => item.label === label);
+      return { label, value: field.value, placeholder: field.placeholder };
+    }));
+  })()`));
+
+  assert.deepEqual(fields, [
+    {
+      label: "实拍尺度（暴力测评可接受范围）",
+      value: "",
+      placeholder: "能否接受暴力测评（喷水 / 花洒 / 酱油 / 胶带 / 食用油 / 暴汗实测）、素颜瑕疵 & 妆后强反差、斑驳卡粉痛点图，具体哪种不接受？"
+    },
+    {
+      label: "外景拍摄可行性",
+      value: "",
+      placeholder: "户外暴晒、运动暴汗、泳池等实景拍摄是否可接受？"
+    },
+    {
+      label: "出镜人员",
+      value: "",
+      placeholder: "家人 / 助理能否出镜，明确人物同框禁忌"
+    },
+    {
+      label: "内容形式",
+      value: "",
+      placeholder: "是否接受剧情类、演绎类"
+    },
+    {
+      label: "内容禁忌（重要）",
+      value: "",
+      placeholder: "禁止拍摄画面、敏感话术、抵触拍摄形式、账号避雷内容"
+    }
+  ]);
 });
 
 test("内容需求不展示与专场信息重复的摘要字段", () => {
