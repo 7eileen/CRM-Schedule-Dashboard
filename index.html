@@ -9221,10 +9221,16 @@ function openMyTaskCalendarDetail(key) {
       render();
     }
 
-    function openDrawer(title, body, foot = `<button class="btn primary" data-close>关闭</button>`, wide = false, center = false) {
+    function drawerFooterWithoutClose(foot = "") {
+      return String(foot || "")
+        .replace(/\s*<button\b(?=[^>]*\bdata-close(?=[\s=>/]))[^>]*>[\s\S]*?<\/button>\s*/gi, "")
+        .trim();
+    }
+
+    function openDrawer(title, body, foot = "", wide = false, center = false) {
       $("#drawerTitle").textContent = title;
       $("#drawerBody").innerHTML = body;
-      $("#drawerFoot").innerHTML = foot;
+      $("#drawerFoot").innerHTML = drawerFooterWithoutClose(foot);
       $("#drawer").classList.toggle("wide", wide);
       $("#drawer").classList.toggle("center", center);
       $("#drawer").classList.add("show");
