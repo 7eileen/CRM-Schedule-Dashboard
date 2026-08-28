@@ -2603,6 +2603,7 @@
     }
     .drawer-head, .drawer-foot { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
     .drawer-foot { border-top: 1px solid var(--line); border-bottom: 0; justify-content: flex-end; }
+    .drawer-foot:empty { display: none; }
     .drawer h2 { margin: 0; font-size: 20px; }
     .drawer-title-status-layout {
       display: inline-flex;
@@ -3004,6 +3005,16 @@
       background: #fbfcfe;
       font-weight: 600;
     }
+    .task-calendar-detail-list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .task-calendar-detail-list-title { display: grid; gap: 4px; }
+    .task-calendar-detail-list-title strong { color: #00152e; font-size: 16px; font-weight: 500; }
+    .task-calendar-detail-list-title span { color: var(--muted); font-size: 12px; }
     .task-calendar-detail-list { display: grid; gap: 10px; }
     .task-calendar-detail-row {
       display: grid;
@@ -3073,6 +3084,43 @@
       padding-top: 14px;
       border-top: 1px solid #f2dfce;
     }
+    .post-publish-assignment-context {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid #e4eaf2;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    .post-publish-assignment-context div { display: grid; gap: 5px; min-width: 0; }
+    .post-publish-assignment-context span { color: var(--muted); font-size: 12px; }
+    .post-publish-assignment-context strong { color: #00152e; font-weight: 500; overflow-wrap: anywhere; }
+    .post-publish-assignment-tip {
+      padding: 12px 14px;
+      border-left: 3px solid var(--orange);
+      background: #fff8ef;
+      color: #7a4a1c;
+      line-height: 1.6;
+    }
+    .post-publish-assignment-form {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.4fr) minmax(170px, .8fr) minmax(180px, .8fr);
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid #ffd3aa;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff7ef 0%, rgba(255, 247, 239, .28) 100%);
+    }
+    .post-publish-assignment-form .required { color: var(--red); }
+    .post-publish-assignment-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid #f2dfce;
+    }
 
     @media (max-width: 1180px) {
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3114,6 +3162,11 @@
       .task-calendar-detail-row { grid-template-columns: 32px 1fr; }
       .task-calendar-detail-cell { grid-column: 2; }
       .task-calendar-detail-row-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
+      .task-calendar-detail-list-head { align-items: stretch; flex-direction: column; }
+      .task-calendar-detail-list-head .btn { width: 100%; }
+      .post-publish-assignment-context,
+      .post-publish-assignment-form { grid-template-columns: 1fr; }
+      .post-publish-assignment-actions { grid-column: 1; justify-content: flex-start; flex-wrap: wrap; }
       .task-calendar-edit-files { grid-column: 1; align-items: flex-start; flex-direction: column; }
       .dispatch-worklist { width: calc(100vw - 68px); max-width: calc(100vw - 68px); }
       .dispatch-worklist-item { grid-template-columns: 1fr; }
@@ -6450,6 +6503,7 @@ function openMyTaskCalendarDetail(key) {
       const groupStatus = myTaskGroupStatus(groupItems);
       const actionKey = groupItems.length > 1 ? myTaskGroupKey(record.id, moduleKey) : primary.key;
       const nextAction = workflowNextAction(moduleKey, groupStatus, record.id);
+      const canAppendTask = taskDispatchModules().includes(moduleKey);
       const actionPanel = isTaskWorkflowAbnormal(groupStatus)
         ? ""
         : `<div class="my-task-actions task-calendar-detail-actions">
@@ -6484,9 +6538,87 @@ function openMyTaskCalendarDetail(key) {
         ${myTaskSpecialInfo(record)}
         ${workflowPathStrip(moduleKey, groupStatus)}
         <div class="task-note">${demandText(record, moduleKey)}</div>
+        <div class="task-calendar-detail-list-head">
+          <div class="task-calendar-detail-list-title">
+            <strong>已发布任务（${groupItems.length}）</strong>
+            <span>追加派工会新建独立任务，不会修改现有任务</span>
+          </div>
+          ${canAppendTask ? `<button class="btn primary" data-calendar-add-assignee="${actionKey}">追加派工</button>` : ""}
+        </div>
         <div class="task-calendar-detail-list">${rows}</div>
         ${actionPanel}
       </div>`;
+    }
+
+    function postPublishAssignmentFormBody(key) {
+      const recordId = recordIdFromTaskAction(key);
+      const moduleKey = moduleKeyFromTaskAction(key);
+      const record = records.find(item => item.id === recordId);
+      if (!record || !moduleMembers[moduleKey]) return `<div class="task-note">未找到可追加派工的专场任务。</div>`;
+      const list = tasksFor(recordId, moduleKey);
+      const template = taskTemplates[moduleKey][list.length % taskTemplates[moduleKey].length];
+      const parentKey = myTaskGroupKey(recordId, moduleKey);
+      return `<div class="stack post-publish-assignment">
+        <div class="post-publish-assignment-context">
+          <div><span>达人专场</span><strong>${escapeHtml(record.talent)} · ${escapeHtml(shortLiveDate(record.liveTime))}</strong></div>
+          <div><span>支持类型</span><strong>${escapeHtml(supportNeeds[moduleKey].title)}</strong></div>
+          <div><span>当前任务</span><strong>${list.length} 项</strong></div>
+        </div>
+        <div class="post-publish-assignment-tip">新增任务会直接进入执行人的“我的任务”，原任务执行人、状态和附件保持不变。</div>
+        <div class="post-publish-assignment-form">
+          <label class="task-field">
+            <span>任务名称 <i class="required">*</i></span>
+            <input class="input" value="${escapeHtml(template)}" data-post-publish-task-title>
+          </label>
+          <label class="task-field">
+            <span>执行人 <i class="required">*</i></span>
+            <select class="select" data-post-publish-task-owner>${moduleMembers[moduleKey].map(owner => `<option>${escapeHtml(owner)}</option>`).join("")}</select>
+          </label>
+          <label class="task-field">
+            <span>预计截止日期 <i class="required">*</i></span>
+            <input class="input" type="date" value="${escapeHtml(dispatchDue(recordId, moduleKey) || defaultDue(record))}" data-post-publish-task-due>
+          </label>
+          <div class="post-publish-assignment-actions">
+            <button class="btn ghost" data-cancel-post-publish-task="${parentKey}">返回任务详情</button>
+            <button class="btn primary" data-save-post-publish-task="${parentKey}">确认派工并通知</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function createPostPublishTask(key, values = {}) {
+      const recordId = recordIdFromTaskAction(key);
+      const moduleKey = moduleKeyFromTaskAction(key);
+      const record = records.find(item => item.id === recordId);
+      const title = String(values.title || "").trim();
+      const owner = String(values.owner || "").trim();
+      const due = String(values.due || "").trim();
+      if (!record || !moduleMembers[moduleKey]) return { ok: false, error: "未找到可追加派工的专场任务" };
+      if (!taskDispatchModules().includes(moduleKey)) return { ok: false, error: "当前身份无追加派工权限" };
+      if (!title || !owner || !due) return { ok: false, error: "请完整填写任务名称、执行人和预计截止日期" };
+      const workflowStatus = workflowStartStatus(moduleKey);
+      const task = {
+        title,
+        owner,
+        due,
+        status: workflowStatus === "待办任务" ? "待处理" : "进行中",
+        workflowStatus,
+        businessNotice: "new",
+        noticeAt: actionDate,
+        source: "追加派工",
+        createdAt: actionDate,
+        createdBy: taskScopeTitle(),
+        isNew: true
+      };
+      const list = tasksFor(recordId, moduleKey);
+      list.push(task);
+      syncAssignmentStatus(recordId, moduleKey);
+      return {
+        ok: true,
+        task,
+        key: `${recordId}:${moduleKey}:${list.length - 1}`,
+        parentKey: myTaskGroupKey(recordId, moduleKey)
+      };
     }
 
     function openMyTaskSubtaskEditor(key, parentKey) {
@@ -9135,6 +9267,27 @@ function openMyTaskCalendarDetail(key) {
       }));
       document.querySelectorAll("#drawer [data-calendar-task-edit]").forEach(btn => btn.addEventListener("click", () => {
         openMyTaskSubtaskEditor(btn.dataset.calendarTaskEdit, btn.dataset.calendarParent);
+      }));
+      document.querySelectorAll("#drawer [data-calendar-add-assignee]").forEach(btn => btn.addEventListener("click", () => {
+        const key = btn.dataset.calendarAddAssignee;
+        openDrawer("追加派工", postPublishAssignmentFormBody(key), "", true, true);
+      }));
+      document.querySelectorAll("#drawer [data-cancel-post-publish-task]").forEach(btn => btn.addEventListener("click", () => {
+        openMyTaskCalendarDetail(btn.dataset.cancelPostPublishTask);
+      }));
+      document.querySelectorAll("#drawer [data-save-post-publish-task]").forEach(btn => btn.addEventListener("click", () => {
+        const key = btn.dataset.savePostPublishTask;
+        const result = createPostPublishTask(key, {
+          title: $("#drawerBody").querySelector("[data-post-publish-task-title]")?.value,
+          owner: $("#drawerBody").querySelector("[data-post-publish-task-owner]")?.value,
+          due: $("#drawerBody").querySelector("[data-post-publish-task-due]")?.value
+        });
+        if (!result.ok) {
+          toast(result.error);
+          return;
+        }
+        openMyTaskCalendarDetail(result.parentKey);
+        toast(`已追加派工并通知 ${result.task.owner}`);
       }));
       document.querySelectorAll("#drawer [data-calendar-edit-back]").forEach(btn => btn.addEventListener("click", () => {
         dismissDispatchTaskEdit(btn.dataset.calendarEditKey);
