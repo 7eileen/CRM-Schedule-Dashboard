@@ -1969,7 +1969,7 @@
     .monthly-special-panel .panel-body { min-width: 0; }
     .monthly-toolbar {
       display: grid;
-      grid-template-columns: 160px minmax(120px, 1fr) minmax(120px, 1fr) minmax(130px, 1fr) minmax(190px, 1.5fr) auto;
+      grid-template-columns: 160px minmax(120px, 1fr) minmax(120px, 1fr) minmax(130px, 1fr) minmax(190px, 1.5fr);
       gap: 12px;
       align-items: end;
       margin-bottom: 18px;
@@ -1984,14 +1984,24 @@
       margin-bottom: 18px;
     }
     .monthly-summary .stat { min-height: 92px; }
+    .monthly-role-nav {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+      margin-bottom: 18px;
+    }
     .monthly-role-tabs {
       display: flex;
+      flex: 1 1 auto;
       gap: 8px;
-      margin-bottom: 18px;
+      min-width: 0;
       padding-bottom: 4px;
       overflow-x: auto;
       scrollbar-width: thin;
     }
+    .monthly-role-export { min-height: 42px; flex: 0 0 auto; }
     .monthly-role-tab {
       min-height: 42px;
       flex: 0 0 132px;
@@ -7458,7 +7468,6 @@ function openMyTaskCalendarDetail(key) {
             <label class="filter-field"><span>状态</span><select class="select" data-monthly-status>${["all:全部", "done:已完成", "unfinished:未完成", "delayed:已延期", "canceled:已取消"].map(item => { const [value, label] = item.split(":"); return `<option value="${value}" ${state.monthlyStatus === value ? "selected" : ""}>${label}</option>`; }).join("")}</select></label>
             <label class="filter-field"><span>等级</span><select class="select" data-monthly-grade><option value="all">全部</option>${gradeOptions.map(value => `<option value="${value}" ${state.monthlyGrade === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
             <label class="filter-field"><span>主推产品</span><select class="select" data-monthly-product><option value="all">全部</option>${productOptionsForFilter.map(value => `<option value="${value}" ${state.monthlyProduct === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
-            <button class="btn primary" data-action="downloadMonthlyReport">导出月报</button>
           </div>
           <div class="monthly-summary">
             <div class="stat stat-orange"><div><strong>${stats.total}</strong><span>本月专场总数</span></div></div>
@@ -7489,8 +7498,11 @@ function openMyTaskCalendarDetail(key) {
     }
 
     function monthlyRoleTabs() {
-      return `<div class="monthly-role-tabs" role="tablist" aria-label="分角色月度看板">
-        ${monthlyRoleDefinitions().map(role => `<button class="monthly-role-tab ${state.monthlyRole === role.id ? "active" : ""}" type="button" role="tab" aria-selected="${state.monthlyRole === role.id}" data-monthly-role="${role.id}">${role.label}看板</button>`).join("")}
+      return `<div class="monthly-role-nav">
+        <div class="monthly-role-tabs" role="tablist" aria-label="分角色月度看板">
+          ${monthlyRoleDefinitions().map(role => `<button class="monthly-role-tab ${state.monthlyRole === role.id ? "active" : ""}" type="button" role="tab" aria-selected="${state.monthlyRole === role.id}" data-monthly-role="${role.id}">${role.label}看板</button>`).join("")}
+        </div>
+        ${state.monthlyRole === "overview" ? `<button class="btn primary monthly-role-export" data-action="downloadMonthlyReport">导出月报</button>` : ""}
       </div>`;
     }
 

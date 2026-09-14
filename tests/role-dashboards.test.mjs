@@ -60,6 +60,22 @@ test("月度统计提供综合及五个角色看板入口", () => {
   assert.equal((result.markup.match(/data-monthly-role=/g) || []).length, 6);
 });
 
+test("导出月报与综合看板并列且仅在综合视角显示", () => {
+  const run = loadDashboard();
+  const markups = JSON.parse(run(`JSON.stringify(Object.fromEntries(
+    ["overview", "service", "supply", "content", "ads", "business"].map(role => {
+      state.monthlyRole = role;
+      return [role, monthlyRoleTabs()];
+    })
+  ))`));
+
+  assert.match(markups.overview, /monthly-role-tabs[\s\S]*data-action="downloadMonthlyReport"/);
+  assert.equal((markups.overview.match(/data-action="downloadMonthlyReport"/g) || []).length, 1);
+  ["service", "supply", "content", "ads", "business"].forEach(role => {
+    assert.doesNotMatch(markups[role], /data-action="downloadMonthlyReport"/);
+  });
+});
+
 test("数据中心删除任务日历入口并将旧缓存状态回退到专场统计", () => {
   const run = loadDashboard();
   const result = JSON.parse(run(`(() => {
@@ -164,6 +180,7 @@ test("导出月报新增剪辑、投放、运营负责人和主推机制", () =>
 test("角色看板宽表具有独立横向滚动和移动端入口样式", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
+  assert.match(html, /\.monthly-role-nav\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto/);
   assert.match(html, /\.monthly-role-tabs\s*\{[^}]*overflow-x:\s*auto/);
   assert.match(html, /\.monthly-special-panel\s*\{[^}]*min-width:\s*0/);
   assert.match(html, /\.monthly-toolbar > \*\s*\{[^}]*min-width:\s*0/);
