@@ -32,7 +32,7 @@
     button, input, select, textarea { font: inherit; }
     button { border: 0; cursor: pointer; }
 
-    .shell { min-height: 100vh; display: grid; grid-template-rows: 60px 1fr; }
+    .shell { min-width: 0; min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 60px 1fr; }
     .topbar {
       height: 60px;
       display: flex;
@@ -104,7 +104,7 @@
       box-shadow: 0 2px 7px rgba(0,0,0,.14);
     }
 
-    main { width: auto; max-width: none; margin: 0; padding: 30px 26px 48px; min-height: calc(100vh - 60px); }
+    main { width: auto; min-width: 0; max-width: none; margin: 0; padding: 30px 26px 48px; min-height: calc(100vh - 60px); }
     .head { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 24px; }
     .head h1 { font-size: 26px; font-weight: 500; line-height: 1.35; margin: 0; color: #00152e; }
     .actions { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
@@ -1965,7 +1965,8 @@
       gap: 12px;
       align-items: end;
     }
-    .monthly-special-panel { margin-bottom: 18px; }
+    .monthly-special-panel { min-width: 0; margin-bottom: 18px; }
+    .monthly-special-panel .panel-body { min-width: 0; }
     .monthly-toolbar {
       display: grid;
       grid-template-columns: 160px minmax(120px, 1fr) minmax(120px, 1fr) minmax(130px, 1fr) minmax(190px, 1.5fr) auto;
@@ -1973,6 +1974,9 @@
       align-items: end;
       margin-bottom: 18px;
     }
+    .monthly-toolbar > * { min-width: 0; }
+    .monthly-toolbar .input,
+    .monthly-toolbar .select { min-width: 0; }
     .monthly-summary {
       display: grid;
       grid-template-columns: repeat(6, minmax(120px, 1fr));
@@ -1980,6 +1984,49 @@
       margin-bottom: 18px;
     }
     .monthly-summary .stat { min-height: 92px; }
+    .monthly-role-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding-bottom: 4px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .monthly-role-tab {
+      min-height: 42px;
+      flex: 0 0 132px;
+      padding: 0 18px;
+      border: 1px solid #e1e7ef;
+      border-radius: 9px;
+      background: #fff;
+      color: #6b7687;
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .monthly-role-tab.active {
+      border-color: var(--orange);
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(255, 127, 0, .16);
+    }
+    .role-table-scroll { position: relative; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; }
+    .role-dashboard-table { table-layout: auto; min-width: 1120px; }
+    .role-dashboard-table.role-content,
+    .role-dashboard-table.role-business { min-width: 1560px; }
+    .role-dashboard-table.role-ads { min-width: 2200px; }
+    .role-dashboard-table th,
+    .role-dashboard-table td { min-width: 112px; white-space: nowrap; }
+    .role-dashboard-table th:nth-child(2),
+    .role-dashboard-table td:nth-child(2) { min-width: 148px; white-space: normal; }
+    .role-dashboard-table th:nth-last-child(1),
+    .role-dashboard-table td:nth-last-child(1) { min-width: 104px; }
+    .role-money { font-weight: 500; color: #00152e; }
+    .role-metric {
+      display: grid;
+      gap: 3px;
+    }
+    .role-metric small { color: var(--muted); font-size: 11px; }
     .monthly-status {
       display: inline-flex;
       align-items: center;
@@ -3122,13 +3169,16 @@
       border-top: 1px solid #f2dfce;
     }
 
+    @media (max-width: 1440px) {
+      .monthly-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+    }
     @media (max-width: 1180px) {
+      .monthly-special-panel .panel-head { align-items: flex-start; flex-direction: column; }
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .list-stat-item { grid-template-columns: 1fr; align-items: stretch; }
       .list-stat-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .data-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
-      .monthly-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3167,6 +3217,7 @@
       .post-publish-assignment-context,
       .post-publish-assignment-form { grid-template-columns: 1fr; }
       .post-publish-assignment-actions { grid-column: 1; justify-content: flex-start; flex-wrap: wrap; }
+      .monthly-role-tab { flex: 0 0 auto; }
       .task-calendar-edit-files { grid-column: 1; align-items: flex-start; flex-direction: column; }
       .dispatch-worklist { width: calc(100vw - 68px); max-width: calc(100vw - 68px); }
       .dispatch-worklist-item { grid-template-columns: 1fr; }
@@ -3321,12 +3372,10 @@
       dataMember: "all",
       dataStatus: "all",
       dataCenterTab: "specialStats",
-      dataTaskModule: "content",
-      dataTaskMember: "all",
-      dataTaskMonth: "2026-06",
       dataMetricTab: "special",
       dataMetricMenuOpen: false,
       monthlyMonth: "2026-06",
+      monthlyRole: "overview",
       monthlyBusiness: "all",
       monthlyStatus: "all",
       monthlyGrade: "all",
@@ -7250,14 +7299,14 @@ function openMyTaskCalendarDetail(key) {
     }
 
     function pageDataCenter() {
+      if (!["specialStats", "dataBlocks"].includes(state.dataCenterTab)) state.dataCenterTab = "specialStats";
       const items = filteredDataItems();
       const total = items.length;
       const done = items.filter(item => item.task.status === "已完成").length;
       const delayed = items.filter(item => item.task.status === "延期中").length;
       const pending = total - done;
       const rate = total ? Math.round(done / total * 100) : 0;
-      let content = dataTaskCalendarPanel();
-      if (state.dataCenterTab === "specialStats") content = monthlySpecialStatsPanel();
+      let content = monthlySpecialStatsPanel();
       if (state.dataCenterTab === "dataBlocks") content = dataBlockDashboard(items, total, done, delayed, pending, rate);
       return `${dataCenterTabs()}
       ${content}`;
@@ -7267,36 +7316,7 @@ function openMyTaskCalendarDetail(key) {
       return `<div class="data-center-tabs">
         <button class="data-center-tab ${state.dataCenterTab === "specialStats" ? "active" : ""}" data-data-center-tab="specialStats">专场统计</button>
         <button class="data-center-tab ${state.dataCenterTab === "dataBlocks" ? "active" : ""}" data-data-center-tab="dataBlocks">数据板块</button>
-        <button class="data-center-tab ${state.dataCenterTab === "taskCalendar" ? "active" : ""}" data-data-center-tab="taskCalendar">任务日历</button>
       </div>`;
-    }
-
-    function dataTaskCalendarPanel() {
-      const moduleKey = moduleOrder.includes(state.dataTaskModule) ? state.dataTaskModule : "content";
-      state.dataTaskModule = moduleKey;
-      const moduleItems = allDispatchTaskItems().filter(item => item.moduleKey === moduleKey);
-      const memberOptions = ownersWithTasks(moduleItems);
-      if (state.dataTaskMember !== "all" && !memberOptions.includes(state.dataTaskMember)) state.dataTaskMember = "all";
-      const filteredItems = moduleItems.filter(item => state.dataTaskMember === "all" || item.task.owner === state.dataTaskMember);
-      const groups = groupedMyTaskItems(filteredItems);
-      const title = state.dataTaskMember === "all" ? `${supportNeeds[moduleKey].title}任务日历` : `${state.dataTaskMember}的任务日历`;
-      return `${dataTaskCalendarToolbar(memberOptions)}
-      ${myTaskCalendar(state.dataTaskMonth, groups, moduleKey, filteredItems, {
-        title,
-        badge: `${supportNeeds[moduleKey].title} ${groups.length} 条`,
-        monthAttr: "data-data-task-month"
-      })}`;
-    }
-
-    function dataTaskCalendarToolbar(memberOptions) {
-      return `<section class="panel data-filter-panel">
-        <div class="panel-body">
-          <div class="data-toolbar">
-            <label class="filter-field"><span>支持类型</span><select class="select" data-data-task-module>${moduleOrder.map(key => `<option value="${key}" ${state.dataTaskModule === key ? "selected" : ""}>${supportNeeds[key].title}</option>`).join("")}</select></label>
-            <label class="filter-field"><span>成员</span><select class="select" data-data-task-member><option value="all">全部</option>${memberOptions.map(owner => `<option value="${owner}" ${state.dataTaskMember === owner ? "selected" : ""}>${owner}</option>`).join("")}</select></label>
-          </div>
-        </div>
-      </section>`;
     }
 
     function dataBlockDashboard(items, total, done, delayed, pending, rate) {
@@ -7424,12 +7444,14 @@ function openMyTaskCalendarDetail(key) {
       const businessOptions = monthlyBusinessOptions();
       const gradeOptions = monthlyGradeOptions();
       const productOptionsForFilter = monthlyProductOptions();
+      const role = monthlyRoleDefinition(state.monthlyRole);
       return `<section class="panel monthly-special-panel">
         <div class="panel-head">
-          <div><h2 class="panel-title">月度专场统计</h2></div>
-          <div class="row">${badge("商务可查看", "green")}<span class="data-note">统计已完成和未完成专场</span></div>
+          <div><h2 class="panel-title">${role.title}</h2></div>
+          <div class="row">${badge(`${role.label}视角`, role.id === "overview" ? "green" : "orange")}<span class="data-note">统计已完成和未完成专场</span></div>
         </div>
         <div class="panel-body">
+          ${monthlyRoleTabs()}
           <div class="monthly-toolbar">
             <label class="filter-field"><span>统计月份</span><input class="input" type="month" value="${state.monthlyMonth}" data-monthly-month></label>
             <label class="filter-field"><span>负责商务</span><select class="select" data-monthly-business><option value="all">全部</option>${businessOptions.map(value => `<option value="${value}" ${state.monthlyBusiness === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
@@ -7446,9 +7468,30 @@ function openMyTaskCalendarDetail(key) {
             <div class="stat"><div><strong>${stats.canceled}</strong><span>已取消</span></div></div>
             <div class="stat stat-blue"><div><strong>${stats.rate}%</strong><span>完成率</span></div></div>
           </div>
-          <div class="table-wrap">${monthlySpecialTable(rows)}</div>
+          <div class="role-table-scroll">${state.monthlyRole === "overview" ? monthlySpecialTable(rows) : monthlyRoleTable(rows, state.monthlyRole)}</div>
         </div>
       </section>`;
+    }
+
+    function monthlyRoleDefinitions() {
+      return [
+        { id: "overview", label: "综合", title: "月度专场统计" },
+        { id: "service", label: "客服", title: "客服月度看板" },
+        { id: "supply", label: "供应链", title: "供应链月度看板" },
+        { id: "content", label: "内容", title: "内容月度看板" },
+        { id: "ads", label: "投放", title: "投放月度看板" },
+        { id: "business", label: "商务", title: "商务月度看板" }
+      ];
+    }
+
+    function monthlyRoleDefinition(roleId = state.monthlyRole) {
+      return monthlyRoleDefinitions().find(item => item.id === roleId) || monthlyRoleDefinitions()[0];
+    }
+
+    function monthlyRoleTabs() {
+      return `<div class="monthly-role-tabs" role="tablist" aria-label="分角色月度看板">
+        ${monthlyRoleDefinitions().map(role => `<button class="monthly-role-tab ${state.monthlyRole === role.id ? "active" : ""}" type="button" role="tab" aria-selected="${state.monthlyRole === role.id}" data-monthly-role="${role.id}">${role.label}看板</button>`).join("")}
+      </div>`;
     }
 
     function monthlySpecialRows() {
@@ -7509,6 +7552,188 @@ function openMyTaskCalendarDetail(key) {
           const record = item.record;
           return `<tr><td>${record.uid}</td><td><strong>${record.talent}</strong></td><td>${record.liveTime}</td><td>${record.business || "待填写"}</td><td><span class="monthly-status ${item.status.cls}">${item.status.label}</span></td><td>${urgencyBadge(talentGrade(record))}</td><td><strong>${record.product}</strong></td><td>${record.expectedGmv || record.sales}</td><td>${actualGmvText(record)}</td><td>${ratePill(attainmentRate(record))}</td><td>${monthlyResponsiblePeopleCell(record)}</td><td><button class="btn ghost" data-monthly-special-detail="${record.id}">查看详情</button></td></tr>`;
         }).join("")}</tbody></table>`;
+    }
+
+    function monthlyRoleColumns(roleId) {
+      const common = {
+        uid: { label: "达人UID", cell: item => escapeHtml(item.record.uid) },
+        talent: { label: "达人昵称", cell: item => `<strong>${escapeHtml(item.record.talent)}</strong>` },
+        schedule: { label: "专场排期时间", cell: item => escapeHtml(specialScheduleDate(item.record)) },
+        startTime: { label: "开播时间", cell: item => escapeHtml(specialStartTime(item.record)) },
+        business: { label: "负责商务", cell: item => escapeHtml(item.record.business || "待填写") },
+        status: { label: "状态", cell: item => `<span class="monthly-status ${item.status.cls}">${item.status.label}</span>` },
+        grade: { label: "等级", cell: item => urgencyBadge(talentGrade(item.record)) },
+        product: { label: "主推产品", cell: item => `<strong>${escapeHtml(item.record.product)}</strong>` },
+        mechanism: { label: "主推机制", cell: item => escapeHtml(item.record.mechanism || "待填写") },
+        expected: { label: "目标销售额", cell: item => `<span class="role-money">${escapeHtml(item.record.expectedGmv || item.record.sales)}</span>` },
+        actual: { label: "实际销售额", cell: item => `<span class="role-money">${escapeHtml(actualGmvText(item.record))}</span>` },
+        rate: { label: "达标率", cell: item => ratePill(attainmentRate(item.record)) },
+        detail: { label: "查看详情", cell: item => `<button class="btn ghost" data-monthly-special-detail="${item.record.id}">查看详情</button>` }
+      };
+      const roleColumns = {
+        service: [common.uid, common.talent, common.schedule, common.startTime, common.business, common.status, common.grade, common.product, common.expected, common.detail],
+        supply: [common.uid, common.talent, common.schedule, common.business, common.status, common.grade, common.product, common.mechanism, common.expected, common.detail],
+        content: [
+          common.uid,
+          common.talent,
+          common.schedule,
+          common.business,
+          { label: "负责编导", cell: item => escapeHtml(monthlyRoleOwner(item.record, "content")) },
+          { label: "编导进度", cell: item => badge(contentDirectorProgress(item.record), taskStatusClass(contentDirectorProgress(item.record))) },
+          common.status,
+          common.grade,
+          common.product,
+          { label: "直播场地", cell: item => escapeHtml(recordLiveRoom(item.record)) },
+          common.expected,
+          common.actual,
+          common.rate,
+          common.detail
+        ],
+        ads: [
+          common.uid,
+          common.talent,
+          common.schedule,
+          common.business,
+          { label: "负责投放", cell: item => escapeHtml(monthlyRoleOwner(item.record, "ads")) },
+          common.product,
+          { label: "线上佣金", cell: item => rolePercentCell(adsCostMetrics(item.record).onlineCommissionRate * 100, "CRM") },
+          { label: "星图费用", cell: item => roleMoneyCell(adsCostMetrics(item.record).starMapFeeWan, "人工") },
+          { label: "坑位费", cell: item => roleMoneyCell(adsCostMetrics(item.record).boothFeeWan, "人工") },
+          { label: "福袋费用", cell: item => roleMoneyCell(adsCostMetrics(item.record).lotteryFeeWan, "人工") },
+          { label: "消耗", cell: item => roleMoneyCell(adsCostMetrics(item.record).adsSpendWan, "千川T+1") },
+          { label: "直接支付ROI", cell: item => roleMetricCell(formatDecimal(adsCostMetrics(item.record).directPayRoi), "千川T+1") },
+          { label: "直接成交金额", cell: item => roleMoneyCell(adsCostMetrics(item.record).directSalesWan, "千川T+1") },
+          { label: "综合佣金", cell: item => rolePercentCell(adsCostMetrics(item.record).combinedRate, "退款后口径") },
+          { label: "投放占比", cell: item => rolePercentCell(adsCostMetrics(item.record).adsRate, `${Math.round((adsCostMetrics(item.record).refundRate || 0) * 100)}%退款率`) },
+          { label: "投放目标销售额", cell: item => `<span class="role-money">${escapeHtml(item.record.adsForecastGmv || "待预估")}</span>` },
+          common.actual,
+          { label: "达标率", cell: item => ratePill(adsActualRate(item.record)) }
+        ],
+        business: [
+          common.uid,
+          common.talent,
+          common.schedule,
+          common.business,
+          { label: "负责编导", cell: item => escapeHtml(monthlyRoleOwner(item.record, "content")) },
+          { label: "负责投放", cell: item => escapeHtml(monthlyRoleOwner(item.record, "ads")) },
+          common.status,
+          common.grade,
+          common.product,
+          common.mechanism,
+          common.expected,
+          common.actual,
+          common.rate,
+          common.detail
+        ]
+      };
+      return roleColumns[roleId] || [];
+    }
+
+    function monthlyRoleTable(rows, roleId) {
+      if (!rows.length) return `<div class="upload"><div><strong>当前筛选暂无专场</strong></div></div>`;
+      const columns = monthlyRoleColumns(roleId);
+      return `<table class="role-dashboard-table role-${roleId}">
+        <thead><tr>${columns.map(column => `<th>${column.label}</th>`).join("")}</tr></thead>
+        <tbody>${rows.map(item => `<tr>${columns.map(column => `<td>${column.cell(item)}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table>`;
+    }
+
+    function specialScheduleDate(record) {
+      return String(record.liveTime || "待排期").split(" ")[0];
+    }
+
+    function specialStartTime(record) {
+      return String(record.liveTime || "").split(" ")[1] || "待确认";
+    }
+
+    function monthlyRoleOwner(record, moduleKey) {
+      const taskOwner = (dispatchTasks[record.id]?.[moduleKey] || []).find(task => task.owner && task.owner !== "待分配")?.owner;
+      const assignmentOwner = dispatchAssignments[record.id]?.[moduleKey]?.owner;
+      const overrideOwner = recordMemberOverrides[record.id]?.[moduleKey]?.[0];
+      return taskOwner || assignmentOwner || overrideOwner || "待分配";
+    }
+
+    function contentDirectorProgress(record) {
+      const sample = contentWorkflowRecordSamples[record.id]
+        || Object.values(contentWorkflowRecordSamples).find(item => item.talent === record.talent);
+      if (sample?.status) return sample.status;
+      const task = (dispatchTasks[record.id]?.content || [])[0];
+      if (task) return taskWorkflowStatus({ record, moduleKey: "content", task });
+      return dispatchAssignments[record.id]?.content?.status || "待派发";
+    }
+
+    function refundRateForProduct(product) {
+      const text = String(product || "");
+      if (text.includes("气垫")) return 0.38;
+      if (text.includes("定妆喷雾")) return 0.22;
+      if (text.includes("素颜霜")) return 0.3;
+      return null;
+    }
+
+    function roundOne(value) {
+      return Number.isFinite(value) ? Math.round(value * 10) / 10 : null;
+    }
+
+    function seededAdsValue(record, field, values) {
+      const value = Number(record[field]);
+      return Number.isFinite(value) ? value : values[stableRecordIndex(record, values.length)];
+    }
+
+    function adsCostMetrics(record) {
+      const refundRate = refundRateForProduct(record.product);
+      const actualWan = gmvAmount(actualGmvText(record));
+      const onlineCommissionRate = seededAdsValue(record, "onlineCommissionRate", [0.18, 0.2, 0.22, 0.24, 0.25]);
+      const starMapFeeWan = seededAdsValue(record, "starMapFeeWan", [3, 5, 8, 2, 6]);
+      const boothFeeWan = seededAdsValue(record, "boothFeeWan", [5, 8, 12, 3, 10]);
+      const lotteryFeeWan = seededAdsValue(record, "lotteryFeeWan", [1.5, 2, 3, 1, 4]);
+      const adsSpendWan = seededAdsValue(record, "adsSpendWan", [12, 18, 25, 8, 35]);
+      const directPayRoi = seededAdsValue(record, "directPayRoi", [2.1, 2.45, 2.8, 1.92, 3.12]);
+      const directSalesWan = seededAdsValue(record, "directSalesWan", [
+        roundOne(adsSpendWan * directPayRoi),
+        roundOne(adsSpendWan * directPayRoi * 0.96),
+        roundOne(adsSpendWan * directPayRoi * 1.04)
+      ]);
+      const netSalesWan = refundRate === null || !actualWan ? null : roundOne(actualWan * (1 - refundRate));
+      const otherFeeRate = netSalesWan ? roundOne((starMapFeeWan + boothFeeWan + lotteryFeeWan) / netSalesWan * 100) : null;
+      const adsRate = netSalesWan ? roundOne(adsSpendWan / netSalesWan * 100) : null;
+      const combinedRate = Number.isFinite(otherFeeRate) && Number.isFinite(adsRate)
+        ? roundOne(onlineCommissionRate * 100) + otherFeeRate + adsRate
+        : null;
+      return {
+        refundRate,
+        actualWan,
+        netSalesWan,
+        onlineCommissionRate,
+        starMapFeeWan,
+        boothFeeWan,
+        lotteryFeeWan,
+        adsSpendWan,
+        directPayRoi,
+        directSalesWan,
+        otherFeeRate,
+        adsRate,
+        combinedRate: roundOne(combinedRate)
+      };
+    }
+
+    function formatDecimal(value) {
+      return Number.isFinite(value) ? Number(value).toFixed(2).replace(/\.00$/, "") : "待同步";
+    }
+
+    function formatWanAmount(value) {
+      return Number.isFinite(value) ? `¥${formatDecimal(value)}万` : "待填写";
+    }
+
+    function roleMetricCell(value, source) {
+      return `<span class="role-metric"><strong>${escapeHtml(value)}</strong><small>${escapeHtml(source)}</small></span>`;
+    }
+
+    function roleMoneyCell(value, source) {
+      return roleMetricCell(formatWanAmount(value), source);
+    }
+
+    function rolePercentCell(value, source) {
+      return roleMetricCell(Number.isFinite(value) ? `${formatDecimal(value)}%` : "待计算", source);
     }
 
     function openMonthlySpecialDetail(recordId) {
@@ -8162,22 +8387,6 @@ function openMyTaskCalendarDetail(key) {
       document.querySelectorAll("[data-data-module]").forEach(input => input.addEventListener("change", () => { state.dataModule = input.value; render(); }));
       document.querySelectorAll("[data-data-member]").forEach(input => input.addEventListener("change", () => { state.dataMember = input.value; render(); }));
       document.querySelectorAll("[data-data-status]").forEach(input => input.addEventListener("change", () => { state.dataStatus = input.value; render(); }));
-      document.querySelectorAll("[data-data-task-module]").forEach(input => input.addEventListener("change", () => {
-        state.dataTaskModule = input.value;
-        state.dataTaskMember = "all";
-        state.taskCalendarExpandedDay = "";
-        render();
-      }));
-      document.querySelectorAll("[data-data-task-member]").forEach(input => input.addEventListener("change", () => {
-        state.dataTaskMember = input.value;
-        state.taskCalendarExpandedDay = "";
-        render();
-      }));
-      document.querySelectorAll("[data-data-task-month]").forEach(input => input.addEventListener("change", () => {
-        state.dataTaskMonth = input.value;
-        state.taskCalendarExpandedDay = "";
-        render();
-      }));
       document.querySelectorAll("[data-data-center-tab]").forEach(btn => btn.addEventListener("click", () => { state.dataCenterTab = btn.dataset.dataCenterTab; render(); }));
       document.querySelectorAll("[data-data-metric-toggle]").forEach(btn => btn.addEventListener("click", () => {
         state.dataMetricMenuOpen = !state.dataMetricMenuOpen;
@@ -8189,6 +8398,7 @@ function openMyTaskCalendarDetail(key) {
         render();
       }));
       document.querySelectorAll("[data-monthly-month]").forEach(input => input.addEventListener("change", () => { state.monthlyMonth = input.value; render(); }));
+      document.querySelectorAll("[data-monthly-role]").forEach(btn => btn.addEventListener("click", () => { state.monthlyRole = btn.dataset.monthlyRole; render(); }));
       document.querySelectorAll("[data-monthly-business]").forEach(input => input.addEventListener("change", () => { state.monthlyBusiness = input.value; render(); }));
       document.querySelectorAll("[data-monthly-status]").forEach(input => input.addEventListener("change", () => { state.monthlyStatus = input.value; render(); }));
       document.querySelectorAll("[data-monthly-grade]").forEach(input => input.addEventListener("change", () => { state.monthlyGrade = input.value; render(); }));
@@ -9039,25 +9249,8 @@ function openMyTaskCalendarDetail(key) {
         toast("当前筛选暂无可导出的月报");
         return;
       }
-      const headers = ["达人UID", "达人昵称", "专场时间", "负责商务", "状态", "等级", "主推产品", "目标销售额", "实际销售额", "达标率", "负责人员", "未完成原因"];
-      const csvRows = rows.map(item => {
-        const record = item.record;
-        const rate = attainmentRate(record);
-        return [
-          record.uid,
-          record.talent,
-          record.liveTime,
-          record.business || "待填写",
-          item.status.label,
-          talentGrade(record),
-          record.product,
-          record.expectedGmv || record.sales,
-          actualGmvText(record),
-          Number.isFinite(rate) ? `${rate}%` : "待回填",
-          monthlyResponsiblePeopleText(record),
-          item.reason
-        ];
-      });
+      const headers = monthlyReportHeaders();
+      const csvRows = rows.map(monthlyReportRow);
       const csv = [headers, ...csvRows].map(row => row.map(csvCell).join(",")).join("\n");
       const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -9069,6 +9262,50 @@ function openMyTaskCalendarDetail(key) {
       link.remove();
       URL.revokeObjectURL(url);
       toast("月报文件已生成");
+    }
+
+    function monthlyReportHeaders() {
+      return [
+        "达人UID",
+        "达人昵称",
+        "专场时间",
+        "负责商务",
+        "负责剪辑",
+        "负责投放",
+        "负责运营",
+        "状态",
+        "等级",
+        "主推产品",
+        "主推机制",
+        "目标销售额",
+        "实际销售额",
+        "达标率",
+        "负责人员",
+        "未完成原因"
+      ];
+    }
+
+    function monthlyReportRow(item) {
+      const record = item.record;
+      const rate = attainmentRate(record);
+      return [
+        record.uid,
+        record.talent,
+        record.liveTime,
+        record.business || "待填写",
+        monthlyRoleOwner(record, "edit"),
+        monthlyRoleOwner(record, "ads"),
+        monthlyRoleOwner(record, "ops"),
+        item.status.label,
+        talentGrade(record),
+        record.product,
+        record.mechanism || "待填写",
+        record.expectedGmv || record.sales,
+        actualGmvText(record),
+        Number.isFinite(rate) ? `${rate}%` : "待回填",
+        monthlyResponsiblePeopleText(record),
+        item.reason
+      ];
     }
 
     function csvCell(value) {
