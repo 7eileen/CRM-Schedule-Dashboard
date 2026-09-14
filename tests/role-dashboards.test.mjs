@@ -60,6 +60,21 @@ test("月度统计提供综合及五个角色看板入口", () => {
   assert.equal((result.markup.match(/data-monthly-role=/g) || []).length, 6);
 });
 
+test("数据中心删除任务日历入口并将旧缓存状态回退到专场统计", () => {
+  const run = loadDashboard();
+  const result = JSON.parse(run(`(() => {
+    state.dataCenterTab = "taskCalendar";
+    const markup = pageDataCenter();
+    return JSON.stringify({ tab: state.dataCenterTab, tabs: dataCenterTabs(), markup });
+  })()`));
+
+  assert.equal((result.tabs.match(/data-data-center-tab=/g) || []).length, 2);
+  assert.doesNotMatch(result.tabs, /任务日历/);
+  assert.equal(result.tab, "specialStats");
+  assert.match(result.markup, /月度专场统计/);
+  assert.doesNotMatch(result.markup, /内容支持任务日历/);
+});
+
 test("所有角色看板均不显示备注小页卡", () => {
   const run = loadDashboard();
   const markups = JSON.parse(run(`JSON.stringify(Object.fromEntries(
