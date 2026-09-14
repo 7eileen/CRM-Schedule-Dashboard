@@ -2010,43 +2010,6 @@
       color: #fff;
       box-shadow: 0 8px 18px rgba(255, 127, 0, .16);
     }
-    .monthly-role-context {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      margin: -2px 0 18px;
-      padding: 12px 14px;
-      border: 1px solid #e4eaf2;
-      border-radius: 10px;
-      background: #f8fafc;
-    }
-    .monthly-role-context-copy {
-      display: grid;
-      gap: 5px;
-      color: #596579;
-      line-height: 1.55;
-    }
-    .monthly-role-context-copy strong { color: #00152e; font-weight: 500; }
-    .monthly-role-sources {
-      display: flex;
-      justify-content: flex-end;
-      gap: 7px;
-      flex-wrap: wrap;
-    }
-    .monthly-source-tag {
-      display: inline-flex;
-      align-items: center;
-      min-height: 26px;
-      padding: 0 9px;
-      border-radius: 999px;
-      background: #eef5ff;
-      color: var(--blue);
-      font-size: 12px;
-      white-space: nowrap;
-    }
-    .monthly-source-tag.manual { background: var(--orange-soft); color: var(--orange); }
-    .monthly-source-tag.qianchuan { background: var(--purple-soft); color: var(--purple); }
     .role-table-scroll { position: relative; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; }
     .role-dashboard-table { table-layout: auto; min-width: 1120px; }
     .role-dashboard-table.role-content,
@@ -3217,8 +3180,6 @@
       .list-stat-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .data-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .monthly-role-context { align-items: stretch; flex-direction: column; }
-      .monthly-role-sources { justify-content: flex-start; }
       .analysis-grid { grid-template-columns: 1fr; }
       .detail-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .special-info-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3257,8 +3218,6 @@
       .post-publish-assignment-form { grid-template-columns: 1fr; }
       .post-publish-assignment-actions { grid-column: 1; justify-content: flex-start; flex-wrap: wrap; }
       .monthly-role-tab { flex: 0 0 auto; }
-      .monthly-role-context { align-items: stretch; flex-direction: column; }
-      .monthly-role-sources { justify-content: flex-start; }
       .task-calendar-edit-files { grid-column: 1; align-items: flex-start; flex-direction: column; }
       .dispatch-worklist { width: calc(100vw - 68px); max-width: calc(100vw - 68px); }
       .dispatch-worklist-item { grid-template-columns: 1fr; }
@@ -7525,7 +7484,6 @@ function openMyTaskCalendarDetail(key) {
         </div>
         <div class="panel-body">
           ${monthlyRoleTabs()}
-          ${monthlyRoleContext(role.id)}
           <div class="monthly-toolbar">
             <label class="filter-field"><span>统计月份</span><input class="input" type="month" value="${state.monthlyMonth}" data-monthly-month></label>
             <label class="filter-field"><span>负责商务</span><select class="select" data-monthly-business><option value="all">全部</option>${businessOptions.map(value => `<option value="${value}" ${state.monthlyBusiness === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
@@ -7566,23 +7524,6 @@ function openMyTaskCalendarDetail(key) {
       return `<div class="monthly-role-tabs" role="tablist" aria-label="分角色月度看板">
         ${monthlyRoleDefinitions().map(role => `<button class="monthly-role-tab ${state.monthlyRole === role.id ? "active" : ""}" type="button" role="tab" aria-selected="${state.monthlyRole === role.id}" data-monthly-role="${role.id}">${role.label}看板</button>`).join("")}
       </div>`;
-    }
-
-    function monthlyRoleContext(roleId) {
-      if (roleId === "ads") {
-        return `<div class="monthly-role-context">
-          <div class="monthly-role-context-copy">
-            <strong>投放费用与佣金口径</strong>
-            <span>投放占比=消耗÷[实际销售额×(1-退款率)]；其它费用占比=(星图费用+坑位费+福袋费用)÷退款后实际销售额；综合佣金=线上佣金+其它费用占比+投放占比。</span>
-          </div>
-          <div class="monthly-role-sources">
-            <span class="monthly-source-tag">线上佣金 · CRM拉取</span>
-            <span class="monthly-source-tag manual">星图/坑位/福袋 · 人工填写</span>
-            <span class="monthly-source-tag qianchuan">消耗/ROI/成交额 · 千川T+1同步</span>
-          </div>
-        </div>`;
-      }
-      return "";
     }
 
     function monthlySpecialRows() {

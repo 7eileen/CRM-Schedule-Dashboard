@@ -60,23 +60,19 @@ test("月度统计提供综合及五个角色看板入口", () => {
   assert.equal((result.markup.match(/data-monthly-role=/g) || []).length, 6);
 });
 
-test("常规角色看板不显示备注小页卡", () => {
+test("所有角色看板均不显示备注小页卡", () => {
   const run = loadDashboard();
-  const contexts = JSON.parse(run(`JSON.stringify({
-    overview: monthlyRoleContext("overview"),
-    service: monthlyRoleContext("service"),
-    supply: monthlyRoleContext("supply"),
-    content: monthlyRoleContext("content"),
-    business: monthlyRoleContext("business"),
-    ads: monthlyRoleContext("ads")
-  })`));
+  const markups = JSON.parse(run(`JSON.stringify(Object.fromEntries(
+    ["overview", "service", "supply", "content", "ads", "business"].map(role => {
+      state.monthlyRole = role;
+      return [role, monthlySpecialStatsPanel()];
+    })
+  ))`));
 
-  assert.equal(contexts.overview, "");
-  assert.equal(contexts.service, "");
-  assert.equal(contexts.supply, "");
-  assert.equal(contexts.content, "");
-  assert.equal(contexts.business, "");
-  assert.match(contexts.ads, /投放费用与佣金口径/);
+  Object.values(markups).forEach(markup => {
+    assert.doesNotMatch(markup, /monthly-role-context/);
+    assert.doesNotMatch(markup, /投放费用与佣金口径/);
+  });
 });
 
 test("各角色看板严格显示需求中的字段", () => {
@@ -131,17 +127,6 @@ test("投放占比、其它费用占比和综合佣金均按退款后销售额�
   assert.equal(metrics.combinedRate, 52.2);
   assert.equal(metrics.directPayRoi, 2.5);
   assert.equal(metrics.directSalesWan, 25);
-});
-
-test("投放看板标明CRM、人工填写和千川T加1数据来源及计算公式", () => {
-  const run = loadDashboard();
-  const markup = run(`monthlyRoleContext("ads")`);
-
-  assert.match(markup, /CRM拉取/);
-  assert.match(markup, /人工填写/);
-  assert.match(markup, /千川T\+1同步/);
-  assert.match(markup, /投放占比=消耗÷\[实际销售额×\(1-退款率\)\]/);
-  assert.match(markup, /综合佣金=线上佣金\+其它费用占比\+投放占比/);
 });
 
 test("导出月报新增剪辑、投放、运营负责人和主推机制", () => {
