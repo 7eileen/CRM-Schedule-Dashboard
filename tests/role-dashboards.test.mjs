@@ -60,6 +60,25 @@ test("月度统计提供综合及五个角色看板入口", () => {
   assert.equal((result.markup.match(/data-monthly-role=/g) || []).length, 6);
 });
 
+test("常规角色看板不显示备注小页卡", () => {
+  const run = loadDashboard();
+  const contexts = JSON.parse(run(`JSON.stringify({
+    overview: monthlyRoleContext("overview"),
+    service: monthlyRoleContext("service"),
+    supply: monthlyRoleContext("supply"),
+    content: monthlyRoleContext("content"),
+    business: monthlyRoleContext("business"),
+    ads: monthlyRoleContext("ads")
+  })`));
+
+  assert.equal(contexts.overview, "");
+  assert.equal(contexts.service, "");
+  assert.equal(contexts.supply, "");
+  assert.equal(contexts.content, "");
+  assert.equal(contexts.business, "");
+  assert.match(contexts.ads, /投放费用与佣金口径/);
+});
+
 test("各角色看板严格显示需求中的字段", () => {
   const run = loadDashboard();
   const headers = JSON.parse(run(`JSON.stringify(Object.fromEntries(
@@ -147,8 +166,11 @@ test("角色看板宽表具有独立横向滚动和移动端入口样式", () =>
 
   assert.match(html, /\.monthly-role-tabs\s*\{[^}]*overflow-x:\s*auto/);
   assert.match(html, /\.monthly-special-panel\s*\{[^}]*min-width:\s*0/);
+  assert.match(html, /\.monthly-toolbar > \*\s*\{[^}]*min-width:\s*0/);
+  assert.match(html, /\.monthly-toolbar \.input,\s*\.monthly-toolbar \.select\s*\{[^}]*min-width:\s*0/);
   assert.match(html, /\.role-table-scroll\s*\{[^}]*max-width:\s*100%[^}]*overflow-x:\s*auto/);
   assert.match(html, /\.role-dashboard-table\.role-ads\s*\{[^}]*min-width:\s*2200px/);
+  assert.match(html, /@media \(max-width: 1440px\)[\s\S]*\.monthly-toolbar\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(150px, 1fr\)\)/);
   assert.match(html, /@media \(max-width: 1180px\)[\s\S]*\.monthly-special-panel \.panel-head\s*\{[^}]*flex-direction:\s*column/);
   assert.match(html, /@media \(max-width: 720px\)[\s\S]*\.monthly-role-tab\s*\{[^}]*flex:\s*0 0 auto/);
 });

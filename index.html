@@ -1974,6 +1974,9 @@
       align-items: end;
       margin-bottom: 18px;
     }
+    .monthly-toolbar > * { min-width: 0; }
+    .monthly-toolbar .input,
+    .monthly-toolbar .select { min-width: 0; }
     .monthly-summary {
       display: grid;
       grid-template-columns: repeat(6, minmax(120px, 1fr));
@@ -3203,6 +3206,9 @@
       border-top: 1px solid #f2dfce;
     }
 
+    @media (max-width: 1440px) {
+      .monthly-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+    }
     @media (max-width: 1180px) {
       .monthly-special-panel .panel-head { align-items: flex-start; flex-direction: column; }
       .process, .stats, .grid-4, .module-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3210,7 +3216,6 @@
       .list-stat-item { grid-template-columns: 1fr; align-items: stretch; }
       .list-stat-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .data-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
-      .monthly-toolbar { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .monthly-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .monthly-role-context { align-items: stretch; flex-direction: column; }
       .monthly-role-sources { justify-content: flex-start; }
@@ -7577,14 +7582,7 @@ function openMyTaskCalendarDetail(key) {
           </div>
         </div>`;
       }
-      const descriptions = {
-        overview: "查看专场整体完成情况、销售达成和全部负责人。",
-        service: "聚焦达人开播排期与客服跟进所需的基础信息。",
-        supply: "聚焦产品、主推机制及备货协同信息。",
-        content: "聚焦编导承接、内容进度、直播场地和销售结果。",
-        business: "聚焦商务负责的专场目标、协同人员与最终销售结果。"
-      };
-      return `<div class="monthly-role-context"><div class="monthly-role-context-copy"><strong>${monthlyRoleDefinition(roleId).title}</strong><span>${descriptions[roleId] || descriptions.overview}</span></div></div>`;
+      return "";
     }
 
     function monthlySpecialRows() {
