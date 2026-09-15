@@ -189,7 +189,7 @@
       background: #fff8ef;
     }
     .list-stats .stat { min-height: 112px; padding: 22px 28px; align-items: flex-start; }
-    .list-stats { grid-template-columns: repeat(5, minmax(128px, 1fr)); }
+    .list-stats { grid-template-columns: repeat(4, minmax(128px, 1fr)); }
     .list-stats button.stat::after {
       content: "筛选日历";
       position: absolute;
@@ -2801,6 +2801,7 @@
     .calendar-cell.has-many { min-height: 312px; }
     .calendar-cell.is-expanded { border-color: #f0b26b; box-shadow: inset 0 0 0 1px #f0b26b; }
     .calendar-event.done { border-color: #bdebd0; background: #e5f8eb; color: #138743; }
+    .calendar-event.delayed { border-color: #ffd8ae; background: #fff2e4; color: #8a4a00; }
     .calendar-event.delay { border-color: #ffd0d1; background: #fff1f1; color: #c43737; }
     .calendar-event strong {
       display: -webkit-box;
@@ -4093,13 +4094,6 @@
           records: rangeRecords.filter(item => specialCalendarStatus(item) === "completed"),
           cls: "blue"
         },
-        delayed: {
-          key: "delayed",
-          label: "已延期",
-          title: "已延期专场日历",
-          records: rangeRecords.filter(item => specialCalendarStatus(item) === "delayed"),
-          cls: "red"
-        },
         canceled: {
           key: "canceled",
           label: "已取消",
@@ -4311,13 +4305,15 @@
     function calendarEvent(record) {
       const displayStatus = record.scheduleStatus || record.status;
       const done = displayStatus === "待复盘" || record.progress >= 90;
-      const delay = displayStatus.includes("延期") || displayStatus.includes("取消");
+      const delayed = displayStatus.includes("延期");
+      const canceled = displayStatus.includes("取消");
+      const statusClass = canceled ? "delay" : delayed ? "delayed" : "";
       const expectedGmv = record.expectedGmv || record.sales || "待填写";
       const liveRoom = recordLiveRoom(record);
       const liveAt = calendarDateTime(record.liveTime);
       const business = record.business || "待填写";
       const displayTitle = record.specialName || record.title;
-      return `<button class="calendar-event ${done ? "done" : ""} ${delay ? "delay" : ""}" data-open-project="${record.id}">
+      return `<button class="calendar-event${done ? " done" : ""}${statusClass ? ` ${statusClass}` : ""}" data-open-project="${record.id}">
         <strong title="${escapeHtml(displayTitle)}">${escapeHtml(displayTitle)}</strong>
         <div class="calendar-event-meta">
           <span class="calendar-pill">${escapeHtml(liveAt)}</span>
