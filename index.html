@@ -784,6 +784,55 @@
     .field { min-height: 72px; padding: 14px; box-shadow: none; }
     .field label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 13px; font-weight: 400; }
     .field strong { display: block; color: #00152e; font-size: 14px; font-weight: 400; line-height: 1.45; overflow-wrap: anywhere; }
+    .live-time-field { position: relative; z-index: 4; overflow: visible; }
+    .live-time-value-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .live-time-history { position: relative; display: inline-flex; align-items: center; }
+    .live-time-history-trigger {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 8px;
+      border: 1px solid #ffd3a8;
+      border-radius: 999px;
+      color: var(--orange);
+      background: var(--orange-soft);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+      cursor: help;
+    }
+    .live-time-history-trigger:focus-visible { outline: 3px solid rgba(255, 127, 0, .22); outline-offset: 2px; }
+    .live-time-history-popover {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      z-index: 90;
+      width: min(380px, calc(100vw - 72px));
+      padding: 14px;
+      border-radius: 10px;
+      background: #00152e;
+      box-shadow: 0 16px 34px rgba(15, 35, 65, .22);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(-4px);
+      transition: opacity .16s ease, visibility .16s ease, transform .16s ease;
+      color: #fff;
+      text-align: left;
+    }
+    .live-time-history-title { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+    .live-time-history-list { display: grid; gap: 9px; }
+    .live-time-history-item { display: grid; gap: 3px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,.14); }
+    .live-time-history-item:first-child { padding-top: 0; border-top: 0; }
+    .field .live-time-history-item strong { color: #fff; font-size: 13px; font-weight: 600; line-height: 1.4; }
+    .live-time-history-item > span { color: rgba(255,255,255,.72); font-size: 12px; line-height: 1.4; }
+    .live-time-history:hover .live-time-history-popover,
+    .live-time-history:focus-within .live-time-history-popover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
 
     .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
@@ -3977,6 +4026,20 @@
     const badge = (text, cls = "") => `<span class="badge ${cls}"><span class="dot"></span>${text}</span>`;
     const field = (label, value) => `<div class="field"><label>${label}</label><strong>${value}</strong></div>`;
 
+    function liveTimeField(record) {
+      const history = Array.isArray(record.liveTimeHistory) ? record.liveTimeHistory : [];
+      const historyMarkup = history.length
+        ? `<span class="live-time-history">
+            <button class="live-time-history-trigger" type="button" aria-label="开播时间已修改，悬停或聚焦查看历史"><span aria-hidden="true">↺</span>已修改</button>
+            <span class="live-time-history-popover" role="tooltip">
+              <span class="live-time-history-title">开播时间修改记录</span>
+              <span class="live-time-history-list">${history.slice().reverse().map(item => `<span class="live-time-history-item"><strong>${escapeHtml(item.from)} → ${escapeHtml(item.to)}</strong><span>${escapeHtml(item.changedBy || "商务")} · ${escapeHtml(item.changedAt || "时间待同步")}</span></span>`).join("")}</span>
+            </span>
+          </span>`
+        : "";
+      return `<div class="field live-time-field"><label>开播时间</label><div class="live-time-value-line"><strong>${escapeHtml(record.liveTime || "待填写")}</strong>${historyMarkup}</div></div>`;
+    }
+
     function render() {
       normalizeMergedDispatchView();
       renderNav();
@@ -5069,6 +5132,18 @@
     function applySpecialInfoValues(record, rawValues, actorLabel = "商务") {
       const values = normalizeSpecialInfoValues(rawValues);
       const syncTime = currentSyncTime();
+      const previousLiveTime = String(record.liveTime || "").replace("T", " ").trim();
+      if (previousLiveTime && values.liveTime && previousLiveTime !== values.liveTime) {
+        record.liveTimeHistory = [
+          ...(Array.isArray(record.liveTimeHistory) ? record.liveTimeHistory : []),
+          {
+            from: previousLiveTime,
+            to: values.liveTime,
+            changedBy: values.business || record.business || actorLabel,
+            changedAt: syncTime
+          }
+        ];
+      }
       record.specialName = values.specialName;
       record.title = values.specialName;
       record.uid = values.uid;
@@ -5169,7 +5244,7 @@
           </div>
         </div>
         <div class="panel-body stack">
-          <div class="field-grid">${field("专场名称", escapeHtml(record.specialName || record.title))}${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}${field("主推机制", escapeHtml(record.mechanism || "按商务文档机制执行"))}</div>
+          <div class="field-grid">${field("专场名称", escapeHtml(record.specialName || record.title))}${field("达人 UID", record.uid)}${liveTimeField(record)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("目标销售额", record.expectedGmv || record.sales)}${field("主推产品", record.product)}${field("主推机制", escapeHtml(record.mechanism || "按商务文档机制执行"))}</div>
           ${specialInfoSyncPanel(record)}
           <div class="stack">
             <h3 class="panel-title" style="font-size:16px">需求识别梗概</h3>
@@ -9446,7 +9521,7 @@ function openMyTaskCalendarDetail(key) {
 
     function openRecordDrawer() {
       const record = selectedRecord();
-      openDrawer("专场记录表原文", `<div class="stack">${field("达人", record.talent)}${field("达人 UID", record.uid)}${field("开播时间", record.liveTime)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("主推产品", record.product)}${field("记录来源", "商务填写专场记录表 / 飞书表格同步")}</div>`);
+      openDrawer("专场记录表原文", `<div class="stack">${field("达人", record.talent)}${field("达人 UID", record.uid)}${liveTimeField(record)}${field("直播间", escapeHtml(recordLiveRoom(record)))}${field("负责商务", record.business)}${field("状态", record.scheduleStatus || record.status)}${field("类型", record.type || "专场")}${field("主推产品", record.product)}${field("记录来源", "商务填写专场记录表 / 飞书表格同步")}</div>`);
     }
 
     function openLogDrawer() {
